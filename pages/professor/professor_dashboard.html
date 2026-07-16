@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Dashboard - Scilab 3.0 - Science Laboratory Reservation System</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/sidebar_theme.css">
+    <style>
+        /* Enhanced Analytics Dashboard Styles */
+        .analytics-dashboard {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .analytics-header {
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .analytics-title {
+            color: #152614;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .analytics-subtitle {
+            color: #666;
+            font-size: 16px;
+            margin: 8px 0 0 0;
+        }
+
+        .analytics-period {
+            display: flex;
+            gap: 8px;
+        }
+
+        .period-btn {
+            padding: 8px 16px;
+            border: 1px solid #e9ecef;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .period-btn.active {
+            background: #31CB00;
+            color: white;
+            border-color: #31CB00;
+        }
+
+        .period-btn:hover {
+            border-color: #31CB00;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .analytics-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #31CB00 0%, #2A7221 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(49, 203, 0, 0.3);
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .metric-change {
+            font-size: 12px;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .metric-change.positive {
+            color: #4CAF50;
+        }
+
+        .metric-change.negative {
+            color: #f44336;
+        }
+
+        .analytics-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analytics-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #31CB00, #2A7221);
+        }
+
+        .analytics-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(49, 203, 0, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .card-title h4 {
+            color: #152614;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .card-badge {
+            background: rgba(49, 203, 0, 0.1);
+            color: #31CB00;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .card-badge.critical {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+        }
+
+        .card-badge.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+
+        .analytics-content {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .analytics-item {
+            padding: 16px;
+            background: rgba(49, 203, 0, 0.05);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .analytics-item:hover {
+            background: rgba(49, 203, 0, 0.1);
+            transform: translateX(4px);
+            border-left-color: #31CB00;
+        }
+
+        .analytics-item.overdue {
+            border-left-color: #FF9800;
+            background: rgba(255, 152, 0, 0.05);
+        }
+
+        .analytics-item.critical {
+            border-left-color: #f44336;
+            background: rgba(244, 67, 54, 0.05);
+        }
+
+        .analytics-item.success {
+            border-left-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.05);
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #152614;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .item-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.6;
+        }
+
+        .performance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .performance-badge.at-risk {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+        }
+
+        .performance-badge.late {
+            background: rgba(255, 152, 0, 0.1);
+            color: #FF9800;
+        }
+
+        .performance-badge.good {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+
+        .action-button {
+            background: #31CB00;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-button:hover {
+            background: #2A7221;
+        }
+
+        .warning-badge {
+            background: #FF9800;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* Navigation Section */
+        .navigation-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .navigation-section h3 {
+            color: #152614;
+            margin-bottom: 20px;
+        }
+
+        .nav-links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .nav-link-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(49, 203, 0, 0.05);
+            border: 1px solid rgba(49, 203, 0, 0.2);
+            border-radius: 8px;
+            text-decoration: none;
+            color: #152614;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link-card:hover {
+            background: rgba(49, 203, 0, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(49, 203, 0, 0.2);
+            text-decoration: none;
+            color: #152614;
+        }
+
+        .nav-icon {
+            width: 32px;
+            height: 32px;
+            background: #31CB00;
+            color: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* New Professor Dashboard Styles */
+        .welcome-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .welcome-title {
+            color: #152614;
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+
+        .welcome-subtitle {
+            color: #666;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .datetime-display {
+            text-align: right;
+        }
+
+        .current-date {
+            color: #152614;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .current-time {
+            color: #31CB00;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s ease;
+            border-left: 4px solid #31CB00;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(49, 203, 0, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #31CB00;
+        }
+
+        .card-content {
+            flex: 1;
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #152614;
+            margin-bottom: 4px;
+        }
+
+        .card-label {
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .section-title {
+            color: #152614;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 24px 0;
+        }
+
+        .upcoming-reservations-section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .reservations-table-container {
+            overflow-x: auto;
+        }
+
+        .reservations-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .reservations-table th {
+            background: #f8f9fa;
+            color: #152614;
+            font-weight: 600;
+            text-align: left;
+            padding: 16px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .reservations-table td {
+            padding: 16px;
+            border-bottom: 1px solid #e9ecef;
+            color: #152614;
+        }
+
+        .reservations-table tr:hover {
+            background: rgba(49, 203, 0, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.approved {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+
+        .status-badge.pending {
+            background: rgba(255, 152, 0, 0.1);
+            color: #FF9800;
+        }
+
+        .quick-actions-section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .quick-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 24px;
+            background: rgba(49, 203, 0, 0.05);
+            border: 2px solid rgba(49, 203, 0, 0.1);
+            border-radius: 12px;
+            text-decoration: none;
+            color: #152614;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(49, 203, 0, 0.1);
+            border-color: #31CB00;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(49, 203, 0, 0.2);
+            text-decoration: none;
+            color: #152614;
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            background: #31CB00;
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .today-schedule-section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .schedule-table-container {
+            overflow-x: auto;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .schedule-table th {
+            background: #f8f9fa;
+            color: #152614;
+            font-weight: 600;
+            text-align: left;
+            padding: 16px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .schedule-table td {
+            padding: 16px;
+            border-bottom: 1px solid #e9ecef;
+            color: #152614;
+        }
+
+        .schedule-table tr:hover {
+            background: rgba(49, 203, 0, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.approved {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+
+        .status-badge.pending {
+            background: rgba(255, 152, 0, 0.1);
+            color: #FF9800;
+        }
+
+        .status-badge.rejected {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+        }
+
+        .status-badge.completed {
+            background: rgba(49, 203, 0, 0.1);
+            color: #31CB00;
+        }
+
+        .student-requests-section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .requests-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .request-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: rgba(49, 203, 0, 0.05);
+            border-radius: 12px;
+            border-left: 4px solid #31CB00;
+            transition: all 0.3s ease;
+        }
+
+        .request-item:hover {
+            background: rgba(49, 203, 0, 0.1);
+            transform: translateX(4px);
+        }
+
+        .request-info {
+            flex: 1;
+        }
+
+        .request-info h4 {
+            color: #152614;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+
+        .request-info p {
+            color: #666;
+            font-size: 14px;
+            margin: 0 0 8px 0;
+            line-height: 1.5;
+        }
+
+        .request-time {
+            color: #31CB00;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn.approve {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .action-btn.approve:hover {
+            background: #45a049;
+        }
+
+        .action-btn.reject {
+            background: #f44336;
+            color: white;
+        }
+
+        .action-btn.reject:hover {
+            background: #da190b;
+        }
+
+        .announcements-section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .announcements-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .announcement-item {
+            display: flex;
+            gap: 16px;
+            padding: 20px;
+            background: rgba(49, 203, 0, 0.05);
+            border-radius: 12px;
+            border-left: 4px solid #31CB00;
+            transition: all 0.3s ease;
+        }
+
+        .announcement-item:hover {
+            background: rgba(49, 203, 0, 0.1);
+            transform: translateX(4px);
+        }
+
+        .announcement-icon {
+            width: 40px;
+            height: 40px;
+            background: #31CB00;
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .announcement-content {
+            flex: 1;
+        }
+
+        .announcement-content h4 {
+            color: #152614;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+
+        .announcement-content p {
+            color: #666;
+            font-size: 14px;
+            margin: 0 0 8px 0;
+            line-height: 1.5;
+        }
+
+        .announcement-date {
+            color: #31CB00;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .analytics-section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .analytics-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #e9ecef;
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+        }
+
+        .card-header h4 {
+            color: #152614;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .chart-container {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 20px 0;
+        }
+
+        .simple-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            width: 100%;
+            height: 100%;
+            gap: 10px;
+        }
+
+        .chart-bar {
+            background: linear-gradient(135deg, #31CB00, #2A7221);
+            color: white;
+            border-radius: 4px 4px 0 0;
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 40px;
+            transition: all 0.3s ease;
+        }
+
+        .chart-bar:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(49, 203, 0, 0.3);
+        }
+
+        .room-usage-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .usage-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .room-name {
+            color: #152614;
+            font-weight: 500;
+        }
+
+        .usage-count {
+            color: #31CB00;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .dashboard-main {
+                margin-left: 0;
+            }
+            
+            .dashboard-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .welcome-section {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            
+            .datetime-display {
+                text-align: center;
+            }
+            
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .request-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            
+            .request-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar will be loaded dynamically -->
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1>Professor Dashboard</h1>
+                    <img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
+                </div>
+            </div>
+            <div class="dashboard-content">
+                <!-- Welcome Section -->
+                <div class="welcome-section">
+                    <div class="welcome-content">
+                        <h1 class="welcome-title">Hello, Prof. <span id="professorName">Professor Name</span></h1>
+                        <p class="welcome-subtitle">Welcome back to SciLab Reservation System</p>
+                    </div>
+                    <div class="datetime-display">
+                        <div class="current-date" id="currentDate">May 1, 2025</div>
+                        <div class="current-time" id="currentTime">10:30 AM</div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <span>📋</span>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value" id="myReservationsCount">8</div>
+                            <div class="card-label">My Reservations</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <span>⏳</span>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value" id="pendingRequestsCount">5</div>
+                            <div class="card-label">Pending Requests</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <span>🎓</span>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value" id="classesTodayCount">3</div>
+                            <div class="card-label">Classes Today</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <span>📅</span>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value" id="upcomingSessionsCount">7</div>
+                            <div class="card-label">Upcoming Sessions</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions-section">
+                    <h2 class="section-title">Quick Actions</h2>
+                    <div class="quick-actions-grid">
+                        <a href="professor_new_reservation.html" class="quick-action-btn">
+                            <div class="action-icon">➕</div>
+                            <span>Reserve Laboratory</span>
+                        </a>
+                        <a href="professor_new_reservation.html" class="quick-action-btn">
+                            <div class="action-icon">🔬</div>
+                            <span>Reserve Equipment</span>
+                        </a>
+                        <a href="professor_approved.html" class="quick-action-btn">
+                            <div class="action-icon">📆</div>
+                            <span>View Schedule</span>
+                        </a>
+                        <a href="student_approvals.html" class="quick-action-btn">
+                            <div class="action-icon">⚙️</div>
+                            <span>Manage Requests</span>
+                        </a>
+                        <a href="professor_reservation_history.html" class="quick-action-btn">
+                            <div class="action-icon">📜</div>
+                            <span>Reservation History</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Today's Schedule -->
+                <div class="today-schedule-section">
+                    <h2 class="section-title">Today's Schedule</h2>
+                    <div class="schedule-table-container">
+                        <table class="schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Room</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="todayScheduleList">
+                                <tr>
+                                    <td colspan="3" style="text-align: center; padding: 40px; color: #666;">
+                                        <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+                                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Loading Schedule...</div>
+                                        <div style="font-size: 14px;">Please wait while we fetch today's schedule</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Upcoming Reservations -->
+                <div class="upcoming-reservations-section">
+                    <h2 class="section-title">My Upcoming Reservations</h2>
+                    <div class="reservations-table-container">
+                        <table class="reservations-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Room</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="upcomingReservationsList">
+                                <!-- Data will be loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Student Requests -->
+                <div class="student-requests-section">
+                    <h2 class="section-title">Student Requests Requiring Attention</h2>
+                    <div class="requests-list" id="studentRequestsList">
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Loading Requests...</div>
+                            <div style="font-size: 14px;">Please wait while we fetch pending requests</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <script src="../../js/main.js"></script>
+    <script>
+        // Set active navigation for Dashboard
+        setTimeout(() => {
+            const dashboardLink = document.getElementById('nav-dashboard');
+            if (dashboardLink) {
+                dashboardLink.classList.add('active');
+            }
+        }, 100);
+
+        // Update current date and time
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString('en-US', options);
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            
+            document.getElementById('currentDate').textContent = dateString;
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // Request management functions
+        async function approveRequest(requestId) {
+            const confirmed = await showConfirmDialog(
+                'Approve Request',
+                'Are you sure you want to approve this request?',
+                'Approve',
+                'Cancel',
+                'success'
+            );
+            if (confirmed) {
+                try {
+                    const { error } = await supabase
+                        .from('reservations')
+                        .update({ professor_approval: 'Approved' })
+                        .eq('reservation_id', requestId);
+
+                    if (error) throw error;
+
+                    showSuccessSnackbar('Request approved successfully and sent to admin for final approval.');
+                    loadStudentRequests();
+                } catch (error) {
+                    console.error('Error approving request:', error);
+                    showWarningSnackbar('An error occurred while approving the request');
+                }
+            }
+        }
+
+        async function rejectRequest(requestId) {
+            const confirmed = await showConfirmDialog(
+                'Reject Request',
+                'Are you sure you want to reject this request?',
+                'Reject',
+                'Cancel',
+                'danger'
+            );
+            if (confirmed) {
+                const reason = prompt('Please provide a reason for rejection:');
+                if (reason) {
+                    try {
+                        // Update reservation to declined
+                        const { error: updateError } = await supabase
+                            .from('reservations')
+                            .update({ 
+                                professor_approval: 'Declined',
+                                additional_note: (await supabase.from('reservations').select('additional_note').eq('reservation_id', requestId).single()).data?.additional_note + `\nRejection reason: ${reason}`
+                            })
+                            .eq('reservation_id', requestId);
+
+                        if (updateError) throw updateError;
+
+                        // Restore resources (return items to inventory)
+                        const { data: reservationItems } = await supabase
+                            .from('reservation_items')
+                            .select('asset_id, quantity_borrowed')
+                            .eq('reservation_id', requestId);
+
+                        if (reservationItems && reservationItems.length > 0) {
+                            for (const item of reservationItems) {
+                                // Fetch current available_stock
+                                const { data: asset } = await supabase
+                                    .from('lab_assets')
+                                    .select('available_stock')
+                                    .eq('asset_id', item.asset_id)
+                                    .single();
+                                
+                                if (asset) {
+                                    // Update with new value
+                                    await supabase
+                                        .from('lab_assets')
+                                        .update({ 
+                                            available_stock: asset.available_stock + item.quantity_borrowed
+                                        })
+                                        .eq('asset_id', item.asset_id);
+                                }
+                            }
+                        }
+
+                        // Release room if occupied
+                        const { data: reservation } = await supabase
+                            .from('reservations')
+                            .select('room_id')
+                            .eq('reservation_id', requestId)
+                            .single();
+
+                        if (reservation && reservation.room_id) {
+                            await supabase
+                                .from('rooms')
+                                .update({ status: 'Available' })
+                                .eq('room_id', reservation.room_id)
+                                .eq('status', 'Occupied');
+                        }
+
+                        showWarningSnackbar('Request rejected successfully.');
+                        loadStudentRequests();
+                    } catch (error) {
+                        console.error('Error rejecting request:', error);
+                        showWarningSnackbar('An error occurred while rejecting the request');
+                    }
+                }
+            }
+        }
+
+        // Load professor data
+        async function loadProfessorData() {
+            try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Update professor name
+                const professorName = document.getElementById('userNameSidebar')?.textContent || 'Professor Name';
+                document.getElementById('professorName').textContent = professorName;
+                
+                // Load real dashboard metrics from database
+                
+                // 1. My Reservations - count of professor's reservations
+                const { count: myReservationsCount, error: reservationsError } = await supabase
+                    .from('reservations')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .neq('status', 'Cancelled');
+                
+                document.getElementById('myReservationsCount').textContent = myReservationsCount || 0;
+                
+                // 2. Pending Requests - count of student requests pending professor approval
+                const { count: pendingRequestsCount, error: pendingError } = await supabase
+                    .from('reservations')
+                    .select('user_info!inner(role)', { count: 'exact', head: true })
+                    .eq('professor_approval', 'Pending')
+                    .eq('user_info.role', 'student');
+                
+                document.getElementById('pendingRequestsCount').textContent = pendingRequestsCount || 0;
+                
+                // 3. Classes Today - count of professor's reservations for today
+                const { count: classesTodayCount, error: todayError } = await supabase
+                    .from('reservations')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .eq('reservation_date', today)
+                    .neq('status', 'Cancelled');
+                
+                document.getElementById('classesTodayCount').textContent = classesTodayCount || 0;
+                
+                // 4. Upcoming Sessions - count of approved future reservations
+                const { count: upcomingSessionsCount, error: upcomingError } = await supabase
+                    .from('reservations')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .eq('professor_approval', 'Approved')
+                    .eq('admin_approval', 'Approved')
+                    .gte('reservation_date', today);
+                
+                document.getElementById('upcomingSessionsCount').textContent = upcomingSessionsCount || 0;
+                
+            } catch (error) {
+                console.error('Error loading professor data:', error);
+                // Fallback to zeros on error
+                document.getElementById('myReservationsCount').textContent = '0';
+                document.getElementById('pendingRequestsCount').textContent = '0';
+                document.getElementById('classesTodayCount').textContent = '0';
+                document.getElementById('upcomingSessionsCount').textContent = '0';
+            }
+        }
+
+        // Load today's schedule
+        async function loadTodaySchedule() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const now = new Date();
+                
+                // Fetch all rooms with their status
+                const { data: rooms, error: roomsError } = await supabase
+                    .from('rooms')
+                    .select('room_id, room_name, status')
+                    .eq('is_deleted', false)
+                    .order('room_name');
+
+                if (roomsError) throw roomsError;
+
+                // Fetch current active reservations for today (for occupied rooms)
+                const { data: reservations, error } = await supabase
+                    .from('reservations')
+                    .select(`
+                        reservation_id,
+                        reservation_date,
+                        start_time,
+                        end_time,
+                        room_id,
+                        user_info (
+                            first_name,
+                            last_name
+                        )
+                    `)
+                    .eq('reservation_date', today)
+                    .not('room_id', 'is', null)
+                    .neq('status', 'Cancelled')
+                    .neq('status', 'Declined')
+                    .neq('status', 'Completed');
+
+                if (error) throw error;
+
+                const container = document.getElementById('todayScheduleList');
+                
+                if (rooms && rooms.length > 0) {
+                    let html = '';
+                    
+                    // Create a map of room_id to current reservation
+                    const reservationMap = {};
+                    if (reservations) {
+                        reservations.forEach(res => {
+                            const startTime = new Date(`${res.reservation_date}T${res.start_time}`);
+                            const endTime = new Date(`${res.reservation_date}T${res.end_time}`);
+                            
+                            // Only include if currently active
+                            if (now >= startTime && now <= endTime) {
+                                reservationMap[res.room_id] = res;
+                            }
+                        });
+                    }
+                    
+                    rooms.forEach(room => {
+                        const reservation = reservationMap[room.room_id];
+                        
+                        // Determine status class based on room status
+                        let statusClass = 'approved'; // default for Available
+                        if (room.status === 'Occupied') statusClass = 'pending';
+                        if (room.status === 'Maintenance') statusClass = 'rejected';
+                        if (room.status === 'Over Time') statusClass = 'critical';
+                        
+                        if (reservation && room.status === 'Occupied') {
+                            // Show current reservation time
+                            html += `
+                                <tr>
+                                    <td>${formatTime(reservation.start_time)} - ${formatTime(reservation.end_time)}</td>
+                                    <td>${room.room_name}</td>
+                                    <td><span class="status-badge ${statusClass}">${room.status}</span></td>
+                                </tr>
+                            `;
+                        } else {
+                            // No current reservation - show room status
+                            html += `
+                                <tr>
+                                    <td>00:00 - 00:00</td>
+                                    <td>${room.room_name}</td>
+                                    <td><span class="status-badge ${statusClass}">${room.status}</span></td>
+                                </tr>
+                            `;
+                        }
+                    });
+                    
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `
+                        <tr>
+                            <td colspan="3" style="text-align: center; padding: 40px; color: #666;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">🏢</div>
+                                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">No Rooms Available</div>
+                                <div style="font-size: 14px;">No rooms found in the system</div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading today\'s schedule:', error);
+                const container = document.getElementById('todayScheduleList');
+                if (container) {
+                    container.innerHTML = `
+                        <tr>
+                            <td colspan="3" style="text-align: center; padding: 40px; color: #f44336;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Error Loading Schedule</div>
+                                <div style="font-size: 14px;">Please refresh the page to try again</div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+        }
+
+        // Load student requests
+        async function loadStudentRequests() {
+            try {
+                // Query reservations with professor_approval = 'Pending' for students
+                const { data: reservations, error } = await supabase
+                    .from('reservations')
+                    .select(`
+                        reservation_id,
+                        reservation_date,
+                        start_time,
+                        end_time,
+                        year,
+                        section,
+                        additional_note,
+                        professor_approval,
+                        admin_approval,
+                        room_id,
+                        user_id,
+                        user_info!inner (
+                            id,
+                            first_name,
+                            last_name,
+                            role
+                        ),
+                        rooms (
+                            room_id,
+                            room_name
+                        ),
+                        reservation_items (
+                            asset_id,
+                            quantity_borrowed,
+                            lab_assets (
+                                item_name
+                            )
+                        )
+                    `)
+                    .eq('professor_approval', 'Pending')
+                    .eq('user_info.role', 'student')
+                    .order('reservation_date', { ascending: true })
+                    .order('start_time', { ascending: true });
+
+                if (error) throw error;
+
+                if (reservations && reservations.length > 0) {
+                    // Format the data for display
+                    const formattedRequests = reservations.map(res => {
+                        // Build resources string
+                        let resources = [];
+                        if (res.rooms && res.rooms.room_name) {
+                            resources.push(`${res.rooms.room_name} (1x)`);
+                        }
+                        if (res.reservation_items && res.reservation_items.length > 0) {
+                            res.reservation_items.forEach(item => {
+                                if (item.lab_assets && item.lab_assets.item_name) {
+                                    resources.push(`${item.lab_assets.item_name} (${item.quantity_borrowed}x)`);
+                                }
+                            });
+                        }
+                        
+                        return {
+                            id: res.reservation_id,
+                            student_name: `${res.user_info.first_name} ${res.user_info.last_name}`,
+                            date: res.reservation_date,
+                            start_time: res.start_time,
+                            end_time: res.end_time,
+                            resources: resources.join(', ') || 'No resources',
+                            year: res.year || '',
+                            section: res.section || '',
+                            additional_note: res.additional_note || ''
+                        };
+                    });
+
+                    displayStudentRequests(formattedRequests);
+                } else {
+                    // Show empty state
+                    const container = document.getElementById('studentRequestsList');
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: #666;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">No Pending Requests</div>
+                                <div style="font-size: 14px;">All student requests have been processed</div>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading student requests:', error);
+                const container = document.getElementById('studentRequestsList');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #f44336;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Error Loading Requests</div>
+                            <div style="font-size: 14px;">Please refresh the page to try again</div>
+                            <div style="font-size: 12px; margin-top: 8px; color: #999;">${error.message}</div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function displayStudentRequests(requests) {
+            const container = document.getElementById('studentRequestsList');
+            if (!container) return;
+            
+            // Sort by reservation date (nearest first)
+            requests.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Limit to 3 requests
+            const limitedRequests = requests.slice(0, 3);
+            
+            let html = '';
+            limitedRequests.forEach(request => {
+                const formattedDate = new Date(request.date + 'T' + request.start_time);
+                const timeAgo = getTimeAgo(formattedDate);
+                
+                html += `
+                    <div class="request-item">
+                        <div class="request-info">
+                            <h4>${request.student_name} - ${request.resources}</h4>
+                            <p>Reserved for ${formatDate(request.date)} (${formatTime(request.start_time)} - ${formatTime(request.end_time)})</p>
+                            <span class="request-time">${timeAgo}</span>
+                        </div>
+                        <div class="request-actions">
+                            <button class="action-btn approve" onclick="approveRequest(${request.id})">Approve</button>
+                            <button class="action-btn reject" onclick="rejectRequest(${request.id})">Reject</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Add "View More" link if there are more than 3 requests
+            if (requests.length > 3) {
+                html += `
+                    <div style="text-align: center; padding: 16px;">
+                        <a href="student_approvals.html" style="color: #31CB00; text-decoration: none; font-weight: 500;">
+                            View ${requests.length - 3} more requests →
+                        </a>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        function formatTime(timeString) {
+            const [hours, minutes] = timeString.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const formattedHour = hour % 12 || 12;
+            return `${formattedHour}:${minutes} ${ampm}`;
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+            if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            return 'Just now';
+        }
+
+        // Load professor's upcoming reservations
+        async function loadUpcomingReservations() {
+            try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                const today = new Date().toISOString().split('T')[0];
+                
+                const { data: reservations, error } = await supabase
+                    .from('reservations')
+                    .select(`
+                        reservation_date,
+                        start_time,
+                        end_time,
+                        professor_approval,
+                        admin_approval,
+                        rooms(room_name)
+                    `)
+                    .eq('user_id', user.id)
+                    .eq('professor_approval', 'Approved')
+                    .eq('admin_approval', 'Approved')
+                    .gte('reservation_date', today)
+                    .order('reservation_date', { ascending: true })
+                    .limit(5);
+
+                if (error) throw error;
+
+                const container = document.getElementById('upcomingReservationsList');
+                
+                if (!reservations || reservations.length === 0) {
+                    container.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #666; padding: 20px;">
+                                No upcoming reservations
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                reservations.forEach(res => {
+                    const statusClass = 'approved';
+                    const statusText = 'Approved';
+                    
+                    html += `
+                        <tr>
+                            <td>${res.reservation_date}</td>
+                            <td>${formatTime(res.start_time)} - ${formatTime(res.end_time)}</td>
+                            <td>${res.rooms?.room_name || 'Lab Room'}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading upcoming reservations:', error);
+                const container = document.getElementById('upcomingReservationsList');
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #f44336; padding: 20px;">
+                            Error loading reservations
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            loadProfessorData();
+            loadTodaySchedule();
+            loadStudentRequests();
+            loadUpcomingReservations();
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../js/sidebar_loader.js"></script>
+    <script src="../../js/professor-dashboard.js"></script>
+    <script src="../../js/snackbar.js"></script>
+    <script src="../../js/dialog.js"></script>
+</body>
+
+</html>

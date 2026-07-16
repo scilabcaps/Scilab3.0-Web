@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Reservation - Professor</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/sidebar_theme.css">
+    <link rel="stylesheet" href="../../css/professor_new_reservation.css">
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar will be loaded dynamically -->
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1>Create New Reservation</h1>
+                    <img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
+                </div>
+            </div>
+            <div class="dashboard-content">
+                <div class="reservation-container">
+                    <div class="form-section">
+                        <h3 class="section-title">Available Resources</h3>
+                        <div class="inventory-tabs">
+                            <button class="tab-btn active" onclick="switchTab('rooms')">Laboratory Rooms</button>
+                            <button class="tab-btn" onclick="switchTab('chemicals')">Chemicals</button>
+                            <button class="tab-btn" onclick="switchTab('equipment')">Equipment</button>
+                            <button class="tab-btn" onclick="switchTab('glassware')">Glassware</button>
+                        </div>
+
+                        <div id="rooms" class="tab-content active">
+                            <div class="resource-grid" id="roomsGrid">
+                                <!-- Resources will be loaded dynamically -->
+                            </div>
+                        </div>
+                        <div id="chemicals" class="tab-content">
+                            <div class="resource-grid" id="chemicalsGrid">
+                                <!-- Resources will be loaded dynamically -->
+                            </div>
+                        </div>
+                        <div id="equipment" class="tab-content">
+                            <div class="resource-grid" id="equipmentGrid">
+                                <!-- Resources will be loaded dynamically -->
+                            </div>
+                        </div>
+                        <div id="glassware" class="tab-content">
+                            <div class="resource-grid" id="glasswareGrid">
+                                <!-- Resources will be loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cart-section">
+                        <h3 class="section-title">Reservation Cart</h3>
+                        <div id="cartItems">
+                            <div class="empty-state">
+                                <div class="empty-state-text">Your cart is empty. Add resources to get started.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="section-title">Reservation Details</h3>
+                        <form id="reservationForm">
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 0 0 auto;">
+                                    <label>Select Date *</label>
+                                    <div class="calendar-container">
+                                        <div class="calendar-header">
+                                            <button class="calendar-nav-btn" onclick="changeMonth(-1)">&lt;</button>
+                                            <h3 id="calendarMonthYear">July 2026</h3>
+                                            <button class="calendar-nav-btn" onclick="changeMonth(1)">&gt;</button>
+                                        </div>
+                                        <div class="calendar-grid">
+                                            <div class="calendar-day-header">Sun</div>
+                                            <div class="calendar-day-header">Mon</div>
+                                            <div class="calendar-day-header">Tue</div>
+                                            <div class="calendar-day-header">Wed</div>
+                                            <div class="calendar-day-header">Thu</div>
+                                            <div class="calendar-day-header">Fri</div>
+                                            <div class="calendar-day-header">Sat</div>
+                                        </div>
+                                        <div class="calendar-grid" id="calendarDays"></div>
+                                    </div>
+                                    <input type="hidden" id="date" name="date" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; margin-left: 20px;">
+                                    <label>Select Time *</label>
+                                    <div class="timeline-container" id="timelineContainer">
+                                        <div class="timeline-header">
+                                            <h4 id="timelineDate">Select a date to view availability</h4>
+                                            <p>Click on the timeline to select your start and end time</p>
+                                        </div>
+                                        <div class="timeline-wrapper hidden" id="timelineWrapper">
+                                            <div class="timeline-grid">
+                                                <div class="timeline-time-labels" id="timelineTimeLabels"></div>
+                                                <div class="timeline-slots" id="timelineSlots"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="startTime" name="startTime" required>
+                                    <input type="hidden" id="endTime" name="endTime" required>
+                                </div>
+                            </div>
+                            <div class="selection-info hidden" id="selectionInfo">
+                                <h5>Selected Time Range</h5>
+                                <p class="time-display" id="selectedTimeDisplay">--:-- - --:--</p>
+                                <p id="selectionDuration">Duration: 0 hours</p>
+                                <div class="selection-actions">
+                                    <button class="btn-clear" onclick="clearTimeSelection()">Clear</button>
+                                </div>
+                            </div>
+                            <div id="availabilityStatus" class="availability-status"></div>
+                            <div id="existingReservations" class="existing-reservations"></div>
+                            <div class="form-group">
+                                <label for="additionalNote">Additional Note (Optional)</label>
+                                <textarea id="additionalNote" name="additionalNote" rows="4"
+                                    placeholder="Any additional information..."></textarea>
+                            </div>
+                            <button type="submit" class="submit-btn">Submit Reservation</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summaryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Reservation Summary</h3>
+                <button class="close-modal" onclick="closeModal('summaryModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="summaryContent">
+                <!-- Summary will be populated here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('summaryModal')">Cancel</button>
+                <button class="btn-confirm" onclick="confirmReservation()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Availability Modal -->
+    <div id="stockModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Item Availability</h3>
+                <button class="close-modal" onclick="closeModal('stockModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="stockModalContent">
+                <!-- Content will be populated here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('stockModal')">Cancel</button>
+                <button class="btn-confirm" id="reserveDateBtn" onclick="reserveAvailableDate()">Reserve This Date</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../js/sidebar_loader.js"></script>
+    <script src="../../js/main.js"></script>
+    <script src="../../js/reservation.js"></script>
+    <script src="../../js/snackbar.js"></script>
+    <script>
+        let cart = [];
+        let reservationsCache = {
+            data: null,
+            date: null,
+            roomId: null
+        };
+        let pendingStockItem = null; // Store item info for stock modal
+        let earliestAvailableTime = null; // Store earliest available time for selected date
+
+        // Calendar and Timeline State
+        let currentDate = new Date();
+        let selectedDate = null;
+        let selectedStartTime = null;
+        let selectedEndTime = null;
+        let existingReservationsForDay = [];
+
+        window.addEventListener('DOMContentLoaded', function () {
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+            if (user.username && user.role === 'Professor') {
+                loadResources();
+                initializeCalendar();
+            } else {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Calendar Functions
+        function initializeCalendar() {
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const calendarDays = document.getElementById('calendarDays');
+            const calendarMonthYear = document.getElementById('calendarMonthYear');
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Update header
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
+            
+            // Get first day of month and total days
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            
+            let html = '';
+            
+            // Empty cells for days before first day of month
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div class="calendar-day disabled"></div>';
+            }
+            
+            // Days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dateStr = formatDateForInput(date);
+                const isToday = date.toDateString() === today.toDateString();
+                const isPast = date < today && !isToday;
+                const isSelected = selectedDate === dateStr;
+                
+                let classes = 'calendar-day';
+                if (isToday) classes += ' today';
+                if (isPast) classes += ' disabled';
+                if (isSelected) classes += ' selected';
+                
+                html += `<div class="${classes}" ${!isPast ? `onclick="selectDate('${dateStr}')"` : ''}>${day}</div>`;
+            }
+            
+            calendarDays.innerHTML = html;
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function selectDate(dateStr) {
+            // Clear earliest available time if user manually selects a different date
+            if (selectedDate && selectedDate !== dateStr) {
+                earliestAvailableTime = null;
+            }
+            selectedDate = dateStr;
+            document.getElementById('date').value = dateStr;
+            renderCalendar();
+            loadTimelineForDate(dateStr);
+        }
+
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Timeline Functions
+        async function loadTimelineForDate(dateStr) {
+            const timelineWrapper = document.getElementById('timelineWrapper');
+            const timelineDate = document.getElementById('timelineDate');
+            const selectionInfo = document.getElementById('selectionInfo');
+            
+            // Clear previous selection
+            clearTimeSelection();
+            
+            // Update header
+            const date = new Date(dateStr);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            timelineDate.textContent = date.toLocaleDateString('en-US', options);
+            
+            // Show timeline
+            timelineWrapper.classList.remove('hidden');
+            
+            // Check if room is selected
+            const roomItem = cart.find(item => item.type === 'Laboratory Room');
+            
+            if (!roomItem) {
+                renderTimeline([]);
+                showWarningSnackbar('Please select a room to view availability');
+                return;
+            }
+            
+            try {
+                // Fetch existing reservations for the room and date
+                const { data, error } = await window.supabase
+                    .from('reservations')
+                    .select('*')
+                    .eq('room_id', roomItem.id)
+                    .eq('reservation_date', dateStr)
+                    .in('status', ['Pending', 'Approved', 'Ongoing'])
+                    .not('admin_approval', 'in', '("Cancelled", "Declined")')
+                    .order('start_time', { ascending: true });
+
+                if (error) throw error;
+                
+                existingReservationsForDay = data || [];
+                renderTimeline(existingReservationsForDay);
+                
+            } catch (error) {
+                console.error('Error loading timeline:', error);
+                renderTimeline([]);
+            }
+        }
+
+        function renderTimeline(reservations) {
+            console.log('renderTimeline called, earliestAvailableTime:', earliestAvailableTime);
+            const timelineTimeLabels = document.getElementById('timelineTimeLabels');
+            const timelineSlots = document.getElementById('timelineSlots');
+            
+            // Operating hours: 7 AM to 8 PM (13 hours)
+            const startHour = 7;
+            const endHour = 20;
+            const totalHours = endHour - startHour;
+            
+            // Check if selected date is today and get current hour
+            const today = new Date();
+            const isToday = selectedDate === formatDateForInput(today);
+            const currentHour = today.getHours();
+            
+            // Get earliest available hour if set
+            let earliestAvailableHour = null;
+            if (earliestAvailableTime) {
+                const [hour, minute] = earliestAvailableTime.split(':').map(Number);
+                earliestAvailableHour = hour;
+                console.log('Earliest available time:', earliestAvailableTime, 'Hour:', earliestAvailableHour);
+            }
+            
+            // Render time labels
+            let labelsHtml = '';
+            for (let hour = startHour; hour < endHour; hour++) {
+                labelsHtml += `<div class="time-label">${formatHour(hour)}</div>`;
+            }
+            timelineTimeLabels.innerHTML = labelsHtml;
+            
+            // Render slots
+            let slotsHtml = '';
+            for (let hour = startHour; hour < endHour; hour++) {
+                const timeStr = `${String(hour).padStart(2, '0')}:00`;
+                slotsHtml += `<div class="timeline-slot" data-hour="${hour}" onclick="handleSlotClick(${hour})"></div>`;
+            }
+            timelineSlots.innerHTML = slotsHtml;
+            
+            // Mark past slots if today or before earliest available time
+            if (isToday) {
+                for (let hour = startHour; hour < endHour; hour++) {
+                    if (hour <= currentHour) {
+                        const slot = timelineSlots.querySelector(`[data-hour="${hour}"]`);
+                        if (slot) {
+                            slot.classList.add('past');
+                        }
+                    }
+                }
+            }
+            
+            // Mark slots before earliest available time
+            if (earliestAvailableHour !== null) {
+                for (let hour = startHour; hour < endHour; hour++) {
+                    if (hour < earliestAvailableHour) {
+                        const slot = timelineSlots.querySelector(`[data-hour="${hour}"]`);
+                        if (slot) {
+                            slot.classList.add('past');
+                        }
+                    }
+                }
+            }
+            
+            // Mark booked slots
+            reservations.forEach(reservation => {
+                const startHour = parseInt(reservation.start_time.split(':')[0]);
+                const endHour = parseInt(reservation.end_time.split(':')[0]);
+                
+                for (let hour = startHour; hour < endHour; hour++) {
+                    const slot = timelineSlots.querySelector(`[data-hour="${hour}"]`);
+                    if (slot) {
+                        slot.classList.add('booked');
+                    }
+                }
+            });
+            
+            // Add reservation blocks
+            reservations.forEach(reservation => {
+                const startHour = parseInt(reservation.start_time.split(':')[0]);
+                const endHour = parseInt(reservation.end_time.split(':')[0]);
+                const duration = endHour - startHour;
+                
+                if (duration > 0) {
+                    const slot = timelineSlots.querySelector(`[data-hour="${startHour}"]`);
+                    if (slot) {
+                        const block = document.createElement('div');
+                        block.className = 'reservation-block';
+                        block.style.top = `${(startHour - 7) * 50}px`;
+                        block.style.height = `${duration * 50}px`;
+                        block.textContent = `${formatTime(reservation.start_time)} - ${formatTime(reservation.end_time)}`;
+                        timelineSlots.appendChild(block);
+                    }
+                }
+            });
+        }
+
+        function formatHour(hour) {
+            if (hour === 12) return '12 PM';
+            if (hour > 12) return `${hour - 12} PM`;
+            return `${hour} AM`;
+        }
+
+        function handleSlotClick(hour) {
+            const slot = document.querySelector(`[data-hour="${hour}"]`);
+            
+            // Don't allow selection on booked slots
+            if (slot.classList.contains('booked')) {
+                showWarningSnackbar('This time slot is already booked');
+                return;
+            }
+            
+            // Don't allow selection on past slots
+            if (slot.classList.contains('past')) {
+                showWarningSnackbar('Cannot make reservations in the past');
+                return;
+            }
+            
+            if (selectedStartTime === null) {
+                // First click - set start time
+                selectedStartTime = hour;
+                slot.classList.add('selected-start');
+            } else if (selectedEndTime === null) {
+                // Second click - set end time
+                if (hour <= selectedStartTime) {
+                    showWarningSnackbar('End time must be after start time');
+                    return;
+                }
+                
+                // Check if any slot in range is booked
+                const hasConflict = checkRangeConflict(selectedStartTime, hour);
+                if (hasConflict) {
+                    showWarningSnackbar('Selected time range conflicts with existing reservations');
+                    return;
+                }
+                
+                selectedEndTime = hour;
+                slot.classList.add('selected-end');
+                
+                // Highlight range
+                for (let h = selectedStartTime + 1; h < selectedEndTime; h++) {
+                    const rangeSlot = document.querySelector(`[data-hour="${h}"]`);
+                    if (rangeSlot) {
+                        rangeSlot.classList.add('in-range');
+                    }
+                }
+                
+                AutoConfirmTimeSelection();
+                updateSelectionDisplay();
+            } else {
+                // Reset and start new selection
+                clearTimeSelection();
+                selectedStartTime = hour;
+                slot.classList.add('selected-start');
+            }
+        }
+
+        function checkRangeConflict(startHour, endHour) {
+            for (let h = startHour; h < endHour; h++) {
+                const slot = document.querySelector(`[data-hour="${h}"]`);
+                if (slot && slot.classList.contains('booked')) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function updateSelectionDisplay() {
+            const display = document.getElementById('selectedTimeDisplay');
+            const duration = document.getElementById('selectionDuration');
+            
+            const startTimeStr = `${String(selectedStartTime).padStart(2, '0')}:00`;
+            const endTimeStr = `${String(selectedEndTime).padStart(2, '0')}:00`;
+            
+            display.textContent = `${startTimeStr} - ${endTimeStr}`;
+            duration.textContent = `Duration: ${selectedEndTime - selectedStartTime} hour(s)`;
+            
+            document.getElementById('selectionInfo').classList.remove('hidden');
+        }
+
+        function clearTimeSelection() {
+            selectedStartTime = null;
+            selectedEndTime = null;
+            
+            // Clear all slot classes
+            document.querySelectorAll('.timeline-slot').forEach(slot => {
+                slot.classList.remove('selected-start', 'selected-end', 'in-range');
+            });
+            
+            document.getElementById('selectionInfo').classList.add('hidden');
+            
+            // Clear hidden inputs
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+        }
+
+        function AutoConfirmTimeSelection() {
+            if (selectedStartTime === null || selectedEndTime === null) {
+                return;
+            }
+            
+            const startTimeStr = `${String(selectedStartTime).padStart(2, '0')}:00`;
+            const endTimeStr = `${String(selectedEndTime).padStart(2, '0')}:00`;
+            
+            document.getElementById('startTime').value = startTimeStr;
+            document.getElementById('endTime').value = endTimeStr;
+            
+            // Run availability check for equipment/chemicals
+            checkAvailability();
+        }
+
+        function setupAvailabilityCheckers() {
+            // This function is now handled by the calendar/timeline system
+            // But we keep it for backward compatibility with equipment/chemical checking
+        }
+
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function restrictTimeRange(input, minHour, maxHour) {
+            const timeValue = input.value;
+            if (!timeValue) return;
+
+            const [hour, minute] = timeValue.split(':').map(Number);
+            
+            if (hour < minHour) {
+                input.value = `${String(minHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                showWarningSnackbar('Time must be between 7:00 AM and 8:00 PM');
+            } else if (hour >= maxHour) {
+                input.value = `${String(maxHour).padStart(2, '0')}:00`;
+                showWarningSnackbar('Time must be between 7:00 AM and 8:00 PM');
+            }
+        }
+
+        async function checkAvailability() {
+            const date = document.getElementById('date').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const availabilityStatus = document.getElementById('availabilityStatus');
+            const existingReservationsDiv = document.getElementById('existingReservations');
+
+            // Clear previous status if fields are incomplete
+            if (!date || !startTime || !endTime) {
+                availabilityStatus.className = 'availability-status';
+                existingReservationsDiv.className = 'existing-reservations';
+                return;
+            }
+
+            // Validate time
+            const timeValidation = validateReservationTime(startTime, endTime, date);
+            if (!timeValidation.valid) {
+                availabilityStatus.className = 'availability-status warning';
+                availabilityStatus.textContent = timeValidation.message;
+                existingReservationsDiv.className = 'existing-reservations';
+                return;
+            }
+
+            // Check equipment/glassware stock conflicts (room conflicts are handled by timeline)
+            const equipmentItems = cart.filter(item => item.type.toLowerCase() === 'equipment');
+            const glasswareItems = cart.filter(item => item.type.toLowerCase() === 'glassware');
+            const assetItems = [...equipmentItems, ...glasswareItems];
+
+            let stockConflicts = [];
+            if (assetItems.length > 0) {
+                try {
+                    // Get all reservations for the same date/time range to check stock
+                    const { data: allTimeReservations, error: timeError } = await window.supabase
+                        .from('reservations')
+                        .select('reservation_id, start_time, end_time')
+                        .eq('reservation_date', date)
+                        .in('status', ['Pending', 'Approved', 'Ongoing'])
+                        .not('admin_approval', 'in', '("Cancelled", "Declined")');
+
+                    if (!timeError && allTimeReservations) {
+                        // Filter reservations that overlap with our time slot (allow boundary matches)
+                        const overlappingReservations = allTimeReservations.filter(reservation => {
+                            // Convert times to minutes for accurate comparison
+                            const startMinutes = timeToMinutes(startTime);
+                            const endMinutes = timeToMinutes(endTime);
+                            const resStartMinutes = timeToMinutes(reservation.start_time);
+                            const resEndMinutes = timeToMinutes(reservation.end_time);
+                            
+                            // No overlap if new reservation starts exactly when existing ends, or ends exactly when existing starts
+                            if (startMinutes === resEndMinutes || endMinutes === resStartMinutes) {
+                                return false;
+                            }
+                            
+                            // Otherwise check for overlap
+                            return startMinutes < resEndMinutes && endMinutes > resStartMinutes;
+                        });
+
+                        const overlappingIds = overlappingReservations.map(r => r.reservation_id);
+
+                        // Check each asset item
+                        for (const item of assetItems) {
+                            // Get current available stock
+                            const { data: asset, error: assetError } = await window.supabase
+                                .from('lab_assets')
+                                .select('available_stock')
+                                .eq('asset_id', item.id)
+                                .single();
+
+                            if (!assetError && asset) {
+                                // Calculate stock used by overlapping reservations
+                                const { data: reservationItems, error: itemsError } = await window.supabase
+                                    .from('reservation_items')
+                                    .select('quantity_borrowed')
+                                    .eq('asset_id', item.id)
+                                    .in('reservation_id', overlappingIds);
+
+                                if (!itemsError && reservationItems) {
+                                    const usedStock = reservationItems.reduce((sum, ri) => sum + ri.quantity_borrowed, 0);
+                                    const availableAfterReservations = asset.available_stock - usedStock;
+
+                                    if (item.quantity > availableAfterReservations) {
+                                        stockConflicts.push({
+                                            name: item.name,
+                                            requested: item.quantity,
+                                            available: availableAfterReservations
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking stock availability:', error);
+                }
+            }
+
+            // Display status - only show if there are stock conflicts (room conflicts handled by timeline)
+            if (stockConflicts.length > 0) {
+                availabilityStatus.className = 'availability-status conflict';
+                availabilityStatus.textContent = `⚠️ Insufficient stock: ${stockConflicts.length} item(s) don't have enough available quantity`;
+                existingReservationsDiv.className = 'existing-reservations show';
+                existingReservationsDiv.innerHTML = `
+                    <h4>Stock conflicts:</h4>
+                    ${stockConflicts.map(conflict => `
+                        <div class="reservation-item conflict">
+                            <div class="reservation-time">${conflict.name}</div>
+                            <div class="reservation-professor">Requested: ${conflict.requested}, Available: ${conflict.available}</div>
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                availabilityStatus.className = 'availability-status';
+                availabilityStatus.textContent = '';
+                existingReservationsDiv.className = 'existing-reservations';
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function loadResources() {
+            try {
+                // Fetch rooms from Supabase
+                const { data: roomsData, error: roomsError } = await window.supabase
+                    .from('rooms')
+                    .select('*')
+                    .eq('is_deleted', false);
+
+                if (roomsError) throw roomsError;
+
+                const rooms = roomsData.map(room => ({
+                    id: room.room_id,
+                    name: room.room_name,
+                    quantity: room.status === 'Available' ? 1 : 0,
+                    status: room.status,
+                    description: `Capacity: ${room.capacity}`
+                }));
+                renderResources('rooms', rooms);
+
+                // Fetch chemicals from Supabase
+                const { data: chemicalsData, error: chemicalsError } = await window.supabase
+                    .from('chemicals')
+                    .select('*')
+                    .eq('is_deleted', false);
+
+                if (chemicalsError) throw chemicalsError;
+
+                const chemicals = chemicalsData.map(chemical => ({
+                    id: chemical.chemical_id,
+                    name: chemical.chemical_name,
+                    quantity: chemical.stock_quantity,
+                    description: `${chemical.formula} - ${chemical.stock_quantity} ${chemical.unit}`
+                }));
+                renderResources('chemicals', chemicals);
+
+                // Fetch lab assets from Supabase
+                const { data: assetsData, error: assetsError } = await window.supabase
+                    .from('lab_assets')
+                    .select('*')
+                    .eq('is_deleted', false);
+
+                if (assetsError) throw assetsError;
+
+                const equipment = assetsData
+                    .filter(asset => asset.category === 'Equipment')
+                    .map(asset => ({
+                        id: asset.asset_id,
+                        name: asset.item_name,
+                        quantity: asset.available_stock,
+                        description: asset.condition_notes || 'Available'
+                    }));
+
+                const glassware = assetsData
+                    .filter(asset => asset.category === 'Glassware')
+                    .map(asset => ({
+                        id: asset.asset_id,
+                        name: asset.item_name,
+                        quantity: asset.available_stock,
+                        description: asset.condition_notes || 'Available'
+                    }));
+
+                renderResources('equipment', equipment);
+                renderResources('glassware', glassware);
+
+            } catch (error) {
+                console.error('Error loading resources:', error);
+                // Fallback to sample data if API fails
+                loadSampleResources();
+            }
+        }
+        
+        function loadSampleResources() {
+            const sampleResources = {
+                rooms: [
+                    { id: 1, name: 'Chemistry Laboratory', quantity: 1, description: 'Room 211' },
+                    { id: 2, name: 'Physics Laboratory', quantity: 1, description: 'Room 212' },
+                    { id: 3, name: 'Biology Laboratory', quantity: 1, description: 'Room 213' },
+                    { id: 4, name: 'Lecture Room', quantity: 1, description: 'Room 214' },
+                ],
+                chemicals: [
+                    { id: 5, name: 'Sodium Chloride', quantity: 50, description: 'NaCl - Common salt' },
+                    { id: 6, name: 'Hydrochloric Acid', quantity: 30, description: 'HCl - Strong acid' },
+                    { id: 7, name: 'Sodium Hydroxide', quantity: 25, description: 'NaOH - Base compound' }
+                ],
+                equipment: [
+                    { id: 8, name: 'Microscope', quantity: 10, description: 'Laboratory microscope' },
+                    { id: 9, name: 'Centrifuge', quantity: 5, description: 'Laboratory centrifuge' },
+                    { id: 10, name: 'Hot Plate', quantity: 8, description: 'Electric hot plate' }
+                ],
+                glassware: [
+                    { id: 11, name: 'Beaker 250ml', quantity: 20, description: '250ml glass beaker' },
+                    { id: 12, name: 'Test Tube', quantity: 100, description: 'Standard test tube' },
+                    { id: 13, name: 'Flask 500ml', quantity: 15, description: '500ml Erlenmeyer flask' }
+                ]
+            };
+
+            renderResources('rooms', sampleResources.rooms);
+            renderResources('chemicals', sampleResources.chemicals);
+            renderResources('equipment', sampleResources.equipment);
+            renderResources('glassware', sampleResources.glassware);
+        }
+
+        function renderResources(type, resources) {
+            const grid = document.getElementById(type + 'Grid');
+            const typeName = type === 'rooms' ? 'Laboratory Room' : type;
+            grid.innerHTML = resources.map(resource => {
+                const cartItem = cart.find(item => item.id === resource.id);
+                const inCartQuantity = cartItem ? cartItem.quantity : 0;
+                const availableQuantity = resource.quantity - inCartQuantity;
+                
+                // For chemicals with 0 available, show "There is currently no stock available. Please wait for further announcements."
+                if (type === 'chemicals' && availableQuantity === 0) {
+                    return `
+                    <div class="resource-card">
+                        <div class="resource-name">${resource.name}</div>
+                        <div class="resource-info">${resource.description}</div>
+                        <div class="resource-quantity">There is currently no stock available. Please wait for further announcements.</div>
+                    </div>
+                `;
+                }
+                
+                // For rooms, show status instead of quantity count
+                let quantityDisplay;
+                let isDisabled = false;
+                let buttonText = 'Select';
+                let buttonAction = `addToCart(${resource.id}, '${resource.name}', '${typeName}', ${resource.quantity})`;
+                
+                if (type === 'rooms') {
+                    if (resource.status === 'Maintenance') {
+                        quantityDisplay = 'This room is currently under maintenance. Please wait for further announcements.';
+                        isDisabled = true;
+                        buttonText = 'Unavailable';
+                        buttonAction = '';
+                    } else {
+                        quantityDisplay = resource.status;
+                    }
+                } else {
+                    quantityDisplay = `Available: ${availableQuantity} ${inCartQuantity > 0 ? `(In cart: ${inCartQuantity})` : ''}`;
+                    if (availableQuantity === 0) {
+                        isDisabled = true;
+                        buttonText = 'Check Availability';
+                        buttonAction = `showStockModal(${resource.id}, '${typeName}', '${resource.name.replace(/'/g, "\\'")}')`;
+                    }
+                }
+                
+                return `
+                <div class="resource-card">
+                    <div class="resource-name">${resource.name}</div>
+                    <div class="resource-info">${resource.description}</div>
+                    <div class="resource-quantity">${quantityDisplay}</div>
+                    <button class="add-to-cart-btn" onclick="${buttonAction}" ${isDisabled ? 'disabled' : ''}>
+                        ${buttonText}
+                    </button>
+                </div>
+            `}).join('');
+        }
+
+        function addToCart(id, name, type, available) {
+            const existingItem = cart.find(item => item.id === id);
+            if (existingItem) {
+                if (existingItem.quantity < available) {
+                    existingItem.quantity++;
+                } else {
+                    showWarningSnackbar('Maximum available quantity reached');
+                    return;
+                }
+            } else {
+                cart.push({ id, name, type, quantity: 1, available });
+            }
+            updateCart();
+            refreshResourcesDisplay();
+            // Refresh timeline if a room was added
+            if (type === 'Laboratory Room' && selectedDate) {
+                loadTimelineForDate(selectedDate);
+            }
+            // Clear cache for equipment/chemical checking
+            if (type === 'Laboratory Room' || 
+                type.toLowerCase() === 'equipment' || 
+                type.toLowerCase() === 'glassware') {
+                reservationsCache = { data: null, date: null, roomId: null };
+            }
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById('cartItems');
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<div class="empty-state"><div class="empty-state-text">Your cart is empty. Add resources to get started.</div></div>';
+                return;
+            }
+
+            cartItems.innerHTML = cart.map((item, index) => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-type">${item.type}</div>
+                    </div>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="decreaseQuantity(${index})">-</button>
+                        <span class="quantity-display">${item.quantity}</span>
+                        <button class="quantity-btn" onclick="increaseQuantity(${index})">+</button>
+                    </div>
+                    <button class="remove-item-btn" onclick="removeFromCart(${index})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function increaseQuantity(index) {
+            if (cart[index].quantity < cart[index].available) {
+                cart[index].quantity++;
+                updateCart();
+                refreshResourcesDisplay();
+            } else {
+                showWarningSnackbar('Maximum available quantity reached');
+            }
+        }
+
+        function decreaseQuantity(index) {
+            if (cart[index].quantity > 1) {
+                cart[index].quantity--;
+                updateCart();
+                refreshResourcesDisplay();
+            } else {
+                removeFromCart(index);
+            }
+        }
+
+        function removeFromCart(index) {
+            const removedItem = cart[index];
+            cart.splice(index, 1);
+            updateCart();
+            refreshResourcesDisplay();
+            // Refresh timeline if a room was removed
+            if (removedItem.type === 'Laboratory Room' && selectedDate) {
+                loadTimelineForDate(selectedDate);
+            }
+            // Clear cache for equipment/chemical checking
+            if (removedItem.type === 'Laboratory Room' || 
+                removedItem.type.toLowerCase() === 'equipment' || 
+                removedItem.type.toLowerCase() === 'glassware') {
+                reservationsCache = { data: null, date: null, roomId: null };
+            }
+        }
+
+        function refreshResourcesDisplay() {
+            // Re-render all resource tabs to update available quantities
+            loadResources();
+        }
+
+        async function checkNextAvailableDate(itemId, itemType, itemName) {
+            try {
+                // Get current stock
+                let currentStock = 0;
+                let totalStock = 0;
+                
+                if (itemType === 'Laboratory Room') {
+                    const { data: room } = await window.supabase
+                        .from('rooms')
+                        .select('status')
+                        .eq('room_id', itemId)
+                        .single();
+                    currentStock = room && room.status === 'Available' ? 1 : 0;
+                    totalStock = 1;
+                } else if (itemType.toLowerCase() === 'chemicals') {
+                    const { data: chemical } = await window.supabase
+                        .from('chemicals')
+                        .select('stock_quantity')
+                        .eq('chemical_id', itemId)
+                        .single();
+                    currentStock = chemical ? chemical.stock_quantity : 0;
+                    totalStock = currentStock;
+                } else {
+                    const { data: asset } = await window.supabase
+                        .from('lab_assets')
+                        .select('available_stock, total_stock')
+                        .eq('asset_id', itemId)
+                        .single();
+                    currentStock = asset ? asset.available_stock : 0;
+                    totalStock = asset ? asset.total_stock : 0;
+                }
+
+                if (currentStock > 0) {
+                    return {
+                        available: true,
+                        message: 'This item is currently available',
+                        date: null
+                    };
+                }
+
+                // Find earliest return date from active reservations
+                const today = new Date();
+                const todayStr = formatDateForInput(today);
+                
+                let earliestReturnDate = null;
+
+                if (itemType === 'Laboratory Room') {
+                    // For rooms, find the earliest reservation end date
+                    const { data: roomReservations, error: roomError } = await window.supabase
+                        .from('reservations')
+                        .select('reservation_date, end_time')
+                        .eq('room_id', itemId)
+                        .gte('reservation_date', todayStr)
+                        .in('status', ['Pending', 'Approved', 'Ongoing'])
+                        .not('admin_approval', 'in', '("Cancelled", "Declined")')
+                        .order('reservation_date', { ascending: true })
+                        .order('end_time', { ascending: false })
+                        .limit(1);
+
+                    if (!roomError && roomReservations && roomReservations.length > 0) {
+                        earliestReturnDate = new Date(roomReservations[0].reservation_date + 'T' + roomReservations[0].end_time);
+                    }
+                } else if (itemType.toLowerCase() === 'chemicals') {
+                    // For chemicals, find reservations using this chemical
+                    const { data: chemicalReservations, error: chemicalError } = await window.supabase
+                        .from('chemical_usage')
+                        .select('reservation_id')
+                        .eq('chemical_id', itemId);
+
+                    if (!chemicalError && chemicalReservations && chemicalReservations.length > 0) {
+                        const reservationIds = chemicalReservations.map(r => r.reservation_id);
+                        
+                        const { data: reservations, error: resError } = await window.supabase
+                            .from('reservations')
+                            .select('reservation_date, end_time')
+                            .in('reservation_id', reservationIds)
+                            .gte('reservation_date', todayStr)
+                            .in('status', ['Pending', 'Approved', 'Ongoing'])
+                            .not('admin_approval', 'in', '("Cancelled", "Declined")')
+                            .order('reservation_date', { ascending: true })
+                            .order('end_time', { ascending: false })
+                            .limit(1);
+
+                        if (!resError && reservations && reservations.length > 0) {
+                            earliestReturnDate = new Date(reservations[0].reservation_date + 'T' + reservations[0].end_time);
+                        }
+                    }
+                } else {
+                    // For equipment/glassware, find reservations with this item
+                    const { data: assetReservations, error: assetError } = await window.supabase
+                        .from('reservation_items')
+                        .select('reservation_id')
+                        .eq('asset_id', itemId)
+                        .eq('is_returned', false);
+
+                    if (!assetError && assetReservations && assetReservations.length > 0) {
+                        const reservationIds = assetReservations.map(r => r.reservation_id);
+                        
+                        const { data: reservations, error: resError } = await window.supabase
+                            .from('reservations')
+                            .select('reservation_date, end_time')
+                            .in('reservation_id', reservationIds)
+                            .gte('reservation_date', todayStr)
+                            .in('status', ['Pending', 'Approved', 'Ongoing'])
+                            .not('admin_approval', 'in', '("Cancelled", "Declined")')
+                            .order('reservation_date', { ascending: true })
+                            .order('end_time', { ascending: false })
+                            .limit(1);
+
+                        if (!resError && reservations && reservations.length > 0) {
+                            earliestReturnDate = new Date(reservations[0].reservation_date + 'T' + reservations[0].end_time);
+                        }
+                    }
+                }
+
+                if (earliestReturnDate) {
+                    // Item is available immediately after return
+                    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+                    
+                    return {
+                        available: false,
+                        message: `This item will be available on ${earliestReturnDate.toLocaleDateString('en-US', dateOptions)} at ${earliestReturnDate.toLocaleTimeString('en-US', timeOptions)}`,
+                        date: formatDateForInput(earliestReturnDate),
+                        time: earliestReturnDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    };
+                }
+
+                return {
+                    available: false,
+                    message: 'No active reservations found for this item',
+                    date: null
+                };
+
+            } catch (error) {
+                console.error('Error checking availability:', error);
+                return {
+                    available: false,
+                    message: 'Unable to check availability',
+                    date: null
+                };
+            }
+        }
+
+        function showStockModal(itemId, itemType, itemName) {
+            pendingStockItem = { id: itemId, type: itemType, name: itemName };
+            
+            const modalContent = document.getElementById('stockModalContent');
+            modalContent.innerHTML = '<p>Checking availability...</p>';
+            document.getElementById('stockModal').style.display = 'block';
+            document.getElementById('reserveDateBtn').disabled = true;
+
+            checkNextAvailableDate(itemId, itemType, itemName).then(result => {
+                modalContent.innerHTML = `
+                    <div class="stock-info">
+                        <h4>${itemName}</h4>
+                        <p class="availability-message">${result.message}</p>
+                    </div>
+                `;
+                
+                if (result.date) {
+                    document.getElementById('reserveDateBtn').disabled = false;
+                    document.getElementById('reserveDateBtn').dataset.date = result.date;
+                    document.getElementById('reserveDateBtn').dataset.time = result.time || '';
+                } else {
+                    document.getElementById('reserveDateBtn').disabled = true;
+                }
+            });
+        }
+
+        function reserveAvailableDate() {
+            const date = document.getElementById('reserveDateBtn').dataset.date;
+            const time = document.getElementById('reserveDateBtn').dataset.time;
+            console.log('Reserve date clicked - Date:', date, 'Time:', time);
+            if (!date || !pendingStockItem) return;
+
+            closeModal('stockModal');
+            
+            // Store earliest available time
+            earliestAvailableTime = time;
+            console.log('Stored earliestAvailableTime:', earliestAvailableTime);
+            
+            // Add item to cart
+            addToCart(pendingStockItem.id, pendingStockItem.name, pendingStockItem.type, 1);
+            
+            // Select the date in calendar
+            selectDate(date);
+            
+            // Scroll to calendar
+            document.querySelector('.calendar-container').scrollIntoView({ behavior: 'smooth' });
+            
+            showSuccessSnackbar(`Date selected for ${pendingStockItem.name}. Please select a time slot.`);
+            
+            pendingStockItem = null;
+        }
+
+        document.getElementById('reservationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (cart.length === 0) {
+                showWarningSnackbar('Please add at least one resource to your cart');
+                return;
+            }
+
+            const formData = {
+                date: document.getElementById('date').value,
+                startTime: document.getElementById('startTime').value,
+                endTime: document.getElementById('endTime').value,
+                additionalNote: document.getElementById('additionalNote').value
+            };
+
+            showSummary(formData);
+        });
+
+        function showSummary(formData) {
+            const summaryContent = document.getElementById('summaryContent');
+            summaryContent.innerHTML = `
+                <div class="summary-item">
+                    <div class="summary-label">Date:</div>
+                    <div class="summary-value">${formData.date}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Time:</div>
+                    <div class="summary-value">${formData.startTime} - ${formData.endTime}</div>
+                </div>
+                ${formData.additionalNote ? `
+                <div class="summary-item">
+                    <div class="summary-label">Additional Note:</div>
+                    <div class="summary-value">${formData.additionalNote}</div>
+                </div>
+                ` : ''}
+                <div class="summary-item">
+                    <div class="summary-label">Resources:</div>
+                    <div class="summary-value">
+                        ${cart.map(item => `${item.name} (${item.quantity}x)`).join('<br>')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('summaryModal').style.display = 'block';
+        }
+
+        async function confirmReservation() {
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+            const professorName = user.firstname + ' ' + user.lastname;
+            const userId = user.user_id || user.id;
+            
+            const date = document.getElementById('date').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const additionalNote = document.getElementById('additionalNote').value;
+
+            // Separate resources by type
+            const roomItem = cart.find(item => item.type === 'Laboratory Room');
+            const equipmentItems = cart.filter(item => item.type.toLowerCase() === 'equipment');
+            const glasswareItems = cart.filter(item => item.type.toLowerCase() === 'glassware');
+            const chemicalItems = cart.filter(item => item.type.toLowerCase() === 'chemicals');
+
+            console.log('Cart items:', cart);
+            console.log('Equipment items:', equipmentItems);
+            console.log('Glassware items:', glasswareItems);
+            console.log('Chemical items:', chemicalItems);
+
+            // Check for conflicting reservations if a room is selected
+            if (roomItem) {
+                const { data: existingReservations, error: checkError } = await window.supabase
+                    .from('reservations')
+                    .select('*')
+                    .eq('room_id', roomItem.id)
+                    .eq('reservation_date', date)
+                    .in('status', ['Pending', 'Approved', 'Ongoing'])
+                    .not('admin_approval', 'in', '("Cancelled", "Declined")');
+
+                if (checkError) throw checkError;
+
+                // Check for time overlap (allow boundary matches)
+                const hasConflict = existingReservations.some(reservation => {
+                    // Convert times to minutes for accurate comparison
+                    const startMinutes = timeToMinutes(startTime);
+                    const endMinutes = timeToMinutes(endTime);
+                    const resStartMinutes = timeToMinutes(reservation.start_time);
+                    const resEndMinutes = timeToMinutes(reservation.end_time);
+                    
+                    console.log('Checking conflict:', {
+                        newStart: startTime,
+                        newEnd: endTime,
+                        existingStart: reservation.start_time,
+                        existingEnd: reservation.end_time,
+                        startMinutes,
+                        endMinutes,
+                        resStartMinutes,
+                        resEndMinutes
+                    });
+                    
+                    // No conflict if new reservation starts exactly when existing ends, or ends exactly when existing starts
+                    if (startMinutes === resEndMinutes || endMinutes === resStartMinutes) {
+                        console.log('Boundary match - no conflict');
+                        return false;
+                    }
+                    
+                    // Otherwise check for overlap
+                    return startMinutes < resEndMinutes && endMinutes > resStartMinutes;
+                });
+
+                if (hasConflict) {
+                    showErrorSnackbar('Conflict detected: This room is already reserved for the selected time slot. Please choose a different time or room.');
+                    closeModal('summaryModal');
+                    return;
+                }
+            }
+
+            try {
+                // Insert into reservations table
+                const { data: reservationData, error: reservationError } = await window.supabase
+                    .from('reservations')
+                    .insert({
+                        user_id: userId,
+                        room_id: roomItem ? roomItem.id : null,
+                        reservation_date: date,
+                        start_time: startTime,
+                        end_time: endTime,
+                        professor: professorName,
+                        professor_approval: 'Approved',
+                        admin_approval: 'Pending',
+                        status: 'Approved',
+                        additional_note: additionalNote || null
+                    })
+                    .select()
+                    .single();
+
+                if (reservationError) throw reservationError;
+
+                const reservationId = reservationData.reservation_id;
+                console.log('Reservation ID:', reservationId);
+
+                // Insert equipment and glassware into reservation_items
+                const assetItems = [...equipmentItems, ...glasswareItems];
+                console.log('Asset items to insert:', assetItems);
+
+                if (assetItems.length === 0) {
+                    console.log('No asset items to insert into reservation_items');
+                } else {
+                    for (const item of assetItems) {
+                        console.log('Inserting item:', item);
+                        const { error: itemError } = await window.supabase
+                            .from('reservation_items')
+                            .insert({
+                                reservation_id: reservationId,
+                                asset_id: item.id,
+                                quantity_borrowed: item.quantity,
+                                quantity_returned: 0,
+                                is_returned: false
+                            });
+
+                        if (itemError) {
+                            console.error('Error inserting item:', itemError);
+                            throw itemError;
+                        } else {
+                            console.log('Successfully inserted item:', item.name);
+                            
+                            // Update available stock in lab_assets
+                            const { data: currentAsset, error: fetchError } = await window.supabase
+                                .from('lab_assets')
+                                .select('available_stock')
+                                .eq('asset_id', item.id)
+                                .single();
+                            
+                            if (!fetchError && currentAsset) {
+                                const newStock = currentAsset.available_stock - item.quantity;
+                                const { error: stockError } = await window.supabase
+                                    .from('lab_assets')
+                                    .update({ available_stock: newStock })
+                                    .eq('asset_id', item.id);
+                                
+                                if (stockError) {
+                                    console.error('Error updating stock:', stockError);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Insert chemicals into chemical_usage
+                for (const item of chemicalItems) {
+                    const { error: chemicalError } = await window.supabase
+                        .from('chemical_usage')
+                        .insert({
+                            reservation_id: reservationId,
+                            chemical_id: item.id,
+                            quantity_used: item.quantity,
+                            unit: 'mL',
+                            purpose: additionalNote || 'Laboratory use'
+                        });
+
+                    if (chemicalError) throw chemicalError;
+                    
+                    // Update stock quantity in chemicals
+                    const { data: currentChemical, error: fetchChemicalError } = await window.supabase
+                        .from('chemicals')
+                        .select('stock_quantity')
+                        .eq('chemical_id', item.id)
+                        .single();
+                    
+                    if (!fetchChemicalError && currentChemical) {
+                        const newStock = currentChemical.stock_quantity - item.quantity;
+                        const { error: chemicalStockError } = await window.supabase
+                            .from('chemicals')
+                            .update({ stock_quantity: newStock })
+                            .eq('chemical_id', item.id);
+                        
+                        if (chemicalStockError) {
+                            console.error('Error updating chemical stock:', chemicalStockError);
+                        }
+                    }
+                }
+
+                showSuccessSnackbar('Reservation submitted successfully! Your reservation has been automatically approved.');
+                
+                // Clear cart and form
+                cart = [];
+                updateCart();
+                document.getElementById('reservationForm').reset();
+                closeModal('summaryModal');
+                
+                // Refresh resources display to show updated stock from database
+                refreshResourcesDisplay();
+
+            } catch (error) {
+                console.error('Error submitting reservation:', error);
+                showErrorSnackbar('Error submitting reservation: ' + error.message);
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+    </script>
+</main>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Reports</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="dashboard-sidebar">
+            <div class="sidebar-header">
+                <img src="../Logo/Scilab_Logo.png" alt="Scilab Logo" class="sidebar-logo-img">
+                <div class="sidebar-brand">
+                    <h1>SciLabReserve</h1>
+                    <p>Lab Management</p>
+                </div>
+            </div>
+            <div class="sidebar-user">
+                <div class="user-profile-card">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-info-sidebar">
+                        <p class="user-name" id="userName">User Name</p>
+                        <span class="user-role-badge" id="userRoleBadge">User</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-navigation">
+                <div class="nav-section-title">Navigation</div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="student/student_dashboard.html" class="nav-link" id="dashboardLink">
+                            <span class="nav-icon"></span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="student/reservation_student.html" class="nav-link" id="reservationLink">
+                            <span class="nav-icon"></span>
+                            <span class="nav-text">New Reservation</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="reservation_reports.html" class="nav-link active">
+                            <span class="nav-icon"></span>
+                            <span class="nav-text">Reports</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="reservation_history.html" class="nav-link" id="historyLink">
+                            <span class="nav-icon"></span>
+                            <span class="nav-text">History</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="student_inventory.html" class="nav-link" id="inventoryLink">
+                            <span class="nav-icon"></span>
+                            <span class="nav-text">Inventory</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="logout-link" onclick="logout(); return false;">
+                    <span class="logout-icon"></span>
+                    <span class="nav-text">Log out</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1>Reservation Reports</h1>
+                    <img src="../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
+                </div>
+            </div>
+            <div class="dashboard-content">
+                
+                <!-- Report Controls -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">Generate Report</h2>
+                    <div class="report-controls">
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label for="reportType">Report Type:</label>
+                                <select id="reportType" onchange="updateReportDescription()">
+                                    <option value="summary">Summary Report</option>
+                                    <option value="detailed">Detailed Report</option>
+                                    <option value="usage">Usage Analysis</option>
+                                    <option value="performance">Performance Report</option>
+                                </select>
+                            </div>
+                            
+                            <div class="control-group">
+                                <label for="format">Export Format:</label>
+                                <select id="format">
+                                    <option value="json">JSON</option>
+                                    <option value="csv">CSV</option>
+                                    <option value="html">HTML</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label for="startDate">Start Date:</label>
+                                <input type="date" id="startDate">
+                            </div>
+                            
+                            <div class="control-group">
+                                <label for="endDate">End Date:</label>
+                                <input type="date" id="endDate">
+                            </div>
+                        </div>
+                        
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label for="statusFilter">Status:</label>
+                                <select id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                    <option value="Declined">Declined</option>
+                                </select>
+                            </div>
+                            
+                            
+                            <div class="control-group">
+                                <label for="roomFilter">Room:</label>
+                                <select id="roomFilter">
+                                    <option value="">All Rooms</option>
+                                    <!-- Will be populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="control-row">
+                            <button class="btn-primary" onclick="generateReport()">Generate Report</button>
+                            <button class="btn-secondary" onclick="resetFilters()">Reset Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Description -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">Report Information</h2>
+                    <div class="report-description" id="reportDescription">
+                        <h3>Summary Report</h3>
+                        <p>Provides an overview of reservation statistics including total reservations, completion rates, user activity, and room utilization. Ideal for quick insights and executive summaries.</p>
+                        <div class="report-metrics">
+                            <div class="metric-item">
+                                <span class="metric-icon">📊</span>
+                                <span class="metric-text">Overall statistics</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-icon">📈</span>
+                                <span class="metric-text">Status breakdown</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-icon">👥</span>
+                                <span class="metric-text">User role analysis</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-icon">🏠</span>
+                                <span class="metric-text">Room usage patterns</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Reports -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">Quick Reports</h2>
+                    <div class="quick-reports-grid">
+                        <div class="quick-report-card" onclick="generateQuickReport('today')">
+                            <div class="quick-report-icon">📅</div>
+                            <div class="quick-report-info">
+                                <h3>Today's Report</h3>
+                                <p>Reservations for today</p>
+                            </div>
+                        </div>
+                        <div class="quick-report-card" onclick="generateQuickReport('week')">
+                            <div class="quick-report-icon">📆</div>
+                            <div class="quick-report-info">
+                                <h3>This Week</h3>
+                                <p>Weekly overview</p>
+                            </div>
+                        </div>
+                        <div class="quick-report-card" onclick="generateQuickReport('month')">
+                            <div class="quick-report-icon">📊</div>
+                            <div class="quick-report-info">
+                                <h3>This Month</h3>
+                                <p>Monthly analysis</p>
+                            </div>
+                        </div>
+                        <div class="quick-report-card" onclick="generateQuickReport('pending')">
+                            <div class="quick-report-icon">⏳</div>
+                            <div class="quick-report-info">
+                                <h3>Pending Items</h3>
+                                <p>Pending reservations</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Results -->
+                <div class="dashboard-section" id="reportResultsSection" style="display: none;">
+                    <h2 class="section-title">Report Results</h2>
+                    <div class="report-results" id="reportResults">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Report Charts -->
+                <div class="dashboard-section" id="reportChartsSection" style="display: none;">
+                    <h2 class="section-title">Visual Analytics</h2>
+                    <div class="charts-container">
+                        <div class="chart-row">
+                            <div class="chart-card">
+                                <h3>Status Distribution</h3>
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                            <div class="chart-card">
+                                <h3>User Role Distribution</h3>
+                                <canvas id="roleChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-card">
+                                <h3>Room Usage</h3>
+                                <canvas id="roomChart"></canvas>
+                            </div>
+                            <div class="chart-card">
+                                <h3>Daily Trends</h3>
+                                <canvas id="trendsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/snackbar.js"></script>
+    <script src="../js/dialog.js"></script>
+    <script>
+        let currentUser = null;
+        let charts = {};
+        let currentReportData = null;
+
+        window.addEventListener('DOMContentLoaded', function () {
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+            if (user.username) {
+                currentUser = user;
+                document.getElementById('userName').textContent = user.firstname + ' ' + user.lastname;
+                const initials = (user.firstname.charAt(0) + user.lastname.charAt(0)).toUpperCase();
+                document.getElementById('userAvatar').textContent = initials;
+                
+                // Update role badge and navigation
+                const roleBadge = document.getElementById('userRoleBadge');
+                roleBadge.textContent = user.role;
+                roleBadge.className = `user-role-badge ${user.role.toLowerCase()}`;
+                
+                
+                // Set default dates
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+                document.getElementById('endDate').value = today.toISOString().split('T')[0];
+                
+                loadRooms();
+            } else {
+                window.location.href = '../index.html';
+            }
+        });
+
+        async function loadRooms() {
+            // TODO: Implement with Supabase - PHP backend removed
+            try {
+                const { data: rooms, error } = await supabase
+                    .from('rooms')
+                    .select('room_id, room_name')
+                    .eq('is_deleted', false);
+                
+                if (error) throw error;
+                
+                if (rooms) {
+                    const roomSelect = document.getElementById('roomFilter');
+                    rooms.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.room_id;
+                        option.textContent = room.room_name;
+                        roomSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading rooms:', error);
+            }
+        }
+
+        function updateReportDescription() {
+            const reportType = document.getElementById('reportType').value;
+            const descriptions = {
+                'summary': {
+                    title: 'Summary Report',
+                    description: 'Provides an overview of reservation statistics including total reservations, completion rates, user activity, and room utilization. Ideal for quick insights and executive summaries.',
+                    metrics: ['📊 Overall statistics', '📈 Status breakdown', '👥 User role analysis', '🏠 Room usage patterns']
+                },
+                'detailed': {
+                    title: 'Detailed Report',
+                    description: 'Comprehensive report showing all individual reservations with full details including users, rooms, items, timestamps, and status. Perfect for audit trails and detailed analysis.',
+                    metrics: ['📋 Complete reservation list', '👤 User information', '🏠 Room details', '📦 Reserved items', '⏰ Timestamps']
+                },
+                'usage': {
+                    title: 'Usage Analysis',
+                    description: 'Analyzes reservation patterns over time including daily usage, hourly distribution, and day-of-week trends. Helps identify peak times and usage patterns.',
+                    metrics: ['📅 Daily usage patterns', '⏰ Hourly distribution', '📆 Day of week analysis', '📈 Trend identification']
+                },
+                'performance': {
+                    title: 'Performance Report',
+                    description: 'Evaluates performance metrics for users and rooms including completion rates, utilization, and activity levels. Useful for performance assessment and resource optimization.',
+                    metrics: ['👥 User performance metrics', '🏠 Room utilization rates', '📊 Completion analysis', '⚡ Efficiency indicators']
+                }
+            };
+            
+            const desc = descriptions[reportType];
+            document.getElementById('reportDescription').innerHTML = `
+                <h3>${desc.title}</h3>
+                <p>${desc.description}</p>
+                <div class="report-metrics">
+                    ${desc.metrics.map(metric => `
+                        <div class="metric-item">
+                            <span class="metric-icon">${metric.split(' ')[0]}</span>
+                            <span class="metric-text">${metric.split(' ').slice(1).join(' ')}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        async function generateReport() {
+            try {
+                showLoading();
+                
+                const reportType = document.getElementById('reportType').value;
+                const format = document.getElementById('format').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const status = document.getElementById('statusFilter').value;
+                const userRole = '';
+                const roomId = document.getElementById('roomFilter').value;
+                
+                const params = new URLSearchParams({
+                    type: reportType,
+                    format: format
+                });
+                
+                if (startDate) params.append('start_date', startDate);
+                if (endDate) params.append('end_date', endDate);
+                if (status) params.append('status', status);
+                if (userRole) params.append('user_role', userRole);
+                if (roomId) params.append('room_id', roomId);
+                
+                // TODO: Implement with Supabase - PHP backend removed
+                // For now, return mock data
+                const mockData = {
+                    success: true,
+                    data: {
+                        summary: {
+                            total_reservations: 0,
+                            completed: 0,
+                            unique_users: 0,
+                            total_hours: 0
+                        },
+                        status_breakdown: [],
+                        role_breakdown: [],
+                        reservations: [],
+                        total_count: 0
+                    }
+                };
+                
+                if (format === 'json') {
+                    const data = mockData;
+                    if (data.success) {
+                        currentReportData = data.data;
+                        displayReportResults(data.data, reportType);
+                        displayReportCharts(data.data, reportType);
+                    } else {
+                        console.error('Error generating report:', data.message);
+                        showError('Failed to generate report');
+                    }
+                } else {
+                    showError('Export formats not yet implemented with Supabase');
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                showError('Error generating report. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function generateQuickReport(type) {
+            const today = new Date();
+            let startDate, endDate, reportType = 'summary';
+            
+            switch (type) {
+                case 'today':
+                    startDate = endDate = today.toISOString().split('T')[0];
+                    break;
+                case 'week':
+                    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+                    startDate = startOfWeek.toISOString().split('T')[0];
+                    endDate = new Date().toISOString().split('T')[0];
+                    break;
+                case 'month':
+                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    startDate = startOfMonth.toISOString().split('T')[0];
+                    endDate = new Date().toISOString().split('T')[0];
+                    break;
+                case 'pending':
+                    document.getElementById('reportType').value = 'detailed';
+                    document.getElementById('statusFilter').value = 'Pending';
+                    updateReportDescription();
+                    generateReport();
+                    return;
+            }
+            
+            document.getElementById('startDate').value = startDate;
+            document.getElementById('endDate').value = endDate;
+            generateReport();
+        }
+
+        function displayReportResults(data, reportType) {
+            const resultsSection = document.getElementById('reportResultsSection');
+            const resultsDiv = document.getElementById('reportResults');
+            
+            resultsSection.style.display = 'block';
+            
+            switch (reportType) {
+                case 'summary':
+                    displaySummaryResults(data);
+                    break;
+                case 'detailed':
+                    displayDetailedResults(data);
+                    break;
+                case 'usage':
+                    displayUsageResults(data);
+                    break;
+                case 'performance':
+                    displayPerformanceResults(data);
+                    break;
+            }
+        }
+
+        function displaySummaryResults(data) {
+            const resultsDiv = document.getElementById('reportResults');
+            
+            resultsDiv.innerHTML = `
+                <div class="summary-results">
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <h4>Total Reservations</h4>
+                            <p class="summary-number">${data.summary.total_reservations.toLocaleString()}</p>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Completed</h4>
+                            <p class="summary-number">${data.summary.completed.toLocaleString()}</p>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Unique Users</h4>
+                            <p class="summary-number">${data.summary.unique_users.toLocaleString()}</p>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Total Hours</h4>
+                            <p class="summary-number">${Math.round(data.summary.total_hours)}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-tables">
+                        <div class="table-section">
+                            <h4>Status Breakdown</h4>
+                            <table class="results-table">
+                                <thead>
+                                    <tr><th>Status</th><th>Count</th><th>Percentage</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${data.status_breakdown.map(status => `
+                                        <tr>
+                                            <td><span class="status-badge ${status.status.toLowerCase()}">${status.status}</span></td>
+                                            <td>${status.count}</td>
+                                            <td>${status.percentage}%</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="table-section">
+                            <h4>User Role Distribution</h4>
+                            <table class="results-table">
+                                <thead>
+                                    <tr><th>Role</th><th>Count</th><th>Percentage</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${data.role_breakdown.map(role => `
+                                        <tr>
+                                            <td><span class="role-badge ${role.role.toLowerCase()}">${role.role}</span></td>
+                                            <td>${role.count}</td>
+                                            <td>${role.percentage}%</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayDetailedResults(data) {
+            const resultsDiv = document.getElementById('reportResults');
+            
+            resultsDiv.innerHTML = `
+                <div class="detailed-results">
+                    <div class="results-header">
+                        <h4>Total Reservations: ${data.total_count.toLocaleString()}</h4>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="results-table detailed-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>User</th>
+                                    <th>Room</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>Purpose</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.reservations.slice(0, 50).map(reservation => `
+                                    <tr>
+                                        <td>#${reservation.reservation_id}</td>
+                                        <td>${formatDate(reservation.reservation_date)}</td>
+                                        <td>${reservation.firstname} ${reservation.lastname}</td>
+                                        <td>${reservation.room_name || 'N/A'}</td>
+                                        <td><span class="status-badge ${reservation.status.toLowerCase()}">${reservation.status}</span></td>
+                                        <td>${Math.round(reservation.duration_hours * 10) / 10}h</td>
+                                        <td>${truncateText(reservation.purpose || 'N/A', 30)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${data.total_count > 50 ? `<p class="results-note">Showing first 50 of ${data.total_count} reservations</p>` : ''}
+                </div>
+            `;
+        }
+
+        function displayUsageResults(data) {
+            const resultsDiv = document.getElementById('reportResults');
+            
+            resultsDiv.innerHTML = `
+                <div class="usage-results">
+                    <div class="usage-summary">
+                        <h4>Usage Patterns</h4>
+                        <div class="usage-grid">
+                            <div class="usage-card">
+                                <h5>Daily Average</h5>
+                                <p>${data.daily_usage.length > 0 ? Math.round(data.daily_usage.reduce((sum, day) => sum + parseInt(day.reservations), 0) / data.daily_usage.length) : 0} reservations/day</p>
+                            </div>
+                            <div class="usage-card">
+                                <h5>Peak Hour</h5>
+                                <p>${data.hourly_usage.length > 0 ? data.hourly_usage.reduce((max, hour) => hour.reservations > max.reservations ? hour : max).hour + ':00' : 'N/A'}</p>
+                            </div>
+                            <div class="usage-card">
+                                <h5>Busiest Day</h5>
+                                <p>${data.day_of_week_usage.length > 0 ? data.day_of_week_usage.reduce((max, day) => day.reservations > max.reservations ? day : max).day_name : 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="usage-tables">
+                        <div class="table-section">
+                            <h4>Recent Daily Usage</h4>
+                            <table class="results-table">
+                                <thead>
+                                    <tr><th>Date</th><th>Reservations</th><th>Completed</th><th>Unique Users</th><th>Total Hours</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${data.daily_usage.slice(0, 10).map(day => `
+                                        <tr>
+                                            <td>${formatDate(day.date)}</td>
+                                            <td>${day.reservations}</td>
+                                            <td>${day.completed}</td>
+                                            <td>${day.unique_users}</td>
+                                            <td>${Math.round(day.total_hours * 10) / 10}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayPerformanceResults(data) {
+            const resultsDiv = document.getElementById('reportResults');
+            
+            resultsDiv.innerHTML = `
+                <div class="performance-results">
+                    <div class="performance-tables">
+                        <div class="table-section">
+                            <h4>Top Users by Performance</h4>
+                            <table class="results-table">
+                                <thead>
+                                    <tr><th>User</th><th>Role</th><th>Reservations</th><th>Completion Rate</th><th>Total Hours</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${data.user_performance.slice(0, 10).map(user => `
+                                        <tr>
+                                            <td>${user.firstname} ${user.lastname}</td>
+                                            <td><span class="role-badge ${user.role.toLowerCase()}">${user.role}</span></td>
+                                            <td>${user.reservation_count}</td>
+                                            <td>${user.completion_rate}%</td>
+                                            <td>${Math.round(user.total_hours * 10) / 10}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="table-section">
+                            <h4>Room Performance</h4>
+                            <table class="results-table">
+                                <thead>
+                                    <tr><th>Room</th><th>Reservations</th><th>Utilization Rate</th><th>Unique Users</th><th>Total Hours</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${data.room_performance.map(room => `
+                                        <tr>
+                                            <td>${room.room_name}</td>
+                                            <td>${room.reservation_count}</td>
+                                            <td>${room.utilization_rate}%</td>
+                                            <td>${room.unique_users}</td>
+                                            <td>${Math.round(room.total_hours * 10) / 10}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayReportCharts(data, reportType) {
+            const chartsSection = document.getElementById('reportChartsSection');
+            chartsSection.style.display = 'block';
+            
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+            
+            if (reportType === 'summary' && data.status_breakdown) {
+                // Status Chart
+                const statusCtx = document.getElementById('statusChart').getContext('2d');
+                charts.status = new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.status_breakdown.map(s => s.status),
+                        datasets: [{
+                            data: data.status_breakdown.map(s => s.count),
+                            backgroundColor: ['#31CB00', '#ffc107', '#dc3545', '#6c757d', '#17a2b8']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'right' }
+                        }
+                    }
+                });
+                
+                // Role Chart
+                if (data.role_breakdown) {
+                    const roleCtx = document.getElementById('roleChart').getContext('2d');
+                    charts.role = new Chart(roleCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: data.role_breakdown.map(r => r.role),
+                            datasets: [{
+                                data: data.role_breakdown.map(r => r.count),
+                                backgroundColor: ['#31CB00', '#119822', '#2A7221']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'right' }
+                            }
+                        }
+                    });
+                }
+                
+                // Room Chart
+                if (data.room_usage && data.room_usage.length > 0) {
+                    const roomCtx = document.getElementById('roomChart').getContext('2d');
+                    charts.room = new Chart(roomCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.room_usage.map(r => r.room_name),
+                            datasets: [{
+                                label: 'Reservations',
+                                data: data.room_usage.map(r => r.count),
+                                backgroundColor: '#31CB00'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('reportType').value = 'summary';
+            document.getElementById('format').value = 'json';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('roleFilter').value = '';
+            document.getElementById('roomFilter').value = '';
+            
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            
+            updateReportDescription();
+            
+            // Hide results
+            document.getElementById('reportResultsSection').style.display = 'none';
+            document.getElementById('reportChartsSection').style.display = 'none';
+        }
+
+        // Helper functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+
+        function showLoading() {
+            const btn = event?.target;
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Generating...';
+            }
+        }
+
+        function hideLoading() {
+            const btn = document.querySelector('.btn-primary');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Generate Report';
+            }
+        }
+
+        function showError(message) {
+            showErrorSnackbar(message);
+        }
+
+        function showSuccess(message) {
+            showSuccessSnackbar(message);
+        }
+    </script>
+
+    <style>
+        .report-controls {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #152614;
+            margin-bottom: 5px;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        .report-description {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .report-description h3 {
+            margin: 0 0 10px 0;
+            color: #31CB00;
+            border-bottom: 2px solid #31CB00;
+            padding-bottom: 8px;
+        }
+
+        .report-description p {
+            margin: 0 0 15px 0;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .report-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .metric-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .metric-icon {
+            font-size: 1.2rem;
+        }
+
+        .metric-text {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .quick-reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .quick-report-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .quick-report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .quick-report-icon {
+            font-size: 2rem;
+        }
+
+        .quick-report-info h3 {
+            margin: 0 0 5px 0;
+            color: #152614;
+        }
+
+        .quick-report-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .report-results {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border-left: 4px solid #31CB00;
+        }
+
+        .summary-card h4 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .summary-number {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #31CB00;
+        }
+
+        .summary-tables {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .table-section h4 {
+            margin: 0 0 15px 0;
+            color: #31CB00;
+            border-bottom: 2px solid #31CB00;
+            padding-bottom: 8px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .results-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #152614;
+            border-bottom: 2px solid #31CB00;
+        }
+
+        .results-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .results-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.approved {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-badge.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.declined {
+            background: #dc3545;
+            color: white;
+        }
+
+        .role-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .role-badge.student {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .role-badge.professor {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .role-badge.admin {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .results-note {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .usage-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .usage-card h5 {
+            margin: 0 0 5px 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .usage-card p {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #31CB00;
+        }
+
+        .charts-container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            margin: 0 0 15px 0;
+            color: #152614;
+            border-bottom: 2px solid #31CB00;
+            padding-bottom: 8px;
+        }
+
+        .chart-card canvas {
+            max-height: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .control-row {
+                flex-direction: column;
+            }
+            
+            .report-metrics {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-reports-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-tables {
+                grid-template-columns: 1fr;
+            }
+            
+            .usage-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config/supabase.js"></script>
+</body>
+</html>

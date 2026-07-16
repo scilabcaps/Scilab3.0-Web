@@ -1,0 +1,89 @@
+<!-- Professor Sidebar Component -->
+<aside class="dashboard-sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <img src="../../Logo/Scilab_Logo.png" alt="Scilab Logo" class="sidebar-logo-img">
+        <div class="sidebar-brand">
+            <h1>SciLabReserve</h1>
+            <p>Lab Management</p>
+        </div>
+    </div>
+    <div class="sidebar-user">
+        <div class="user-profile-card">
+            <div class="user-avatar" id="userAvatar">NC</div>
+            <div class="user-info-sidebar">
+                <p class="user-name" id="userNameSidebar">Professor Name</p>
+                <span class="user-role-badge professor">Professor</span>
+            </div>
+        </div>
+    </div>
+    <nav class="sidebar-navigation">
+        <div class="nav-section-title">Navigation</div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="professor_dashboard.html" class="nav-link" id="nav-dashboard">
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+
+            <!-- My Reservations Dropdown -->
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle" id="dropdown-reservations">
+                    <span class="nav-text">My Reservations</span>
+                    <span class="dropdown-arrow">▼</span>
+                </a>
+                <ul class="dropdown-menu" id="menu-reservations">
+                    <li>
+                        <a href="professor_new_reservation.html" class="nav-link" id="nav-new-reservation">
+                            <span class="nav-text">New Reservation</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="professor_pending_approval.html" class="nav-link" id="nav-pending-approval">
+                            <span class="nav-text">Pending Approval</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="professor_reservation_history.html" class="nav-link" id="nav-reservation-history">
+                            <span class="nav-text">Reservation History</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Students Dropdown -->
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle" id="dropdown-students">
+                    <span class="nav-text">Students</span>
+                    <span class="dropdown-arrow">▼</span>
+                </a>
+                <ul class="dropdown-menu" id="menu-students">
+                    <li>
+                        <a href="student_approvals.html" class="nav-link" id="nav-student-approvals">
+                            <span class="nav-text">Student Approvals</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="student_approved_reservation.html" class="nav-link" id="nav-student-approved">
+                            <span class="nav-text">Student Reservations</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="professor_unreturned.html" class="nav-link" id="nav-unreturned">
+                            <span class="nav-text">Students with Unreturned Items</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="settings.html" class="nav-link" id="nav-settings">
+                    <span class="nav-text">Account Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="#" class="logout-link" onclick="logout(); return false;">
+            <span class="nav-text">Log out</span>
+        </a>
+    </div>
+</aside>

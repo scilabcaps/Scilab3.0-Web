@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Scilab 3.0 - Science Laboratory Reservation System</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/sidebar_theme.css">
+    <link rel="stylesheet" href="student_dashboard.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Collapsible Sidebar Navigation -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1>Student Dashboard</h1>
+                    <img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
+                </div>
+            </div>
+            <div class="dashboard-content">
+                <!-- Welcome Section -->
+                <div class="welcome-section">
+                    <div class="welcome-content">
+                        <h1 class="welcome-title">Hello, <span id="studentName">Student Name</span></h1>
+                        <p class="welcome-subtitle">Welcome back to SciLab Reservation System</p>
+                    </div>
+                    <div class="datetime-display">
+                        <div class="current-date" id="currentDate">May 1, 2025</div>
+                        <div class="current-time" id="currentTime">10:30 AM</div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <span>📋</span>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value" id="myReservationsCount">12</div>
+                            <div class="card-label">My Reservations</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <span>⏳</span>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value" id="pendingRequestsCount">3</div>
+                            <div class="card-label">Pending Requests</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <span>✅</span>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value" id="approvedTodayCount">2</div>
+                            <div class="card-label">Approved Today</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <span>📅</span>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value" id="upcomingScheduleCount">5</div>
+                            <div class="card-label">Upcoming Schedule</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions-section">
+                    <h2 class="section-title">Quick Actions</h2>
+                    <div class="quick-actions-grid">
+                        <a href="reservation_student.html" class="quick-action-btn">
+                            <div class="action-icon">➕</div>
+                            <span>Reserve Laboratory</span>
+                        </a>
+                        <a href="reservation_student.html" class="quick-action-btn">
+                            <div class="action-icon">🔬</div>
+                            <span>Reserve Equipment</span>
+                        </a>
+                        <a href="student_approved.html" class="quick-action-btn">
+                            <div class="action-icon">📆</div>
+                            <span>View My Schedule</span>
+                        </a>
+                        <a href="student_history.html" class="quick-action-btn">
+                            <div class="action-icon">📜</div>
+                            <span>Reservation History</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- My Upcoming Reservations -->
+                <div class="upcoming-reservations-section">
+                    <h2 class="section-title">My Upcoming Reservations</h2>
+                    <div class="reservations-table-container">
+                        <table class="reservations-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Room</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="upcomingReservationsList">
+                                <!-- Data will be loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Announcements Section -->
+                <div class="announcements-section">
+                    <h2 class="section-title">Announcements</h2>
+                    <div class="announcements-list" id="announcementsList">
+                        <!-- Announcements will be loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Calendar Widget -->
+                <div class="calendar-section"> 
+                    <h2 class="section-title">Weekly Schedule Preview</h2>
+                    <div class="calendar-widget">
+                        <div class="calendar-header">
+                            <button class="calendar-nav-btn" onclick="previousWeek()">Previous</button>
+                            <h3 id="weekRange">May 1 - May 7, 2025</h3>
+                            <button class="calendar-nav-btn" onclick="nextWeek()">Next</button>
+                        </div>
+                        <div class="calendar-grid">
+                            <div class="calendar-day">
+                                <div class="day-header">Mon</div>
+                                <div class="day-date">1</div>
+                                <div class="day-events">
+                                    <div class="event-item approved">Lab 1 - 8:00 AM</div>
+                                </div>
+                            </div>
+                            <div class="calendar-day">
+                                <div class="day-header">Tue</div>
+                                <div class="day-date">2</div>
+                                <div class="day-events">
+                                    <div class="event-item approved">Lab 1 - 8:00 AM</div>
+                                </div>
+                            </div>
+                            <div class="calendar-day">
+                                <div class="day-header">Wed</div>
+                                <div class="day-date">3</div>
+                                <div class="day-events">
+                                    <div class="event-item pending">Lab 2 - 2:00 PM</div>
+                                </div>
+                            </div>
+                            <div class="calendar-day">
+                                <div class="day-header">Thu</div>
+                                <div class="day-date">4</div>
+                                <div class="day-events">
+                                    <div class="event-item maintenance">Maintenance</div>
+                                </div>
+                            </div>
+                            <div class="calendar-day">
+                                <div class="day-header">Fri</div>
+                                <div class="day-date">5</div>
+                                <div class="day-events">
+                                    <div class="event-item approved">Lab 3 - 10:00 AM</div>
+                                </div>
+                            </div>
+                            <div class="calendar-day">
+                                <div class="day-header">Sat</div>
+                                <div class="day-date">6</div>
+                                <div class="day-events"></div>
+                            </div>
+                            <div class="calendar-day">
+                                <div class="day-header">Sun</div>
+                                <div class="day-date">7</div>
+                                <div class="day-events"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="../../js/sidebar_loader.js"></script>
+    <script src="../../js/main.js"></script>
+    <script>
+        // Update current date and time
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString('en-US', options);
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            
+            document.getElementById('currentDate').textContent = dateString;
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // Calendar navigation
+        let currentWeekOffset = 0;
+        
+        function updateWeekDisplay() {
+            const today = new Date();
+            const currentWeek = new Date(today);
+            currentWeek.setDate(today.getDate() + (currentWeekOffset * 7));
+            
+            const startOfWeek = new Date(currentWeek);
+            const day = startOfWeek.getDay();
+            const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+            startOfWeek.setDate(diff);
+            
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            const startString = startOfWeek.toLocaleDateString('en-US', options);
+            const endString = endOfWeek.toLocaleDateString('en-US', options);
+            
+            document.getElementById('weekRange').textContent = `${startString} - ${endString}`;
+            
+            // Update calendar days
+            updateCalendarDays(startOfWeek);
+        }
+        
+        async function updateCalendarDays(startDate) {
+            const calendarDays = document.querySelectorAll('.calendar-day');
+            const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 6);
+                
+                // Fetch reservations for the current week
+                const { data: reservations, error } = await supabase
+                    .from('reservations')
+                    .select(`
+                        reservation_date,
+                        start_time,
+                        professor_approval,
+                        admin_approval,
+                        rooms(room_name)
+                    `)
+                    .eq('user_id', user.id)
+                    .eq('professor_approval', 'Approved')
+                    .eq('admin_approval', 'Approved')
+                    .gte('reservation_date', startDate.toISOString().split('T')[0])
+                    .lte('reservation_date', endDate.toISOString().split('T')[0]);
+
+                if (error) throw error;
+
+                // Create a map of reservations by date
+                const reservationsByDate = {};
+                if (reservations) {
+                    reservations.forEach(res => {
+                        if (!reservationsByDate[res.reservation_date]) {
+                            reservationsByDate[res.reservation_date] = [];
+                        }
+                        reservationsByDate[res.reservation_date].push(res);
+                    });
+                }
+                
+                calendarDays.forEach((dayElement, index) => {
+                    const currentDate = new Date(startDate);
+                    currentDate.setDate(startDate.getDate() + index);
+                    
+                    const dayHeader = dayElement.querySelector('.day-header');
+                    const dayDate = dayElement.querySelector('.day-date');
+                    const dayEvents = dayElement.querySelector('.day-events');
+                    
+                    dayHeader.textContent = dayNames[index];
+                    dayDate.textContent = currentDate.getDate();
+                    
+                    // Clear existing events
+                    dayEvents.innerHTML = '';
+                    
+                    // Add events from database for this date
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const dayReservations = reservationsByDate[dateStr] || [];
+                    
+                    dayReservations.forEach(res => {
+                        const eventDiv = document.createElement('div');
+                        eventDiv.className = 'event-item approved';
+                        eventDiv.textContent = `${res.rooms?.room_name || 'Lab Room'} - ${res.start_time}`;
+                        dayEvents.appendChild(eventDiv);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading calendar events:', error);
+                // Fallback to empty calendar on error
+                calendarDays.forEach((dayElement, index) => {
+                    const dayHeader = dayElement.querySelector('.day-header');
+                    const dayDate = dayElement.querySelector('.day-date');
+                    const dayEvents = dayElement.querySelector('.day-events');
+                    
+                    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    const currentDate = new Date(startDate);
+                    currentDate.setDate(startDate.getDate() + index);
+                    
+                    dayHeader.textContent = dayNames[index];
+                    dayDate.textContent = currentDate.getDate();
+                    dayEvents.innerHTML = '';
+                });
+            }
+        }
+        
+        function previousWeek() {
+            currentWeekOffset--;
+            updateWeekDisplay();
+        }
+        
+        function nextWeek() {
+            currentWeekOffset++;
+            updateWeekDisplay();
+        }
+
+        // Load student data and dashboard metrics
+        async function loadStudentData() {
+            try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                
+                // Update student name
+                const studentName = document.getElementById('userName')?.textContent || 'Student Name';
+                document.getElementById('studentName').textContent = studentName;
+                
+                // Fetch reservation counts from Supabase
+                const { data: allReservations, error } = await supabase
+                    .from('reservations')
+                    .select('status, professor_approval, admin_approval, reservation_date')
+                    .eq('user_id', user.id);
+                
+                if (error) throw error;
+                
+                // Calculate metrics
+                const totalReservations = allReservations?.length || 0;
+                const pendingRequests = allReservations?.filter(r => 
+                    r.professor_approval === 'Pending' || r.admin_approval === 'Pending'
+                ).length || 0;
+                
+                const today = new Date().toISOString().split('T')[0];
+                const approvedToday = allReservations?.filter(r => 
+                    r.professor_approval === 'Approved' && 
+                    r.admin_approval === 'Approved' && 
+                    r.reservation_date === today
+                ).length || 0;
+                
+                const upcomingSchedule = allReservations?.filter(r => 
+                    r.professor_approval === 'Approved' && 
+                    r.admin_approval === 'Approved' && 
+                    r.reservation_date >= today
+                ).length || 0;
+                
+                // Update dashboard metrics
+                document.getElementById('myReservationsCount').textContent = totalReservations;
+                document.getElementById('pendingRequestsCount').textContent = pendingRequests;
+                document.getElementById('approvedTodayCount').textContent = approvedToday;
+                document.getElementById('upcomingScheduleCount').textContent = upcomingSchedule;
+                
+                // Load upcoming reservations table
+                loadUpcomingReservations();
+                
+            } catch (error) {
+                console.error('Error loading student data:', error);
+                // Set default values on error
+                document.getElementById('myReservationsCount').textContent = '0';
+                document.getElementById('pendingRequestsCount').textContent = '0';
+                document.getElementById('approvedTodayCount').textContent = '0';
+                document.getElementById('upcomingScheduleCount').textContent = '0';
+            }
+        }
+        
+        // Load upcoming reservations for the table
+        async function loadUpcomingReservations() {
+            try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                const today = new Date().toISOString().split('T')[0];
+                
+                const { data: reservations, error } = await supabase
+                    .from('reservations')
+                    .select(`
+                        reservation_date,
+                        start_time,
+                        end_time,
+                        professor_approval,
+                        admin_approval,
+                        rooms(room_name)
+                    `)
+                    .eq('user_id', user.id)
+                    .eq('professor_approval', 'Approved')
+                    .eq('admin_approval', 'Approved')
+                    .gte('reservation_date', today)
+                    .order('reservation_date', { ascending: true })
+                    .limit(5);
+
+                if (error) throw error;
+
+                const container = document.getElementById('upcomingReservationsList');
+                
+                if (!reservations || reservations.length === 0) {
+                    container.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #666; padding: 20px;">
+                                No upcoming reservations
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                reservations.forEach(res => {
+                    const statusClass = 'approved';
+                    const statusText = 'Approved';
+                    
+                    html += `
+                        <tr>
+                            <td>${res.reservation_date}</td>
+                            <td>${res.start_time} - ${res.end_time}</td>
+                            <td>${res.rooms?.room_name || 'Lab Room'}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading upcoming reservations:', error);
+                const container = document.getElementById('upcomingReservationsList');
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">
+                            Error loading reservations
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            updateWeekDisplay();
+            loadStudentData();
+            loadUserData();
+            
+            // Load announcements
+            loadAnnouncements();
+        });
+
+        function quickReserve(assetId) {
+            // Pre-fill reservation form with this item
+            sessionStorage.setItem('preselectedItem', assetId);
+            window.location.href = 'reservation_student.html';
+        }
+
+        // Load user data and validate session
+        function loadUserData() {
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+            if (user.username && user.role === 'Student') {
+                const firstName = user.firstname || 'Student';
+                const lastName = user.lastname || 'User';
+                const fullName = firstName + ' ' + lastName;
+                document.getElementById('studentName').textContent = fullName;
+            } else {
+                window.location.href = '../../index.html';
+            }
+        }
+
+        // Load announcements from Supabase
+        async function loadAnnouncements() {
+            try {
+                const now = new Date().toISOString();
+                
+                const { data: announcements, error } = await supabase
+                    .from('announcement')
+                    .select('title, content, publish_at')
+                    .eq('is_published', true)
+                    .lte('publish_at', now)
+                    .or('expires_at.is.null,expires_at.gte.' + now)
+                    .order('publish_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                const container = document.getElementById('announcementsList');
+                
+                if (!announcements || announcements.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📢</div>
+                            <div class="empty-state-text">No announcements</div>
+                            <div class="empty-state-subtext">Check back later for updates</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                const icons = ['📋', '🔧', '🎉', '⚠️', 'ℹ️', '📢'];
+                
+                announcements.forEach((announcement, index) => {
+                    const icon = icons[index % icons.length];
+                    const date = new Date(announcement.publish_at).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    
+                    html += `
+                        <div class="announcement-item">
+                            <div class="announcement-icon">${icon}</div>
+                            <div class="announcement-content">
+                                <h4>${announcement.title}</h4>
+                                <p>${announcement.content}</p>
+                                <span class="announcement-date">${date}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                const container = document.getElementById('announcementsList');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <div class="empty-state-text">Error loading announcements</div>
+                        <div class="empty-state-subtext">Please try refreshing the page</div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../js/snackbar.js"></script>
+    <script src="../../js/dialog.js"></script>
+</body>
+
+</html>

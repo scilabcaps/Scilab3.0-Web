@@ -1,0 +1,323 @@
+/* Calendar Styles for Student Reservation */
+.calendar-container {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 700px;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.calendar-header h3 {
+    margin: 0;
+    color: #152614;
+    font-size: 14px;
+}
+
+.calendar-nav-btn {
+    background: #31CB00;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.calendar-nav-btn:hover {
+    background: #2A7221;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-weight: 600;
+    color: #666;
+    padding: 15px 10px;
+    font-size: 18px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 20px;
+    transition: all 0.2s;
+    border: 1px solid #e0e0e0;
+    background: white;
+    min-height: 70px;
+}
+
+.calendar-day:hover:not(.disabled) {
+    background: #e8f5e9;
+    border-color: #31CB00;
+}
+
+.calendar-day.selected {
+    background: #31CB00;
+    color: white;
+    border-color: #31CB00;
+}
+
+.calendar-day.disabled {
+    color: #ccc;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+.calendar-day.today {
+    border: 2px solid #31CB00;
+}
+
+/* Timeline Styles */
+.timeline-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-top: 20px;
+    max-height: 560px;
+    overflow-y: auto;
+}
+
+.timeline-header {
+    margin-bottom: 15px;
+}
+
+.timeline-header h4 {
+    margin: 0 0 5px 0;
+    color: #152614;
+}
+
+.timeline-header p {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.timeline-wrapper {
+    position: relative;
+    height: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: visible;
+}
+
+.timeline-grid {
+    display: flex;
+    height: 100%;
+}
+
+.timeline-time-labels {
+    width: 60px;
+    border-right: 1px solid #e0e0e0;
+    background: #f9f9f9;
+}
+
+.time-label {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #666;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.timeline-slots {
+    flex: 1;
+    position: relative;
+    background: white;
+}
+
+.timeline-slot {
+    height: 50px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.timeline-slot:hover {
+    background: #f0f7ee;
+}
+
+.timeline-slot.booked {
+    background: #ffebee;
+    cursor: not-allowed;
+}
+
+.timeline-slot.booked::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(244, 67, 54, 0.1) 10px,
+        rgba(244, 67, 54, 0.1) 20px
+    );
+}
+
+.timeline-slot.selected-start {
+    background: #e8f5e9;
+    border-top: 3px solid #31CB00;
+}
+
+.timeline-slot.selected-end {
+    background: #e8f5e9;
+    border-bottom: 3px solid #31CB00;
+}
+
+.timeline-slot.in-range {
+    background: #c8e6c9;
+}
+
+.timeline-slot.conflict {
+    background: #ffebee !important;
+    cursor: not-allowed;
+}
+
+.timeline-slot.past {
+    background: #f5f5f5;
+    color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.timeline-slot.past::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.03) 10px,
+        rgba(0, 0, 0, 0.03) 20px
+    );
+}
+
+.reservation-block {
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    background: #f44336;
+    color: white;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+.selection-info {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f0f7ee;
+    border-radius: 6px;
+    border-left: 4px solid #31CB00;
+}
+
+.selection-info h5 {
+    margin: 0 0 10px 0;
+    color: #152614;
+}
+
+.selection-info p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.selection-info .time-display {
+    font-weight: 600;
+    color: #2A7221;
+    font-size: 16px;
+}
+
+.selection-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.selection-actions button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-clear {
+    background: #f44336;
+    color: white;
+    border: none;
+}
+
+.btn-clear:hover {
+    background: #d32f2f;
+}
+
+.btn-confirm-time {
+    background: #31CB00;
+    color: white;
+    border: none;
+}
+
+.btn-confirm-time:hover {
+    background: #2A7221;
+}
+
+.btn-confirm-time:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Stock Modal Styles */
+.stock-info {
+    padding: 15px;
+    background: #f0f7ee;
+    border-radius: 6px;
+    border-left: 4px solid #31CB00;
+}
+
+.stock-info h4 {
+    margin: 0 0 10px 0;
+    color: #152614;
+    font-size: 16px;
+}
+
+.availability-message {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+}

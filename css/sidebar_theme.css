@@ -1,0 +1,107 @@
+/* Unified Sidebar Theme - Dark Green */
+/* This file provides consistent sidebar styling across all pages */
+
+.dashboard-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    background: #2a7221;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    border-right: 1px solid #e9ecef;
+}
+
+.dashboard-sidebar .sidebar-header {
+    background: linear-gradient(135deg, #152614 0%, #1E441E 100%);
+    border-bottom: 1px solid #e9ecef;
+}
+
+.dashboard-sidebar .sidebar-user {
+    background: #f0f7ee;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.dashboard-sidebar .sidebar-navigation {
+    background: #f0f7ee;
+}
+
+.dashboard-sidebar .sidebar-footer {
+    background: #e8f5e9;
+    border-top: 1px solid #e9ecef;
+}
+
+.dashboard-sidebar .sidebar-brand h1 {
+    color: #ffffff;
+}
+
+.dashboard-sidebar .sidebar-brand p {
+    color: #e8f5e9;
+}
+
+.dashboard-sidebar .user-info-sidebar p {
+    color: #152614;
+}
+
+.dashboard-sidebar .nav-section-title {
+    color: #666;
+}
+
+.dashboard-sidebar .nav-text {
+    color: #152614;
+}
+
+.dashboard-sidebar .nav-link {
+    color: #152614;
+    border-color: rgba(21, 38, 20, 0.1);
+}
+
+.dashboard-sidebar .nav-link:hover {
+    background: rgba(49, 203, 0, 0.15);
+    color: #2A7221;
+}
+
+.dashboard-sidebar .nav-link.active {
+    background: rgba(49, 203, 0, 0.2);
+    color: #2A7221;
+    border-left: 3px solid #31CB00;
+}
+
+.dashboard-sidebar .user-role-badge {
+    background: rgba(49, 203, 0, 0.2);
+    color: #2A7221;
+}
+
+.dashboard-sidebar .logout-link {
+    color: #666;
+}
+
+.dashboard-sidebar .logout-link:hover {
+    color: #2A7221;
+}
+
+.dashboard-main {
+    margin-left: 280px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.menu-toggle-btn {
+    display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-main {
+        margin-left: 0;
+    }
+    
+    .dashboard-sidebar {
+        transform: translateX(-100%);
+    }
+}

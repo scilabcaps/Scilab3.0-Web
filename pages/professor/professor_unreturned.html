@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students with Unreturned Items - Professor</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/sidebar_theme.css">
+    <style>
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .dashboard-main {
+                margin-left: 0;
+            }
+            
+            .dashboard-sidebar {
+                transform: translateX(-100%);
+            }
+        }
+
+        .student-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .student-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .student-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #152614;
+            margin-bottom: 5px;
+        }
+
+        .student-info {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .unreturned-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #152614;
+            margin-bottom: 5px;
+        }
+
+        .item-details {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .unreturned-qty {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar will be loaded dynamically -->
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1>Students with Unreturned Items</h1>
+                    <img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
+                </div>
+            </div>
+            <div class="dashboard-content">
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Year & Section</th>
+                                <th>Item Name</th>
+                                <th>Type</th>
+                                <th>Borrowed</th>
+                                <th>Returned</th>
+                                <th>Unreturned</th>
+                                <th>Reservation Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTable">
+                            <!-- Data will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="itemsEmptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon"></div>
+                    <div class="empty-state-text">No students with unreturned items</div>
+                </div>
+
+                <div id="studentsList" style="margin-top: 30px;">
+                    <!-- Students with unreturned items will be displayed here -->
+                </div>
+                <div id="studentsEmptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon"></div>
+                    <div class="empty-state-text">No students with unreturned items</div>
+                </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../js/sidebar_loader.js"></script>
+    <script src="../../js/main.js"></script>
+    <script src="../../js/professor_unreturned.js"></script>
+</body>
+
+</html>
