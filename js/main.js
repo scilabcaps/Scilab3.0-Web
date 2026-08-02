@@ -9,9 +9,23 @@ function togglePassword(inputId = 'password') {
 
 // Logout function
 function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        sessionStorage.removeItem('user');
-        window.location.href = '../../index.html';
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// Confirm logout
+function confirmLogout() {
+    sessionStorage.removeItem('user');
+    window.location.href = '/index.html';
+}
+
+// Cancel logout
+function cancelLogout() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.style.display = 'none';
     }
 }
 
@@ -108,9 +122,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Redirect based on role
                 if (userData.role === 'Professor') {
-                    window.location.href = 'pages/professor/professor_dashboard.html';
+                    window.location.href = '/pages/professor/professor_dashboard.html';
                 } else {
-                    window.location.href = 'pages/student/student_dashboard.html';
+                    window.location.href = '/pages/student/student_dashboard.html';
                 }
             } catch (error) {
                 console.error('Login error:', error);

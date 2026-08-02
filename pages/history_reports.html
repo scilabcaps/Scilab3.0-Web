@@ -70,6 +70,23 @@
             </div>
         </aside>
 
+        <!-- Logout Confirmation Modal -->
+        <div id="logoutModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Confirm Logout</h3>
+                    <button class="modal-close" onclick="cancelLogout()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to log out?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="cancelLogout()">Cancel</button>
+                    <button class="btn-primary" onclick="confirmLogout()">Log out</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content -->
         <main class="dashboard-main">
             <div class="dashboard-header">

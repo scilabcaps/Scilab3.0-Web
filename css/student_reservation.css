@@ -129,7 +129,7 @@
 }
 
 .time-label {
-    height: 50px;
+    height: 25px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -145,7 +145,7 @@
 }
 
 .timeline-slot {
-    height: 50px;
+    height: 25px;
     border-bottom: 1px solid #f0f0f0;
     cursor: pointer;
     transition: background 0.2s;

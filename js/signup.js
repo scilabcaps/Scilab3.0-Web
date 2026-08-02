@@ -17,13 +17,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const firstname = document.getElementById('firstname').value.trim();
             const lastname = document.getElementById('lastname').value.trim();
+            const yearSection = document.getElementById('yearSection').value.trim();
+            const course = document.getElementById('course').value;
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
-            const role = document.getElementById('role').value;
+            const role = 'student';
 
             // Validate all fields
-            if (!firstname || !lastname || !email || !password || !confirmPassword || !role) {
+            if (!firstname || !lastname || !yearSection || !course || !email || !password || !confirmPassword) {
                 showErrorSnackbar('Please fill in all fields.');
                 return;
             }
@@ -47,11 +49,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Validate professor email domain
-            if (role === 'professor' && !email.endsWith('@plsp.edu.ph')) {
-                showErrorSnackbar('Professor email must end with @plsp.edu.ph');
-                return;
-            }
 
             try {
                 // Ensure Supabase client is available
@@ -92,6 +89,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
 
+                console.log('Sign up response:', { signUpData, signUpError });
+
                 if (signUpError) {
                     console.error('Signup error:', signUpError);
                     if (signUpError.status === 429) {
@@ -107,6 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 pendingSignupData = {
                     firstname,
                     lastname,
+                    yearSection,
+                    course,
                     email,
                     password,
                     role
@@ -169,7 +170,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         email: pendingSignupData.email,
                         first_name: pendingSignupData.firstname,
                         last_name: pendingSignupData.lastname,
-                        role: pendingSignupData.role
+                        year_section: pendingSignupData.yearSection,
+                        course: pendingSignupData.course,
+                        role: pendingSignupData.role,
+                        isApproved: 0
                     });
 
                 if (userInfoError) {
@@ -181,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 setButtonLoading('verifyOtpBtn', false);
                 showSuccessSnackbar('Account created successfully! Redirecting to login...');
                 setTimeout(() => {
-                    window.location.href = '../index.html';
+                    window.location.href = '../../index.html';
                 }, 2000);
             } catch (err) {
                 setButtonLoading('verifyOtpBtn', false);
