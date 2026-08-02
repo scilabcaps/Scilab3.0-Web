@@ -1174,47 +1174,51 @@ body {
 .modal-content {
     background-color: white;
     margin: 5% auto;
-    padding: 30px;
-    border-radius: 15px;
+    padding: 0;
+    border-radius: 12px;
     width: 90%;
-    max-width: 600px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    border: 3px solid #2A7221;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: none;
+    overflow: hidden;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #e0e0e0;
+    padding: 24px 28px;
+    background: linear-gradient(135deg, #2A7221 0%, #1E441E 100%);
+    border-bottom: none;
 }
 
 .modal-title {
-    color: #1E441E;
-    font-size: 1.8rem;
+    color: white;
+    font-size: 1.4rem;
     font-weight: 600;
+    margin: 0;
 }
 
 .modal-close {
-    background: none;
+    background: rgba(255, 255, 255, 0.2);
     border: none;
-    font-size: 2rem;
-    color: #666;
+    font-size: 1.5rem;
+    color: white;
     cursor: pointer;
     line-height: 1;
-    transition: color 0.3s;
+    transition: all 0.3s;
     padding: 0;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 6px;
 }
 
 .modal-close:hover {
-    color: #152614;
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
 }
 
 .close-modal {
@@ -1232,7 +1236,15 @@ body {
 }
 
 .modal-body {
-    margin-bottom: 20px;
+    padding: 28px;
+    margin-bottom: 0;
+}
+
+.modal-body p {
+    color: #4a5568;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
 }
 
 .summary-item {
@@ -1256,10 +1268,48 @@ body {
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 15px;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 2px solid #e0e0e0;
+    gap: 12px;
+    margin-top: 0;
+    padding: 20px 28px 28px;
+    border-top: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+}
+
+.btn-secondary {
+    padding: 12px 24px;
+    background-color: white;
+    color: #4a5568;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+    color: #374151;
+}
+
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #2A7221 0%, #1E441E 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(42, 114, 33, 0.2);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1E441E 0%, #152614 100%);
+    box-shadow: 0 4px 8px rgba(42, 114, 33, 0.3);
+    transform: translateY(-1px);
 }
 
 .btn-cancel {

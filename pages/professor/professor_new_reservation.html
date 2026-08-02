@@ -193,7 +193,7 @@
                 loadResources();
                 initializeCalendar();
             } else {
-                window.location.href = '../index.html';
+                window.location.href = '../../index.html';
             }
         });
 
@@ -324,55 +324,72 @@
             // Operating hours: 7 AM to 8 PM (13 hours)
             const startHour = 7;
             const endHour = 20;
-            const totalHours = endHour - startHour;
+            const slotInterval = 30; // 30-minute intervals
+            const totalSlots = (endHour - startHour) * (60 / slotInterval);
             
-            // Check if selected date is today and get current hour
+            // Check if selected date is today and get current time
             const today = new Date();
             const isToday = selectedDate === formatDateForInput(today);
             const currentHour = today.getHours();
+            const currentMinute = today.getMinutes();
+            const currentTotalMinutes = currentHour * 60 + currentMinute;
             
-            // Get earliest available hour if set
-            let earliestAvailableHour = null;
+            // Get earliest available time if set
+            let earliestAvailableMinutes = null;
             if (earliestAvailableTime) {
                 const [hour, minute] = earliestAvailableTime.split(':').map(Number);
-                earliestAvailableHour = hour;
-                console.log('Earliest available time:', earliestAvailableTime, 'Hour:', earliestAvailableHour);
+                earliestAvailableMinutes = hour * 60 + minute;
+                console.log('Earliest available time:', earliestAvailableTime, 'Minutes:', earliestAvailableMinutes);
             }
             
-            // Render time labels
+            // Render time labels (show every half-hour)
             let labelsHtml = '';
             for (let hour = startHour; hour < endHour; hour++) {
-                labelsHtml += `<div class="time-label">${formatHour(hour)}</div>`;
+                for (let minute = 0; minute < 60; minute += slotInterval) {
+                    const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    labelsHtml += `<div class="time-label">${formatTimeShort(timeStr)}</div>`;
+                }
             }
             timelineTimeLabels.innerHTML = labelsHtml;
             
-            // Render slots
+            // Render slots (30-minute intervals)
             let slotsHtml = '';
             for (let hour = startHour; hour < endHour; hour++) {
-                const timeStr = `${String(hour).padStart(2, '0')}:00`;
-                slotsHtml += `<div class="timeline-slot" data-hour="${hour}" onclick="handleSlotClick(${hour})"></div>`;
+                for (let minute = 0; minute < 60; minute += slotInterval) {
+                    const slotIndex = (hour - startHour) * 2 + (minute / slotInterval);
+                    const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    slotsHtml += `<div class="timeline-slot" data-slot-index="${slotIndex}" data-time="${timeStr}" onclick="handleSlotClick(${slotIndex})"></div>`;
+                }
             }
             timelineSlots.innerHTML = slotsHtml;
             
             // Mark past slots if today or before earliest available time
             if (isToday) {
                 for (let hour = startHour; hour < endHour; hour++) {
-                    if (hour <= currentHour) {
-                        const slot = timelineSlots.querySelector(`[data-hour="${hour}"]`);
-                        if (slot) {
-                            slot.classList.add('past');
+                    for (let minute = 0; minute < 60; minute += slotInterval) {
+                        const slotMinutes = hour * 60 + minute;
+                        const slotIndex = (hour - startHour) * 2 + (minute / slotInterval);
+                        if (slotMinutes < currentTotalMinutes) {
+                            const slot = timelineSlots.querySelector(`[data-slot-index="${slotIndex}"]`);
+                            if (slot) {
+                                slot.classList.add('past');
+                            }
                         }
                     }
                 }
             }
             
             // Mark slots before earliest available time
-            if (earliestAvailableHour !== null) {
+            if (earliestAvailableMinutes !== null) {
                 for (let hour = startHour; hour < endHour; hour++) {
-                    if (hour < earliestAvailableHour) {
-                        const slot = timelineSlots.querySelector(`[data-hour="${hour}"]`);
-                        if (slot) {
-                            slot.classList.add('past');
+                    for (let minute = 0; minute < 60; minute += slotInterval) {
+                        const slotMinutes = hour * 60 + minute;
+                        const slotIndex = (hour - startHour) * 2 + (minute / slotInterval);
+                        if (slotMinutes < earliestAvailableMinutes) {
+                            const slot = timelineSlots.querySelector(`[data-slot-index="${slotIndex}"]`);
+                            if (slot) {
+                                slot.classList.add('past');
+                            }
                         }
                     }
                 }
@@ -380,30 +397,40 @@
             
             // Mark booked slots
             reservations.forEach(reservation => {
-                const startHour = parseInt(reservation.start_time.split(':')[0]);
-                const endHour = parseInt(reservation.end_time.split(':')[0]);
+                const startParts = reservation.start_time.split(':').map(Number);
+                const endParts = reservation.end_time.split(':').map(Number);
+                const startMinutes = startParts[0] * 60 + startParts[1];
+                const endMinutes = endParts[0] * 60 + endParts[1];
                 
-                for (let hour = startHour; hour < endHour; hour++) {
-                    const slot = timelineSlots.querySelector(`[data-hour="${hour}"]`);
-                    if (slot) {
-                        slot.classList.add('booked');
+                for (let slotMinutes = startMinutes; slotMinutes < endMinutes; slotMinutes += slotInterval) {
+                    const slotHour = Math.floor(slotMinutes / 60);
+                    const slotMinute = slotMinutes % 60;
+                    if (slotHour >= startHour && slotHour < endHour) {
+                        const slotIndex = (slotHour - startHour) * 2 + (slotMinute / slotInterval);
+                        const slot = timelineSlots.querySelector(`[data-slot-index="${slotIndex}"]`);
+                        if (slot) {
+                            slot.classList.add('booked');
+                        }
                     }
                 }
             });
             
             // Add reservation blocks
             reservations.forEach(reservation => {
-                const startHour = parseInt(reservation.start_time.split(':')[0]);
-                const endHour = parseInt(reservation.end_time.split(':')[0]);
-                const duration = endHour - startHour;
+                const startParts = reservation.start_time.split(':').map(Number);
+                const endParts = reservation.end_time.split(':').map(Number);
+                const startMinutes = startParts[0] * 60 + startParts[1];
+                const endMinutes = endParts[0] * 60 + endParts[1];
+                const durationMinutes = endMinutes - startMinutes;
                 
-                if (duration > 0) {
-                    const slot = timelineSlots.querySelector(`[data-hour="${startHour}"]`);
+                if (durationMinutes > 0) {
+                    const startSlotIndex = (startParts[0] - startHour) * 2 + (startParts[1] / slotInterval);
+                    const slot = timelineSlots.querySelector(`[data-slot-index="${startSlotIndex}"]`);
                     if (slot) {
                         const block = document.createElement('div');
                         block.className = 'reservation-block';
-                        block.style.top = `${(startHour - 7) * 50}px`;
-                        block.style.height = `${duration * 50}px`;
+                        block.style.top = `${startSlotIndex * 25}px`; // 25px per 30-min slot
+                        block.style.height = `${(durationMinutes / slotInterval) * 25}px`;
                         block.textContent = `${formatTime(reservation.start_time)} - ${formatTime(reservation.end_time)}`;
                         timelineSlots.appendChild(block);
                     }
@@ -417,8 +444,15 @@
             return `${hour} AM`;
         }
 
-        function handleSlotClick(hour) {
-            const slot = document.querySelector(`[data-hour="${hour}"]`);
+        function formatTimeShort(timeStr) {
+            const [hour, minute] = timeStr.split(':').map(Number);
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+            return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
+        }
+
+        function handleSlotClick(slotIndex) {
+            const slot = document.querySelector(`[data-slot-index="${slotIndex}"]`);
             
             // Don't allow selection on booked slots
             if (slot.classList.contains('booked')) {
@@ -434,28 +468,28 @@
             
             if (selectedStartTime === null) {
                 // First click - set start time
-                selectedStartTime = hour;
+                selectedStartTime = slotIndex;
                 slot.classList.add('selected-start');
             } else if (selectedEndTime === null) {
                 // Second click - set end time
-                if (hour <= selectedStartTime) {
+                if (slotIndex <= selectedStartTime) {
                     showWarningSnackbar('End time must be after start time');
                     return;
                 }
                 
                 // Check if any slot in range is booked
-                const hasConflict = checkRangeConflict(selectedStartTime, hour);
+                const hasConflict = checkRangeConflict(selectedStartTime, slotIndex);
                 if (hasConflict) {
                     showWarningSnackbar('Selected time range conflicts with existing reservations');
                     return;
                 }
                 
-                selectedEndTime = hour;
+                selectedEndTime = slotIndex;
                 slot.classList.add('selected-end');
                 
                 // Highlight range
-                for (let h = selectedStartTime + 1; h < selectedEndTime; h++) {
-                    const rangeSlot = document.querySelector(`[data-hour="${h}"]`);
+                for (let i = selectedStartTime + 1; i < selectedEndTime; i++) {
+                    const rangeSlot = document.querySelector(`[data-slot-index="${i}"]`);
                     if (rangeSlot) {
                         rangeSlot.classList.add('in-range');
                     }
@@ -466,14 +500,14 @@
             } else {
                 // Reset and start new selection
                 clearTimeSelection();
-                selectedStartTime = hour;
+                selectedStartTime = slotIndex;
                 slot.classList.add('selected-start');
             }
         }
 
-        function checkRangeConflict(startHour, endHour) {
-            for (let h = startHour; h < endHour; h++) {
-                const slot = document.querySelector(`[data-hour="${h}"]`);
+        function checkRangeConflict(startSlotIndex, endSlotIndex) {
+            for (let i = startSlotIndex; i < endSlotIndex; i++) {
+                const slot = document.querySelector(`[data-slot-index="${i}"]`);
                 if (slot && slot.classList.contains('booked')) {
                     return true;
                 }
@@ -485,11 +519,18 @@
             const display = document.getElementById('selectedTimeDisplay');
             const duration = document.getElementById('selectionDuration');
             
-            const startTimeStr = `${String(selectedStartTime).padStart(2, '0')}:00`;
-            const endTimeStr = `${String(selectedEndTime).padStart(2, '0')}:00`;
+            const startTimeStr = slotIndexToTime(selectedStartTime);
+            const endTimeStr = slotIndexToTime(selectedEndTime);
             
             display.textContent = `${startTimeStr} - ${endTimeStr}`;
-            duration.textContent = `Duration: ${selectedEndTime - selectedStartTime} hour(s)`;
+            const durationMinutes = (selectedEndTime - selectedStartTime) * 30;
+            const hours = Math.floor(durationMinutes / 60);
+            const minutes = durationMinutes % 60;
+            if (minutes > 0) {
+                duration.textContent = `Duration: ${hours} hour(s) ${minutes} minute(s)`;
+            } else {
+                duration.textContent = `Duration: ${hours} hour(s)`;
+            }
             
             document.getElementById('selectionInfo').classList.remove('hidden');
         }
@@ -510,13 +551,22 @@
             document.getElementById('endTime').value = '';
         }
 
+        function slotIndexToTime(slotIndex) {
+            const startHour = 7;
+            const slotInterval = 30;
+            const totalMinutes = slotIndex * slotInterval;
+            const hour = startHour + Math.floor(totalMinutes / 60);
+            const minute = totalMinutes % 60;
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+
         function AutoConfirmTimeSelection() {
             if (selectedStartTime === null || selectedEndTime === null) {
                 return;
             }
             
-            const startTimeStr = `${String(selectedStartTime).padStart(2, '0')}:00`;
-            const endTimeStr = `${String(selectedEndTime).padStart(2, '0')}:00`;
+            const startTimeStr = slotIndexToTime(selectedStartTime);
+            const endTimeStr = slotIndexToTime(selectedEndTime);
             
             document.getElementById('startTime').value = startTimeStr;
             document.getElementById('endTime').value = endTimeStr;

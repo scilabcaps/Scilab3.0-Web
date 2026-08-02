@@ -3,118 +3,137 @@
  * Handles functionality for professor reservation history page
  */
 
-let reservationModal;
 const CACHE_KEY = 'professor_history_cache';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
-window.addEventListener('DOMContentLoaded', function () {
-    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-    if (user.username && user.role === 'Professor') {
-        reservationModal = new Modal('reservationModal');
-        loadCompletedReservations();
-    } else {
-        window.location.href = '../index.html';
-    }
-});
+const ProfessorHistory = {
+    reservations: [],
+    currentPage: 1,
+    pageSize: 10,
+    reservationModal: null,
 
-function getCachedData() {
-    try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (!cached) return null;
-        
-        const { data, timestamp } = JSON.parse(cached);
-        const now = Date.now();
-        
-        if (now - timestamp > CACHE_TTL) {
-            localStorage.removeItem(CACHE_KEY);
+    init() {
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        if (user.username && user.role === 'Professor') {
+            this.reservationModal = new Modal('reservationModal');
+            this.loadCompletedReservations();
+        } else {
+            window.location.href = '../../index.html';
+        }
+    },
+
+    getCachedData() {
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (!cached) return null;
+
+            const { data, timestamp } = JSON.parse(cached);
+            const now = Date.now();
+
+            if (now - timestamp > CACHE_TTL) {
+                localStorage.removeItem(CACHE_KEY);
+                return null;
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error reading cache:', error);
             return null;
         }
-        
-        return data;
-    } catch (error) {
-        console.error('Error reading cache:', error);
-        return null;
-    }
-}
+    },
 
-function setCachedData(data) {
-    try {
-        const cacheData = {
-            data: data,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-    } catch (error) {
-        console.error('Error setting cache:', error);
-    }
-}
+    setCachedData(data) {
+        try {
+            const cacheData = {
+                data: data,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        } catch (error) {
+            console.error('Error setting cache:', error);
+        }
+    },
 
-function clearCache() {
-    localStorage.removeItem(CACHE_KEY);
-}
+    clearCache() {
+        localStorage.removeItem(CACHE_KEY);
+    },
 
-async function loadCompletedReservations() {
-    try {
-        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-        
-        // Try to get cached data first
-        const cachedData = getCachedData();
-        if (cachedData) {
-            displayReservations(cachedData);
+    async loadCompletedReservations() {
+        try {
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+
+            const cachedData = this.getCachedData();
+            if (cachedData) {
+                this.reservations = cachedData || [];
+                this.currentPage = 1;
+                this.displayReservations();
+                return;
+            }
+
+            const { data: reservations, error } = await supabase
+                .from('reservations')
+                .select(`
+                    *,
+                    rooms(room_name),
+                    user_info!inner(first_name, last_name)
+                `)
+                .in('status', ['Completed', 'Cancelled', 'Declined'])
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            this.setCachedData(reservations);
+            this.reservations = reservations || [];
+            this.currentPage = 1;
+            this.displayReservations();
+        } catch (error) {
+            console.error('Error loading reservations:', error);
+            this.showError('Failed to load reservation history');
+        }
+    },
+
+    displayReservations() {
+        const emptyState = document.getElementById('emptyState');
+
+        if (!this.reservations || this.reservations.length === 0) {
+            const tbody = document.getElementById('reservationsTable');
+            if (tbody) tbody.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'block';
+            this.removePagination();
             return;
         }
-        
-        // Query completed reservations from Supabase
-        const { data: reservations, error } = await supabase
-            .from('reservations')
-            .select(`
-                *,
-                rooms(room_name),
-                user_info!inner(first_name, last_name)
-            `)
-            .in('status', ['Completed', 'Cancelled', 'Declined'])
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (emptyState) emptyState.style.display = 'none';
+        this.renderPage();
+        this.renderPaginationControls();
+    },
 
-        // Cache the results
-        setCachedData(reservations);
-        displayReservations(reservations);
-    } catch (error) {
-        console.error('Error loading reservations:', error);
-        document.getElementById('emptyState').style.display = 'block';
-    }
-}
+    renderPage() {
+        const tbody = document.getElementById('reservationsTable');
+        const start = (this.currentPage - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        const pageData = this.reservations.slice(start, end);
 
-function displayReservations(reservations) {
-    const tbody = document.getElementById('reservationsTable');
-    if (!reservations || reservations.length === 0) {
-        document.getElementById('emptyState').style.display = 'block';
-        tbody.innerHTML = '';
-    } else {
-        document.getElementById('emptyState').style.display = 'none';
-        tbody.innerHTML = reservations.map(res => {
-            // Determine status color based on reservation status
-            let statusColor = '#119822'; // Default green for completed
+        tbody.innerHTML = pageData.map(res => {
+            let statusColor = '#119822';
             if (res.status === 'Approved') {
-                statusColor = '#119822'; // Green
+                statusColor = '#119822';
             } else if (res.status === 'Rejected' || res.status === 'Declined') {
-                statusColor = '#dc2626'; // Red
+                statusColor = '#dc2626';
             } else if (res.status === 'Completed') {
-                statusColor = '#6b7280'; // Gray for completed
+                statusColor = '#6b7280';
             } else if (res.status === 'Cancelled') {
-                statusColor = '#f59e0b'; // Orange for cancelled
+                statusColor = '#f59e0b';
             }
-            
-            // Format resources to ensure proper display
+
             let resourcesDisplay = res.room_name || 'Lab Room';
             if (!resourcesDisplay) {
                 resourcesDisplay = '<span style="color: #6b7280;">No room specified</span>';
             }
 
             const studentName = res.user_info ? `${res.user_info.first_name} ${res.user_info.last_name}` : 'Unknown';
-            
+
             return `
                 <tr>
                     <td>${res.reservation_date}</td>
@@ -124,80 +143,144 @@ function displayReservations(reservations) {
                     <td>${res.additional_note || 'N/A'}</td>
                     <td><span style="color: ${statusColor}; font-weight: 600;">${res.status}</span></td>
                     <td>
-                        <button class="btn btn-view" onclick="viewDetails(${res.reservation_id})">View</button>
+                        <button class="btn btn-view" onclick="ProfessorHistory.viewDetails(${res.reservation_id})">View</button>
                     </td>
                 </tr>
             `;
         }).join('');
-    }
-}
+    },
 
-async function viewDetails(id) {
-    try {
-        const { data: reservation, error } = await supabase
-            .from('reservations')
-            .select(`
-                *,
-                rooms(room_name),
-                user_info!inner(first_name, last_name)
-            `)
-            .eq('reservation_id', id)
-            .single();
+    renderPaginationControls() {
+        this.removePagination();
+        if (this.reservations.length <= this.pageSize) return;
 
-        if (error) throw error;
-
-        // Determine status color
-        let statusColor = '#119822';
-        if (reservation.status === 'Rejected' || reservation.status === 'Declined') {
-            statusColor = '#dc2626';
-        } else if (reservation.status === 'Completed') {
-            statusColor = '#6b7280';
-        } else if (reservation.status === 'Cancelled') {
-            statusColor = '#f59e0b';
-        }
-
-        const studentName = reservation.user_info ? 
-            `${reservation.user_info.first_name} ${reservation.user_info.last_name}` : 'Unknown';
-        const roomName = reservation.rooms?.room_name || 'Lab Room';
-
-        const content = `
-            <div class="summary-item">
-                <div class="summary-label">Reservation ID</div>
-                <div class="summary-value">${reservation.reservation_id}</div>
+        const totalPages = Math.ceil(this.reservations.length / this.pageSize);
+        const container = document.createElement('div');
+        container.className = 'pagination-container';
+        container.id = 'paginationContainer';
+        container.innerHTML = `
+            <div class="pagination-info" id="paginationInfo">Showing ${this.currentPage} of ${totalPages}</div>
+            <div class="pagination-controls">
+                <button onclick="ProfessorHistory.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''}>&laquo; First</button>
+                <button onclick="ProfessorHistory.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>&lsaquo; Prev</button>
+                <button onclick="ProfessorHistory.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>Next &rsaquo;</button>
+                <button onclick="ProfessorHistory.goToPage(${totalPages})" ${this.currentPage === totalPages ? 'disabled' : ''}>Last &raquo;</button>
             </div>
-            <div class="summary-item">
-                <div class="summary-label">Date</div>
-                <div class="summary-value">${reservation.reservation_date}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Time</div>
-                <div class="summary-value">${reservation.start_time} - ${reservation.end_time}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Room</div>
-                <div class="summary-value">${roomName}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Student</div>
-                <div class="summary-value">${studentName}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Additional Note</div>
-                <div class="summary-value">${reservation.additional_note || 'N/A'}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Status</div>
-                <div class="summary-value" style="color: ${statusColor}; font-weight: 600;">${reservation.status}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Created At</div>
-                <div class="summary-value">${new Date(reservation.created_at).toLocaleString()}</div>
+            <div class="pagination-size">
+                <label for="pageSizeSelect">Rows:</label>
+                <select id="pageSizeSelect" onchange="ProfessorHistory.changePageSize(this.value)">
+                    ${[5, 10, 25, 50].map(s => `<option value="${s}" ${this.pageSize === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
             </div>
         `;
 
-        reservationModal.open('Reservation Details', content);
-    } catch (error) {
-        console.error('Error fetching reservation details:', error);
-        reservationModal.open('Error', '<p style="color: #dc2626;">Failed to load reservation details.</p>');
+        const table = document.querySelector('.data-table table');
+        if (table && table.parentNode) {
+            table.parentNode.insertBefore(container, table.nextSibling);
+        }
+    },
+
+    removePagination() {
+        const existing = document.getElementById('paginationContainer');
+        if (existing) existing.remove();
+    },
+
+    goToPage(page) {
+        const totalPages = Math.ceil(this.reservations.length / this.pageSize);
+        if (page < 1 || page > totalPages) return;
+        this.currentPage = page;
+        this.renderPage();
+        this.renderPaginationControls();
+    },
+
+    changePageSize(size) {
+        this.pageSize = parseInt(size);
+        this.currentPage = 1;
+        this.renderPage();
+        this.renderPaginationControls();
+    },
+
+    async viewDetails(id) {
+        try {
+            const { data: reservation, error } = await supabase
+                .from('reservations')
+                .select(`
+                    *,
+                    rooms(room_name),
+                    user_info!inner(first_name, last_name)
+                `)
+                .eq('reservation_id', id)
+                .single();
+
+            if (error) throw error;
+
+            let statusColor = '#119822';
+            if (reservation.status === 'Rejected' || reservation.status === 'Declined') {
+                statusColor = '#dc2626';
+            } else if (reservation.status === 'Completed') {
+                statusColor = '#6b7280';
+            } else if (reservation.status === 'Cancelled') {
+                statusColor = '#f59e0b';
+            }
+
+            const studentName = reservation.user_info ?
+                `${reservation.user_info.first_name} ${reservation.user_info.last_name}` : 'Unknown';
+            const roomName = reservation.rooms?.room_name || 'Lab Room';
+
+            const content = `
+                <div class="summary-item">
+                    <div class="summary-label">Reservation ID</div>
+                    <div class="summary-value">${reservation.reservation_id}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Date</div>
+                    <div class="summary-value">${reservation.reservation_date}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Time</div>
+                    <div class="summary-value">${reservation.start_time} - ${reservation.end_time}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Room</div>
+                    <div class="summary-value">${roomName}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Student</div>
+                    <div class="summary-value">${studentName}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Additional Note</div>
+                    <div class="summary-value">${reservation.additional_note || 'N/A'}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Status</div>
+                    <div class="summary-value" style="color: ${statusColor}; font-weight: 600;">${reservation.status}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Created At</div>
+                    <div class="summary-value">${new Date(reservation.created_at).toLocaleString()}</div>
+                </div>
+            `;
+
+            this.reservationModal.open('Reservation Details', content);
+        } catch (error) {
+            console.error('Error fetching reservation details:', error);
+            this.reservationModal.open('Error', '<p style="color: #dc2626;">Failed to load reservation details.</p>');
+        }
+    },
+
+    showError(message) {
+        const tbody = document.getElementById('reservationsTable');
+        const emptyState = document.getElementById('emptyState');
+
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
+        }
+        if (emptyState) emptyState.style.display = 'block';
+        this.removePagination();
     }
-}
+};
+
+window.addEventListener('DOMContentLoaded', function () {
+    ProfessorHistory.init();
+});

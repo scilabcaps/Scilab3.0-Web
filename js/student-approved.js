@@ -6,6 +6,8 @@
 class StudentApprovedReservations {
     constructor() {
         this.reservations = [];
+        this.currentPage = 1;
+        this.pageSize = 10;
         this.init();
     }
 
@@ -29,7 +31,7 @@ class StudentApprovedReservations {
             this.loadUserInfo();
             this.loadApprovedReservations();
         } else {
-            window.location.href = '../index.html';
+            window.location.href = '../../index.html';
         }
     }
 
@@ -74,8 +76,8 @@ class StudentApprovedReservations {
                 startTime: res.start_time,
                 endTime: res.end_time,
                 resources: res.room_name || 'Lab Room',
-                year: res.year,
-                section: res.section,
+                year_section: res.year_section,
+                course: res.course,
                 professor: res.professor,
                 status: res.status,
                 professor_approval: res.professor_approval,
@@ -96,13 +98,74 @@ class StudentApprovedReservations {
         if (!this.reservations || this.reservations.length === 0) {
             if (tbody) tbody.innerHTML = '';
             if (emptyState) emptyState.style.display = 'block';
+            this.removePagination();
             return;
         }
 
         if (emptyState) emptyState.style.display = 'none';
 
-        const reservationsHTML = this.reservations.map(res => this.createReservationRow(res)).join('');
+        this.currentPage = 1;
+        this.renderPage();
+        this.renderPaginationControls();
+    }
+
+    renderPage() {
+        const tbody = document.getElementById('reservationsTable');
+        const start = (this.currentPage - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        const pageData = this.reservations.slice(start, end);
+        const reservationsHTML = pageData.map(res => this.createReservationRow(res)).join('');
         if (tbody) tbody.innerHTML = reservationsHTML;
+    }
+
+    renderPaginationControls() {
+        this.removePagination();
+        if (this.reservations.length <= this.pageSize) return;
+
+        const totalPages = Math.ceil(this.reservations.length / this.pageSize);
+        const container = document.createElement('div');
+        container.className = 'pagination-container';
+        container.id = 'paginationContainer';
+        container.innerHTML = `
+            <div class="pagination-info" id="paginationInfo">Showing ${this.currentPage} of ${totalPages}</div>
+            <div class="pagination-controls">
+                <button onclick="studentApproved.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''}>&laquo; First</button>
+                <button onclick="studentApproved.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>&lsaquo; Prev</button>
+                <button onclick="studentApproved.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>Next &rsaquo;</button>
+                <button onclick="studentApproved.goToPage(${totalPages})" ${this.currentPage === totalPages ? 'disabled' : ''}>Last &raquo;</button>
+            </div>
+            <div class="pagination-size">
+                <label for="pageSizeSelect">Rows:</label>
+                <select id="pageSizeSelect" onchange="studentApproved.changePageSize(this.value)">
+                    ${[5, 10, 25, 50].map(s => `<option value="${s}" ${this.pageSize === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+            </div>
+        `;
+
+        const table = document.querySelector('.data-table table');
+        if (table && table.parentNode) {
+            table.parentNode.insertBefore(container, table.nextSibling);
+        }
+    }
+
+    removePagination() {
+        const existing = document.getElementById('paginationContainer');
+        if (existing) existing.remove();
+    }
+
+    goToPage(page) {
+        const totalPages = Math.ceil(this.reservations.length / this.pageSize);
+        if (page < 1 || page > totalPages) return;
+        this.currentPage = page;
+        this.renderPage();
+        this.renderPaginationControls();
+    }
+
+    changePageSize(size) {
+        this.pageSize = parseInt(size);
+        this.currentPage = 1;
+        this.renderPage();
+        this.renderPaginationControls();
     }
 
     createReservationRow(reservation) {
@@ -114,7 +177,8 @@ class StudentApprovedReservations {
                 <td>${reservation.date}</td>
                 <td>${timeRange}</td>
                 <td>${reservation.resources || 'No resources'}</td>
-                <td>${reservation.year ? `${reservation.year} - ${reservation.section || ''}` : 'N/A'}</td>
+                <td>${reservation.year_section || 'N/A'}</td>
+                <td>${reservation.course || 'N/A'}</td>
                 <td>${reservation.professor || 'N/A'}</td>
                 <td>${approvalStatus}</td>
             </tr>
@@ -184,11 +248,12 @@ class StudentApprovedReservations {
     showError(message) {
         const tbody = document.getElementById('reservationsTable');
         const emptyState = document.getElementById('emptyState');
-        
+
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
         }
         if (emptyState) emptyState.style.display = 'none';
+        this.removePagination();
     }
 
     refresh() {

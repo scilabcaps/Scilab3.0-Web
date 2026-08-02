@@ -4,146 +4,157 @@
  */
 
 const CACHE_KEY = 'student_approvals_cache';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes (short-term cache for frequently changing data)
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-window.addEventListener('DOMContentLoaded', function () {
-    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-    if (user.username && user.role === 'Professor') {
-        loadPendingRequests();
-    } else {
-        window.location.href = '../index.html';
-    }
-});
+const StudentApprovals = {
+    requests: [],
+    currentPage: 1,
+    pageSize: 10,
 
-function getCachedData() {
-    try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (!cached) return null;
-        
-        const { data, timestamp } = JSON.parse(cached);
-        const now = Date.now();
-        
-        if (now - timestamp > CACHE_TTL) {
-            localStorage.removeItem(CACHE_KEY);
+    init() {
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        if (user.username && user.role === 'Professor') {
+            this.loadPendingRequests();
+        } else {
+            window.location.href = '../../index.html';
+        }
+    },
+
+    getCachedData() {
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (!cached) return null;
+
+            const { data, timestamp } = JSON.parse(cached);
+            const now = Date.now();
+
+            if (now - timestamp > CACHE_TTL) {
+                localStorage.removeItem(CACHE_KEY);
+                return null;
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error reading cache:', error);
             return null;
         }
-        
-        return data;
-    } catch (error) {
-        console.error('Error reading cache:', error);
-        return null;
-    }
-}
+    },
 
-function setCachedData(data) {
-    try {
-        const cacheData = {
-            data: data,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-    } catch (error) {
-        console.error('Error setting cache:', error);
-    }
-}
-
-function clearCache() {
-    localStorage.removeItem(CACHE_KEY);
-}
-
-async function loadPendingRequests() {
-    try {
-        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-        const professorName = user.firstname + ' ' + user.lastname;
-        
-        console.log('Loading requests for professor:', professorName);
-        
-        // Try to get cached data first
-        const cachedData = getCachedData();
-        if (cachedData) {
-            displayRequests(cachedData);
-            return;
+    setCachedData(data) {
+        try {
+            const cacheData = {
+                data: data,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        } catch (error) {
+            console.error('Error setting cache:', error);
         }
-        
-        // Query reservations pending professor approval from Supabase
-        const { data: requests, error } = await supabase
-            .from('reservations')
-            .select(`
-                *,
-                rooms(room_name),
-                reservation_items(
-                    lab_assets(item_name)
-                ),
-                chemical_usage(
-                    chemicals(chemical_name)
-                )
-            `)
-            .eq('professor_approval', 'Pending')
-            .eq('professor', professorName)
-            .order('created_at', { ascending: false });
+    },
 
-        console.log('Requests found:', requests);
-        console.log('Error:', error);
+    clearCache() {
+        localStorage.removeItem(CACHE_KEY);
+    },
 
-        if (error) throw error;
+    async loadPendingRequests() {
+        try {
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+            const professorName = user.firstname + ' ' + user.lastname;
 
-        // Fetch user info for each reservation
-        if (requests && requests.length > 0) {
-            const userIds = [...new Set(requests.map(r => r.user_id).filter(id => id))];
-            const { data: users, error: userError } = await supabase
-                .from('user_info')
-                .select('id, first_name, last_name')
-                .in('id', userIds);
-            
-            if (userError) console.error('Error fetching users:', userError);
-            
-            // Map users by id for easy lookup
-            const userMap = {};
-            if (users) {
-                users.forEach(u => {
-                    userMap[u.id] = u;
+            console.log('Loading requests for professor:', professorName);
+
+            const cachedData = this.getCachedData();
+            if (cachedData) {
+                this.requests = cachedData || [];
+                this.currentPage = 1;
+                this.displayRequests();
+                return;
+            }
+
+            const { data: requests, error } = await supabase
+                .from('reservations')
+                .select(`
+                    *,
+                    rooms(room_name),
+                    reservation_items(
+                        lab_assets(item_name)
+                    ),
+                    chemical_usage(
+                        chemicals(chemical_name)
+                    )
+                `)
+                .eq('professor_approval', 'Pending')
+                .eq('professor', professorName)
+                .order('created_at', { ascending: false });
+
+            console.log('Requests found:', requests);
+            console.log('Error:', error);
+
+            if (error) throw error;
+
+            if (requests && requests.length > 0) {
+                const userIds = [...new Set(requests.map(r => r.user_id).filter(id => id))];
+                const { data: users, error: userError } = await supabase
+                    .from('user_info')
+                    .select('id, first_name, last_name, year_section')
+                    .in('id', userIds);
+
+                if (userError) console.error('Error fetching users:', userError);
+
+                const userMap = {};
+                if (users) {
+                    users.forEach(u => {
+                        userMap[u.id] = u;
+                    });
+                }
+
+                requests.forEach(req => {
+                    req.user_info = userMap[req.user_id] || null;
                 });
             }
-            
-            // Attach user info to each request
-            requests.forEach(req => {
-                req.user_info = userMap[req.user_id] || null;
-            });
+
+            this.requests = requests || [];
+            this.currentPage = 1;
+            this.setCachedData(this.requests);
+            this.displayRequests();
+        } catch (error) {
+            console.error('Error loading requests:', error);
+            this.showError('Failed to load pending requests');
+        }
+    },
+
+    displayRequests() {
+        const emptyState = document.getElementById('emptyState');
+
+        if (!this.requests || this.requests.length === 0) {
+            const tbody = document.getElementById('reservationsTable');
+            if (tbody) tbody.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'block';
+            this.removePagination();
+            return;
         }
 
-        // Cache the results
-        setCachedData(requests);
-        displayRequests(requests);
-    } catch (error) {
-        console.error('Error loading requests:', error);
-        document.getElementById('emptyState').style.display = 'block';
-    }
-}
+        if (emptyState) emptyState.style.display = 'none';
+        this.renderPage();
+        this.renderPaginationControls();
+    },
 
-function displayRequests(requests) {
-    const tbody = document.getElementById('reservationsTable');
-    if (!requests || requests.length === 0) {
-        document.getElementById('emptyState').style.display = 'block';
-        tbody.innerHTML = '';
-    } else {
-        document.getElementById('emptyState').style.display = 'none';
-        tbody.innerHTML = requests.map(req => {
-            // Format year and section
-            const yearSection = req.year && req.section ? `${req.year} - ${req.section}` : 
-                              req.year ? req.year : 
-                              req.section ? req.section : 'N/A';
-            
+    renderPage() {
+        const tbody = document.getElementById('reservationsTable');
+        const start = (this.currentPage - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        const pageData = this.requests.slice(start, end);
+
+        tbody.innerHTML = pageData.map(req => {
+            const yearSection = req.user_info?.year_section || 'N/A';
             const studentName = req.user_info ? `${req.user_info.first_name} ${req.user_info.last_name}` : 'N/A';
-            
-            // Build resources display
+
             let resourcesDisplay = '';
-            
-            // Add room if present
+
             if (req.room_name) {
                 resourcesDisplay += req.room_name;
             }
-            
-            // Add equipment and glassware from reservation_items
+
             if (req.reservation_items && req.reservation_items.length > 0) {
                 const assets = req.reservation_items
                     .map(item => item.lab_assets ? item.lab_assets.item_name : 'Unknown')
@@ -151,8 +162,7 @@ function displayRequests(requests) {
                 if (resourcesDisplay) resourcesDisplay += '<br>';
                 resourcesDisplay += assets;
             }
-            
-            // Add chemicals from chemical_usage
+
             if (req.chemical_usage && req.chemical_usage.length > 0) {
                 const chemicals = req.chemical_usage
                     .map(chem => chem.chemicals ? chem.chemicals.chemical_name : 'Unknown')
@@ -160,9 +170,9 @@ function displayRequests(requests) {
                 if (resourcesDisplay) resourcesDisplay += '<br>';
                 resourcesDisplay += chemicals;
             }
-            
+
             if (!resourcesDisplay) resourcesDisplay = 'No resources';
-            
+
             return `
                 <tr>
                     <td>${studentName}</td>
@@ -172,80 +182,139 @@ function displayRequests(requests) {
                     <td>${yearSection}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-approve" onclick="approveRequest(${req.reservation_id})">Approve</button>
-                            <button class="btn btn-decline" onclick="declineRequest(${req.reservation_id})">Decline</button>
+                            <button class="btn btn-approve" onclick="StudentApprovals.approveRequest(${req.reservation_id})">Approve</button>
+                            <button class="btn btn-decline" onclick="StudentApprovals.declineRequest(${req.reservation_id})">Decline</button>
                         </div>
                     </td>
                 </tr>
             `;
         }).join('');
-    }
-}
+    },
 
-async function approveRequest(id) {
-    const confirmed = await showConfirmDialog(
-        'Approve Request',
-        'Are you sure you want to approve this request? It will be sent to admin for final approval.',
-        'Approve',
-        'Cancel',
-        'success'
-    );
-    
-    if (confirmed) {
-        try {
-            // Update reservation in Supabase
-            const { error } = await supabase
-                .from('reservations')
-                .update({ 
-                    professor_approval: 'Approved',
-                    status: 'Pending'
-                })
-                .eq('reservation_id', id);
+    renderPaginationControls() {
+        this.removePagination();
+        if (this.requests.length <= this.pageSize) return;
 
-            if (error) throw error;
+        const totalPages = Math.ceil(this.requests.length / this.pageSize);
+        const container = document.createElement('div');
+        container.className = 'pagination-container';
+        container.id = 'paginationContainer';
+        container.innerHTML = `
+            <div class="pagination-info" id="paginationInfo">Showing ${this.currentPage} of ${totalPages}</div>
+            <div class="pagination-controls">
+                <button onclick="StudentApprovals.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''}>&laquo; First</button>
+                <button onclick="StudentApprovals.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>&lsaquo; Prev</button>
+                <button onclick="StudentApprovals.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>Next &rsaquo;</button>
+                <button onclick="StudentApprovals.goToPage(${totalPages})" ${this.currentPage === totalPages ? 'disabled' : ''}>Last &raquo;</button>
+            </div>
+            <div class="pagination-size">
+                <label for="pageSizeSelect">Rows:</label>
+                <select id="pageSizeSelect" onchange="StudentApprovals.changePageSize(this.value)">
+                    ${[5, 10, 25, 50].map(s => `<option value="${s}" ${this.pageSize === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+            </div>
+        `;
 
-            // Clear cache to ensure fresh data on next load
-            clearCache();
-            
-            showSuccessSnackbar('Request approved! Sent to admin for final approval.');
-            loadPendingRequests();
-        } catch (error) {
-            console.error('Error:', error);
-            showErrorSnackbar('Error approving request. Please try again.');
+        const table = document.querySelector('.data-table table');
+        if (table && table.parentNode) {
+            table.parentNode.insertBefore(container, table.nextSibling);
         }
-    }
-}
+    },
 
-async function declineRequest(id) {
-    const confirmed = await showConfirmDialog(
-        'Decline Request',
-        'Are you sure you want to decline this request? This action cannot be undone.',
-        'Decline',
-        'Cancel',
-        'danger'
-    );
-    
-    if (confirmed) {
-        try {
-            // Update reservation in Supabase
-            const { error } = await supabase
-                .from('reservations')
-                .update({ 
-                    professor_approval: 'Declined',
-                    status: 'Declined'
-                })
-                .eq('reservation_id', id);
+    removePagination() {
+        const existing = document.getElementById('paginationContainer');
+        if (existing) existing.remove();
+    },
 
-            if (error) throw error;
+    goToPage(page) {
+        const totalPages = Math.ceil(this.requests.length / this.pageSize);
+        if (page < 1 || page > totalPages) return;
+        this.currentPage = page;
+        this.renderPage();
+        this.renderPaginationControls();
+    },
 
-            // Clear cache to ensure fresh data on next load
-            clearCache();
-            
-            showSuccessSnackbar('Request declined successfully.');
-            loadPendingRequests();
-        } catch (error) {
-            console.error('Error:', error);
-            showErrorSnackbar('Error declining request. Please try again.');
+    changePageSize(size) {
+        this.pageSize = parseInt(size);
+        this.currentPage = 1;
+        this.renderPage();
+        this.renderPaginationControls();
+    },
+
+    async approveRequest(id) {
+        const confirmed = await showConfirmDialog(
+            'Approve Request',
+            'Are you sure you want to approve this request? It will be sent to admin for final approval.',
+            'Approve',
+            'Cancel',
+            'success'
+        );
+
+        if (confirmed) {
+            try {
+                const { error } = await supabase
+                    .from('reservations')
+                    .update({
+                        professor_approval: 'Approved',
+                        status: 'Pending'
+                    })
+                    .eq('reservation_id', id);
+
+                if (error) throw error;
+
+                this.clearCache();
+                showSuccessSnackbar('Request approved! Sent to admin for final approval.');
+                this.loadPendingRequests();
+            } catch (error) {
+                console.error('Error:', error);
+                showErrorSnackbar('Error approving request. Please try again.');
+            }
         }
+    },
+
+    async declineRequest(id) {
+        const confirmed = await showConfirmDialog(
+            'Decline Request',
+            'Are you sure you want to decline this request? This action cannot be undone.',
+            'Decline',
+            'Cancel',
+            'danger'
+        );
+
+        if (confirmed) {
+            try {
+                const { error } = await supabase
+                    .from('reservations')
+                    .update({
+                        professor_approval: 'Declined',
+                        status: 'Declined'
+                    })
+                    .eq('reservation_id', id);
+
+                if (error) throw error;
+
+                this.clearCache();
+                showSuccessSnackbar('Request declined successfully.');
+                this.loadPendingRequests();
+            } catch (error) {
+                console.error('Error:', error);
+                showErrorSnackbar('Error declining request. Please try again.');
+            }
+        }
+    },
+
+    showError(message) {
+        const tbody = document.getElementById('reservationsTable');
+        const emptyState = document.getElementById('emptyState');
+
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
+        }
+        if (emptyState) emptyState.style.display = 'block';
+        this.removePagination();
     }
-}
+};
+
+window.addEventListener('DOMContentLoaded', function () {
+    StudentApprovals.init();
+});

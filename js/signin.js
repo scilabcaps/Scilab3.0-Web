@@ -78,12 +78,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Fetch role from public.user_info table
             const { data: userInfo, error: userInfoError } = await window.supabase
                 .from('user_info')
-                .select('role, username, first_name, last_name, middle_name, phone')
+                .select('role, username, first_name, last_name, phone, isApproved')
                 .eq('id', user.id)
                 .single();
 
             if (userInfoError) {
                 showErrorSnackbar('Failed to fetch user information. Please try again.');
+                setButtonLoading(loginBtn, false);
+                return;
+            }
+
+            // Check if account is approved
+            if (userInfo.isApproved === 0) {
+                showErrorSnackbar('Your account is waiting for approval by an authorized person.');
                 setButtonLoading(loginBtn, false);
                 return;
             }
@@ -98,7 +105,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 username: userInfo.username || username,
                 firstname: userInfo.first_name,
                 lastname: userInfo.last_name,
-                middle_name: userInfo.middle_name,
                 phone: userInfo.phone
             };
             sessionStorage.setItem('user', JSON.stringify(userData));
@@ -109,10 +115,10 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 switch (role) {
                     case 'professor':
-                        window.location.href = 'pages/professor/professor_dashboard.html';
+                        window.location.href = '/pages/professor/professor_dashboard.html';
                         break;
                     case 'student':
-                        window.location.href = 'pages/student/student_dashboard.html';
+                        window.location.href = '/pages/student/student_dashboard.html';
                         break;
                     default:
                         showErrorSnackbar('Unknown role. Please contact administrator.');

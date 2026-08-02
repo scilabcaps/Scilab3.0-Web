@@ -20,6 +20,7 @@ CREATE TABLE public.chemicals (
   is_deleted boolean DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  expiration date,
   CONSTRAINT chemicals_pkey PRIMARY KEY (chemical_id)
 );
 CREATE TABLE public.lab_assets (
@@ -41,12 +42,12 @@ CREATE TABLE public.reservations (
   reservation_date date NOT NULL,
   start_time time without time zone NOT NULL,
   end_time time without time zone NOT NULL,
-  year text,
-  section character varying,
+  year_section text,
+  course text,
   professor character varying,
   professor_approval text NOT NULL DEFAULT 'Pending'::text CHECK (professor_approval = ANY (ARRAY['Pending'::text, 'Approved'::text, 'Completed'::text, 'Cancelled'::text, 'Declined'::text])),
   admin_approval text NOT NULL DEFAULT 'Pending'::text CHECK (admin_approval = ANY (ARRAY['Pending'::text, 'Approved'::text, 'Completed'::text, 'Cancelled'::text, 'Declined'::text])),
-  status text NOT NULL DEFAULT 'Pending'::text CHECK (status = ANY (ARRAY['Pending'::text, 'Approved'::text, 'Ongoing'::text, 'Partially Returned'::text, 'Completed'::text, 'Cancelled'::text])),
+  status text NOT NULL DEFAULT 'Pending'::text CHECK (status = ANY (ARRAY['Pending'::text, 'Approved'::text, 'Ongoing'::text, 'Partially Returned'::text, 'Completed'::text, 'Cancelled'::text, 'Unreturned'::text])),
   additional_note character varying,
   is_deleted boolean DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -101,12 +102,14 @@ CREATE TABLE public.user_info (
   email text,
   first_name text,
   last_name text,
-  middle_name text,
   phone text,
   role text NOT NULL DEFAULT 'student'::text CHECK (role = ANY (ARRAY['admin'::text, 'student'::text, 'professor'::text])),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   is_banned boolean DEFAULT false,
+  isApproved integer CHECK ("isApproved" = ANY (ARRAY[0, 1, 2])),
+  year_section text,
+  course text,
   CONSTRAINT user_info_pkey PRIMARY KEY (id),
   CONSTRAINT user_info_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
@@ -122,4 +125,17 @@ CREATE TABLE public.announcement (
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT announcement_pkey PRIMARY KEY (id),
   CONSTRAINT announcement_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.user_info(id)
+);
+CREATE TABLE public.audit_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  action_type text NOT NULL,
+  entity_type text NOT NULL,
+  entity_id text,
+  old_values jsonb,
+  new_values jsonb,
+  description text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT audit_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT audit_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );

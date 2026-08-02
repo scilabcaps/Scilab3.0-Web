@@ -30,7 +30,7 @@ class ProfessorDashboard {
             this.loadUserInfo();
             this.updateWelcomeMessage();
         } else {
-            window.location.href = '../index.html';
+            window.location.href = '../../index.html';
         }
     }
 
