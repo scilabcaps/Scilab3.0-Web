@@ -315,10 +315,10 @@ async function logout() {
             console.error('Logout error:', error);
         }
         sessionStorage.clear();
-        window.location.href = '../index.html';
+        window.location.href = '../../index.html';
     } catch (error) {
         console.error('Error during logout:', error);
         sessionStorage.clear();
-        window.location.href = '../index.html';
+        window.location.href = '../../index.html';
     }
 }
