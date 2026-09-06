@@ -3,8 +3,7 @@
  * Handles functionality for professor pending reservations page
  */
 
-const CACHE_KEY = 'professor_pending_cache';
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL = 60 * 1000; // 1 minute
 
 const ProfessorPending = {
     allReservations: [],
@@ -14,7 +13,7 @@ const ProfessorPending = {
 
     init() {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-        if (user.username && user.role === 'Professor') {
+        if (user.username && String(user.role || '').toLowerCase() === 'professor') {
             this.loadPendingReservations();
             this.setupTabButtons();
         } else {
@@ -22,16 +21,20 @@ const ProfessorPending = {
         }
     },
 
-    getCachedData() {
+    getCacheKey(userId) {
+        return `professor_pending_cache:${userId}`;
+    },
+
+    getCachedData(userId) {
         try {
-            const cached = localStorage.getItem(CACHE_KEY);
+            const cached = localStorage.getItem(this.getCacheKey(userId));
             if (!cached) return null;
 
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
             if (now - timestamp > CACHE_TTL) {
-                localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(this.getCacheKey(userId));
                 return null;
             }
 
@@ -42,33 +45,25 @@ const ProfessorPending = {
         }
     },
 
-    setCachedData(data) {
+    setCachedData(userId, data) {
         try {
             const cacheData = {
                 data: data,
                 timestamp: Date.now()
             };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            localStorage.setItem(this.getCacheKey(userId), JSON.stringify(cacheData));
         } catch (error) {
             console.error('Error setting cache:', error);
         }
     },
 
-    clearCache() {
-        localStorage.removeItem(CACHE_KEY);
+    clearCache(userId) {
+        if (userId) localStorage.removeItem(this.getCacheKey(userId));
     },
 
     async loadPendingReservations() {
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-
-            const cachedData = this.getCachedData();
-            if (cachedData) {
-                this.allReservations = cachedData || [];
-                this.currentPage = 1;
-                this.filterReservations(this.currentFilter);
-                return;
-            }
 
             const { data: reservations, error } = await supabase
                 .from('reservations')
@@ -89,7 +84,6 @@ const ProfessorPending = {
 
             if (error) throw error;
 
-            this.setCachedData(reservations);
             this.allReservations = reservations || [];
             this.currentPage = 1;
             this.filterReservations(this.currentFilter);

@@ -25,8 +25,22 @@ function togglePassword() {
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('loginForm');
-    const loginBtn = form.querySelector('.login-btn');
     if (!form) return;
+    const loginBtn = form.querySelector('.login-btn');
+
+    async function denyLogin(message) {
+        // signInWithPassword creates a Supabase session before account approval is
+        // checked, so clear it whenever the application denies access.
+        try {
+            await window.supabase.auth.signOut();
+        } catch (signOutError) {
+            console.error('Failed to clear denied login session:', signOutError);
+        }
+
+        sessionStorage.removeItem('user');
+        showErrorSnackbar(message);
+        setButtonLoading(loginBtn, false);
+    }
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -83,15 +97,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 .single();
 
             if (userInfoError) {
-                showErrorSnackbar('Failed to fetch user information. Please try again.');
-                setButtonLoading(loginBtn, false);
+                await denyLogin('Failed to fetch user information. Please try again.');
                 return;
             }
 
-            // Check if account is approved
-            if (userInfo.isApproved === 0) {
-                showErrorSnackbar('Your account is waiting for approval by an authorized person.');
-                setButtonLoading(loginBtn, false);
+            // Only explicitly approved accounts may continue. This also denies
+            // rejected, null, and unexpected status values.
+            if (userInfo.isApproved !== 1) {
+                const message = userInfo.isApproved === 2
+                    ? 'Your account has been rejected. Please contact an authorized person.'
+                    : 'Your account is waiting for approval by an authorized person.';
+                await denyLogin(message);
                 return;
             }
 

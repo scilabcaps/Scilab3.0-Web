@@ -76,7 +76,13 @@ class StudentPendingReservations {
                 .from('reservations')
                 .select(`
                     *,
-                    rooms(room_name)
+                    rooms(room_name),
+                    reservation_items(
+                        lab_assets(item_name)
+                    ),
+                    chemical_usage(
+                        chemicals(chemical_name)
+                    )
                 `)
                 .eq('user_id', user.id)
                 .or('professor_approval.eq.Pending,admin_approval.eq.Pending')
@@ -85,19 +91,32 @@ class StudentPendingReservations {
             if (error) throw error;
 
             // Format reservations to match expected structure
-            this.reservations = reservations.map(res => ({
-                id: res.reservation_id,
-                date: res.reservation_date,
-                start_time: res.start_time,
-                end_time: res.end_time,
-                resources: res.room_name || 'Lab Room',
-                year_section: res.year_section,
-                course: res.course,
-                professor_name: res.professor,
-                status: res.status,
-                professor_approval: res.professor_approval,
-                admin_approval: res.admin_approval
-            }));
+            this.reservations = reservations.map(res => {
+                const resources = [];
+                if (res.rooms?.room_name) resources.push(res.rooms.room_name);
+
+                (res.reservation_items || []).forEach(item => {
+                    if (item.lab_assets?.item_name) resources.push(item.lab_assets.item_name);
+                });
+
+                (res.chemical_usage || []).forEach(usage => {
+                    if (usage.chemicals?.chemical_name) resources.push(usage.chemicals.chemical_name);
+                });
+
+                return {
+                    id: res.reservation_id,
+                    date: res.reservation_date,
+                    start_time: res.start_time,
+                    end_time: res.end_time,
+                    resources: resources.length > 0 ? resources.join(', ') : 'No resources',
+                    year_section: res.year_section,
+                    course: res.course,
+                    professor_name: res.professor,
+                    status: res.status,
+                    professor_approval: res.professor_approval,
+                    admin_approval: res.admin_approval
+                };
+            });
 
             this.renderReservations();
         } catch (error) {

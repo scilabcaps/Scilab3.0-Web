@@ -1207,9 +1207,40 @@
                 const user = JSON.parse(sessionStorage.getItem('user') || '{}');
                 const today = new Date().toISOString().split('T')[0];
                 
-                // Update professor name
-                const professorName = document.getElementById('userNameSidebar')?.textContent || 'Professor Name';
+                // Fetch the logged-in professor's current name instead of copying
+                // the sidebar placeholder (the sidebar loads asynchronously).
+                let firstName = user.firstname || '';
+                let lastName = user.lastname || '';
+
+                if (user.id) {
+                    const { data: userInfo, error: userInfoError } = await supabase
+                        .from('user_info')
+                        .select('first_name, last_name')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (userInfoError) {
+                        console.warn('Could not refresh professor name:', userInfoError);
+                    } else if (userInfo) {
+                        firstName = userInfo.first_name || firstName;
+                        lastName = userInfo.last_name || lastName;
+
+                        // Keep the session and sidebar consistent with the database.
+                        user.firstname = firstName;
+                        user.lastname = lastName;
+                        sessionStorage.setItem('user', JSON.stringify(user));
+                    }
+                }
+
+                const professorName = [firstName, lastName].filter(Boolean).join(' ') || user.username || 'Professor';
                 document.getElementById('professorName').textContent = professorName;
+
+                const sidebarName = document.getElementById('userNameSidebar');
+                const sidebarAvatar = document.getElementById('userAvatar');
+                if (sidebarName) sidebarName.textContent = professorName;
+                if (sidebarAvatar) {
+                    sidebarAvatar.textContent = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || 'P';
+                }
                 
                 // Load real dashboard metrics from database
                 

@@ -857,10 +857,16 @@
                 let buttonAction = `addToCart(${resource.id}, '${resource.name}', '${typeName}', ${resource.quantity})`;
                 
                 if (type === 'rooms') {
+                    const anotherRoomSelected = cart.some(item => item.type === 'Laboratory Room' && item.id !== resource.id);
                     if (resource.status === 'Maintenance') {
                         quantityDisplay = 'This room is currently under maintenance. Please wait for further announcements.';
                         isDisabled = true;
                         buttonText = 'Unavailable';
+                        buttonAction = '';
+                    } else if (anotherRoomSelected) {
+                        quantityDisplay = 'Remove the selected room before choosing another room.';
+                        isDisabled = true;
+                        buttonText = 'One room only';
                         buttonAction = '';
                     } else {
                         quantityDisplay = resource.status;
@@ -887,8 +893,20 @@
         }
 
         function addToCart(id, name, type, available) {
+            if (type === 'Laboratory Room') {
+                const selectedRoom = cart.find(item => item.type === 'Laboratory Room');
+                if (selectedRoom && selectedRoom.id !== id) {
+                    showWarningSnackbar('Only one room can be reserved at a time. Remove the selected room first.');
+                    return;
+                }
+            }
+
             const existingItem = cart.find(item => item.id === id);
             if (existingItem) {
+                if (type === 'Laboratory Room') {
+                    showWarningSnackbar('Only one room can be reserved per reservation.');
+                    return;
+                }
                 if (existingItem.quantity < available) {
                     existingItem.quantity++;
                 } else {
@@ -1229,6 +1247,12 @@
 
             // Separate resources by type
             const roomItem = cart.find(item => item.type === 'Laboratory Room');
+            const roomItems = cart.filter(item => item.type === 'Laboratory Room');
+            if (roomItems.length > 1) {
+                showErrorSnackbar('Only one room can be included in a reservation.');
+                closeModal('summaryModal');
+                return;
+            }
             const equipmentItems = cart.filter(item => item.type.toLowerCase() === 'equipment');
             const glasswareItems = cart.filter(item => item.type.toLowerCase() === 'glassware');
             const chemicalItems = cart.filter(item => item.type.toLowerCase() === 'chemicals');

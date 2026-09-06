@@ -3,7 +3,6 @@
  * Handles functionality for professor student review page
  */
 
-const CACHE_KEY = 'student_approvals_cache';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const StudentApprovals = {
@@ -13,23 +12,27 @@ const StudentApprovals = {
 
     init() {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-        if (user.username && user.role === 'Professor') {
+        if (user.username && String(user.role || '').toLowerCase() === 'professor') {
             this.loadPendingRequests();
         } else {
             window.location.href = '../../index.html';
         }
     },
 
-    getCachedData() {
+    getCacheKey(professorName) {
+        return `student_approvals_cache:${professorName.trim().toLowerCase()}`;
+    },
+
+    getCachedData(professorName) {
         try {
-            const cached = localStorage.getItem(CACHE_KEY);
+            const cached = localStorage.getItem(this.getCacheKey(professorName));
             if (!cached) return null;
 
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
             if (now - timestamp > CACHE_TTL) {
-                localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(this.getCacheKey(professorName));
                 return null;
             }
 
@@ -40,30 +43,36 @@ const StudentApprovals = {
         }
     },
 
-    setCachedData(data) {
+    setCachedData(professorName, data) {
         try {
             const cacheData = {
                 data: data,
                 timestamp: Date.now()
             };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            localStorage.setItem(this.getCacheKey(professorName), JSON.stringify(cacheData));
         } catch (error) {
             console.error('Error setting cache:', error);
         }
     },
 
-    clearCache() {
-        localStorage.removeItem(CACHE_KEY);
+    clearCache(professorName) {
+        if (professorName) {
+            localStorage.removeItem(this.getCacheKey(professorName));
+        }
     },
 
     async loadPendingRequests() {
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-            const professorName = user.firstname + ' ' + user.lastname;
+            const professorName = `${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`.trim();
+
+            if (!professorName) {
+                throw new Error('Unable to determine the logged-in professor name');
+            }
 
             console.log('Loading requests for professor:', professorName);
 
-            const cachedData = this.getCachedData();
+            const cachedData = this.getCachedData(professorName);
             if (cachedData) {
                 this.requests = cachedData || [];
                 this.currentPage = 1;
@@ -84,7 +93,7 @@ const StudentApprovals = {
                     )
                 `)
                 .eq('professor_approval', 'Pending')
-                .eq('professor', professorName)
+                .ilike('professor', professorName.trim())
                 .order('created_at', { ascending: false });
 
             console.log('Requests found:', requests);
@@ -115,7 +124,7 @@ const StudentApprovals = {
 
             this.requests = requests || [];
             this.currentPage = 1;
-            this.setCachedData(this.requests);
+            this.setCachedData(professorName, this.requests);
             this.displayRequests();
         } catch (error) {
             console.error('Error loading requests:', error);
@@ -262,7 +271,8 @@ const StudentApprovals = {
 
                 if (error) throw error;
 
-                this.clearCache();
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                this.clearCache(`${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`);
                 showSuccessSnackbar('Request approved! Sent to admin for final approval.');
                 this.loadPendingRequests();
             } catch (error) {
@@ -293,7 +303,8 @@ const StudentApprovals = {
 
                 if (error) throw error;
 
-                this.clearCache();
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                this.clearCache(`${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`);
                 showSuccessSnackbar('Request declined successfully.');
                 this.loadPendingRequests();
             } catch (error) {

@@ -113,10 +113,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 const { data: userData, error: userError } = await supabase
                     .from('user_info')
                     .select('*')
-                    .eq('email', email)
+                    .eq('id', data.user.id)
                     .single();
                 
-                if (userError) throw userError;
+                if (userError) {
+                    await supabase.auth.signOut();
+                    sessionStorage.removeItem('user');
+                    throw userError;
+                }
+
+                // Authentication success does not mean the application account is
+                // approved. Deny every state except the explicit approved value.
+                if (userData.isApproved !== 1) {
+                    await supabase.auth.signOut();
+                    sessionStorage.removeItem('user');
+
+                    throw new Error(userData.isApproved === 2
+                        ? 'Your account has been rejected. Please contact an authorized person.'
+                        : 'Your account is waiting for approval by an authorized person.');
+                }
                 
                 sessionStorage.setItem('user', JSON.stringify(userData));
                 
