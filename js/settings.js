@@ -307,18 +307,3 @@ function togglePassword(fieldId) {
     }
 }
 
-// Logout function
-async function logout() {
-    try {
-        const { error } = await window.supabase.auth.signOut();
-        if (error) {
-            console.error('Logout error:', error);
-        }
-        sessionStorage.clear();
-        window.location.href = '../../index.html';
-    } catch (error) {
-        console.error('Error during logout:', error);
-        sessionStorage.clear();
-        window.location.href = '../../index.html';
-    }
-}

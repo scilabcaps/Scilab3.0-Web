@@ -9,16 +9,44 @@ function togglePassword(inputId = 'password') {
 
 // Logout function
 function logout() {
-    const modal = document.getElementById('logoutModal');
+    let modal = document.getElementById('logoutModal');
+    if (!modal) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="logoutModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Confirm Logout</h3>
+                        <button class="modal-close" onclick="cancelLogout()" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="modal-body"><p>Are you sure you want to log out?</p></div>
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick="cancelLogout()">Cancel</button>
+                        <button class="btn-primary" onclick="confirmLogout()">Log out</button>
+                    </div>
+                </div>
+            </div>`);
+        modal = document.getElementById('logoutModal');
+    }
     if (modal) {
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', 'Confirm Logout');
         modal.style.display = 'flex';
+        modal.querySelector('.btn-secondary').focus();
     }
 }
 
 // Confirm logout
-function confirmLogout() {
-    sessionStorage.removeItem('user');
-    window.location.href = '/index.html';
+async function confirmLogout() {
+    try {
+        const { error } = await window.supabase.auth.signOut();
+        if (error) throw error;
+        sessionStorage.removeItem('user');
+        window.location.href = '/index.html';
+    } catch (error) {
+        console.error('Logout failed:', error);
+        alert('Unable to log out. Please try again.');
+    }
 }
 
 // Cancel logout

@@ -1165,6 +1165,22 @@ body {
     overflow: auto;
 }
 
+#logoutModal {
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+#logoutModal .modal-content {
+    flex: 0 1 380px;
+    height: auto;
+    min-height: 0;
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    overflow-y: auto;
+}
+
 .modal.active {
     display: flex;
     align-items: center;
