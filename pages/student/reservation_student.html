@@ -1221,6 +1221,7 @@
         async function confirmReservation() {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
             const userId = user.user_id || user.id;
+            const studentName = [user.firstname, user.lastname].filter(Boolean).join(' ') || user.username || user.email || 'A student';
             
             if (!userId) {
                 showErrorSnackbar('Error: User not found. Please log in again.');
@@ -1326,6 +1327,16 @@
                     .single();
 
                 if (reservationError) throw reservationError;
+
+                await window.createAdminNotification({
+                    title: 'New reservation submitted',
+                    message: `${studentName} submitted a new reservation for approval.`,
+                    type: 'reservation_submitted',
+                    relatedId: reservationData.reservation_id,
+                    entityType: 'reservation',
+                    entityId: reservationData.reservation_id,
+                    action: 'view'
+                });
 
                 const reservationId = reservationData.reservation_id;
                 console.log('Reservation ID:', reservationId);

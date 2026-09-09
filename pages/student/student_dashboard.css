@@ -919,3 +919,130 @@
         padding: 8px;
     }
 }
+
+/* Admin dashboard card treatment */
+.dashboard-content {
+    padding: 24px;
+}
+
+.summary-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.summary-card {
+    min-height: 74px;
+    padding: 20px;
+    border-radius: 12px;
+    gap: 16px;
+    border-left: 0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.summary-card .card-icon {
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 20px;
+}
+
+.summary-card .card-icon svg,
+.action-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.summary-card:nth-child(1) .card-icon,
+.summary-card:nth-child(2) .card-icon {
+    color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.summary-card:nth-child(3) .card-icon {
+    color: #FF9800;
+    background: rgba(255, 152, 0, 0.1);
+}
+
+.summary-card:nth-child(4) .card-icon {
+    color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+}
+
+.summary-card .card-value {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.summary-card .card-label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.quick-actions-section {
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.quick-actions-section .section-title {
+    color: #2E7D32;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.quick-actions-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.quick-action-btn {
+    padding: 16px;
+    border: 1px solid rgba(46, 125, 50, 0.3);
+    border-radius: 8px;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.action-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.quick-action-btn:nth-child(1) .action-icon {
+    background: #2E7D32;
+}
+
+.quick-action-btn:nth-child(2) .action-icon {
+    background: #2196F3;
+}
+
+.quick-action-btn:nth-child(3) .action-icon {
+    background: #FF9800;
+}
+
+.quick-action-btn:nth-child(2) {
+    border-color: rgba(33, 150, 243, 0.3);
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+}
+
+.quick-action-btn:nth-child(3) {
+    border-color: rgba(255, 152, 0, 0.3);
+    background: rgba(255, 152, 0, 0.1);
+    color: #FF9800;
+}
+
+@media (max-width: 768px) {
+    .summary-cards,
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}

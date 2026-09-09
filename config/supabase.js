@@ -17,3 +17,29 @@ if (typeof supabase !== 'undefined') {
 } else {
     console.error('Supabase library not loaded. Make sure the Supabase CDN script is included before this file.');
 }
+
+// Create a broadcast notification for the admin app.
+window.createAdminNotification = async function ({
+    title,
+    message,
+    type = 'general',
+    relatedId = null,
+    entityType = null,
+    entityId = null,
+    action = 'view'
+}) {
+    if (!window.supabase) return { error: new Error('Supabase client is not initialized') };
+
+    const { error } = await window.supabase.from('notifications').insert({
+        title,
+        message,
+        type,
+        related_id: relatedId == null ? null : String(relatedId),
+        entity_type: entityType,
+        entity_id: entityId == null ? null : Number(entityId),
+        action
+    });
+
+    if (error) console.error('Unable to create notification:', error);
+    return { error };
+};

@@ -41,12 +41,12 @@ body {
 }
 
 .login-left {
-    flex: 0 0 40%;
-    background-color: #ececec;
+    flex: 1;
+    background-color: #f5f5f5;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px;
+    padding: 48px;
 }
 
 .company-name {
@@ -55,19 +55,19 @@ body {
 }
 
 .company-name h1 {
-    font-size: 3.5rem;
-    font-weight: 600;
-    margin-bottom: 10px;
-    font-family: 'Georgia', serif;
-    color: #31CB00;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    font-family: inherit;
+    color: #2E7D32;
 }
 
 .company-name h2 {
-    font-size: 2.5rem;
-    font-weight: 500;
-    margin-bottom: 5px;
-    font-family: 'Georgia', serif;
-    color: #119822;
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin-bottom: 0;
+    font-family: inherit;
+    color: #2E7D32;
 }
 
 .company-name h3 {
@@ -190,49 +190,45 @@ body {
 }
 
 .login-right {
-    flex: 0 0 60%;
-    background: linear-gradient(135deg, #152614 0%, #1E441E 100%);
+    flex: 1;
+    background: #2E7D32;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px;
-    position: relative;
-    border-top-left-radius: 80px;
-    box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.2);
 }
 
 .login-form-container {
     background: white;
-    padding: 50px 40px;
-    border-radius: 20px;
+    padding: 40px;
+    border-radius: 16px;
     width: 100%;
-    max-width: 450px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
 }
 
 .user-icon {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .user-icon svg,
 .user-icon i {
-    color: #2A7221;
+    color: #2E7D32;
     font-size: 4rem;
 }
 
 .welcome-text {
     text-align: center;
     color: #152614;
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 30px;
-    letter-spacing: 2px;
+    margin-bottom: 32px;
+    letter-spacing: 0;
 }
 
 .input-group {
     position: relative;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
 }
@@ -255,7 +251,7 @@ body {
 .input-group input,
 .input-group select {
     width: 100%;
-    padding: 12px 45px 12px 45px;
+    padding: 16px 45px;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 1rem;
@@ -312,20 +308,21 @@ body {
 
 .login-btn {
     width: 100%;
+    height: 50px;
     padding: 15px;
-    background-color: #152614;
+    background-color: #2E7D32;
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 700;
     cursor: pointer;
     transition: background-color 0.3s;
     letter-spacing: 1px;
 }
 
 .login-btn:hover {
-    background-color: #1E441E;
+    background-color: #256528;
 }
 
 .signup-link {

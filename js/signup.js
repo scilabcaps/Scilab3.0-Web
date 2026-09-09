@@ -182,6 +182,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
+                await window.createAdminNotification({
+                    title: 'New account awaiting approval',
+                    message: `${pendingSignupData.firstname} ${pendingSignupData.lastname} submitted a ${pendingSignupData.role} account for approval.`,
+                    type: 'account_submitted',
+                    relatedId: data.user.id
+                });
+
                 setButtonLoading('verifyOtpBtn', false);
                 showSuccessSnackbar('Account created successfully! Redirecting to login...');
                 setTimeout(() => {

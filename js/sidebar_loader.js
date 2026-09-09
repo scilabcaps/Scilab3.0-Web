@@ -1,5 +1,16 @@
 // Sidebar Loader - Loads the shared sidebar component
 async function loadSidebar() {
+    const header = document.querySelector('.dashboard-header');
+    if (header && !header.querySelector('.header-logout')) {
+        const logoutButton = document.createElement('button');
+        logoutButton.type = 'button';
+        logoutButton.className = 'header-logout';
+        logoutButton.setAttribute('aria-label', 'Log out');
+        logoutButton.title = 'Log out';
+        logoutButton.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4z"/></svg>';
+        logoutButton.addEventListener('click', () => logout());
+        header.appendChild(logoutButton);
+    }
     try {
         // Determine the correct path based on current location
         const currentPath = window.location.pathname;
