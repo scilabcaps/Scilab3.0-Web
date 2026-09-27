@@ -15,7 +15,6 @@ const ProfessorPending = {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && String(user.role || '').toLowerCase() === 'professor') {
             this.loadPendingReservations();
-            this.setupTabButtons();
         } else {
             window.location.href = '../../index.html';
         }
@@ -85,45 +84,16 @@ const ProfessorPending = {
             if (error) throw error;
 
             this.allReservations = reservations || [];
-            this.currentPage = 1;
-            this.filterReservations(this.currentFilter);
+            this.displayAllReservations();
         } catch (error) {
             console.error('Error loading reservations:', error);
             this.showError('Failed to load reservations');
         }
     },
 
-    setupTabButtons() {
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                ProfessorPending.currentFilter = this.getAttribute('data-filter');
-                ProfessorPending.filterReservations(ProfessorPending.currentFilter);
-            });
-        });
-    },
-
-    getFilteredReservations(filter) {
-        if (filter === 'all') return this.allReservations;
-
-        return this.allReservations.filter(res => {
-            if (filter === 'rooms') {
-                return res.room_id !== null && res.room_id !== undefined;
-            } else if (filter === 'chemicals') {
-                return res.chemical_usage && res.chemical_usage.length > 0;
-            } else if (filter === 'assets') {
-                return res.reservation_items && res.reservation_items.length > 0;
-            }
-            return true;
-        });
-    },
-
-    filterReservations(filter) {
-        const filtered = this.getFilteredReservations(filter);
+    displayAllReservations() {
         this.currentPage = 1;
-        this.displayReservations(filtered);
+        this.displayReservations(this.allReservations);
     },
 
     displayReservations(reservations) {
@@ -149,15 +119,6 @@ const ProfessorPending = {
         const pageData = reservations.slice(start, end);
 
         tbody.innerHTML = pageData.map(res => {
-            let statusColor = '#f59e0b';
-            if (res.admin_approval === 'Approved') {
-                statusColor = '#119822';
-            } else if (res.admin_approval === 'Rejected') {
-                statusColor = '#dc2626';
-            } else if (res.admin_approval === 'Pending') {
-                statusColor = '#3b82f6';
-            }
-
             let resourcesDisplay = '';
             if (res.room_id && res.rooms) {
                 resourcesDisplay = res.rooms.room_name || 'Lab Room';
@@ -180,10 +141,44 @@ const ProfessorPending = {
                     <td>${resourcesDisplay}</td>
                     <td>${studentName}</td>
                     <td>${res.additional_note || 'N/A'}</td>
-                    <td><span style="color: ${statusColor}; font-weight: 600;">${res.admin_approval}</span></td>
+                    <td>${this.getApprovalStatus(res.admin_approval)}</td>
                 </tr>
             `;
         }).join('');
+    },
+
+    getApprovalStatus(adminApproval) {
+        return `
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                ${this.getApprovalBadge(adminApproval, 'Admin')}
+            </div>
+        `;
+    },
+
+    getApprovalBadge(status, type) {
+        const colors = {
+            Pending: '#f39c12',
+            Approved: '#27ae60',
+            Declined: '#e74c3c',
+            Cancelled: '#95a5a6',
+            Completed: '#3498db'
+        };
+        const color = colors[status] || '#7f8c8d';
+
+        return `
+            <span style="
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 600;
+                background: ${color}20;
+                color: ${color};
+                border: 1px solid ${color}40;
+            ">
+                ${type}: ${status || 'Unknown'}
+            </span>
+        `;
     },
 
     renderPaginationControls(totalCount) {
@@ -222,20 +217,20 @@ const ProfessorPending = {
     },
 
     goToPage(page) {
-        const filtered = this.getFilteredReservations(this.currentFilter);
-        const totalPages = Math.ceil(filtered.length / this.pageSize);
+        const reservations = this.allReservations;
+        const totalPages = Math.ceil(reservations.length / this.pageSize);
         if (page < 1 || page > totalPages) return;
         this.currentPage = page;
-        this.renderPage(filtered);
-        this.renderPaginationControls(filtered.length);
+        this.renderPage(reservations);
+        this.renderPaginationControls(reservations.length);
     },
 
     changePageSize(size) {
         this.pageSize = parseInt(size);
         this.currentPage = 1;
-        const filtered = this.getFilteredReservations(this.currentFilter);
-        this.renderPage(filtered);
-        this.renderPaginationControls(filtered.length);
+        const reservations = this.allReservations;
+        this.renderPage(reservations);
+        this.renderPaginationControls(reservations.length);
     },
 
     viewDetails(id) {

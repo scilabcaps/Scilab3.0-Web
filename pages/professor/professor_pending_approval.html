@@ -8,38 +8,6 @@
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/sidebar_theme.css">
     <style>
-        /* Resource Tabs Styles */
-        .resource-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            padding: 10px 20px;
-            border: 2px solid #e9ecef;
-            background: #ffffff;
-            color: #666;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .tab-btn:hover {
-            background: #f0f7ee;
-            border-color: #31CB00;
-            color: #2A7221;
-        }
-
-        .tab-btn.active {
-            background: rgba(49, 203, 0, 0.15);
-            border-color: #31CB00;
-            color: #2A7221;
-        }
-
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .dashboard-main {
@@ -67,14 +35,6 @@
                 </div>
             </div>
             <div class="dashboard-content">
-                <!-- Tab Buttons -->
-                <div class="resource-tabs">
-                    <button class="tab-btn active" data-filter="all">All</button>
-                    <button class="tab-btn" data-filter="rooms">Rooms</button>
-                    <button class="tab-btn" data-filter="chemicals">Chemicals</button>
-                    <button class="tab-btn" data-filter="assets">Assets</button>
-                </div>
-                
                 <div class="data-table">
                     <table>
                         <thead>
@@ -84,7 +44,7 @@
                                 <th>Resources</th>
                                 <th>Student</th>
                                 <th>Additional Note</th>
-                                <th>Status</th>
+                                <th>Approval Status</th>
                                 <!-- <th>Actions</th> -->
                             </tr>
                         </thead>

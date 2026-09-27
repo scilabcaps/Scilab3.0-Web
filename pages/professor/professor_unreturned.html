@@ -75,6 +75,23 @@
             color: #d32f2f;
             font-weight: 600;
         }
+
+        .view-reservation-btn {
+            padding: 8px 14px;
+            border: 0;
+            border-radius: 5px;
+            background: #31CB00;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .view-reservation-btn:hover { background: #269d00; }
+
+        .resource-detail-row { padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+        .resource-detail-row:last-child { border-bottom: 0; }
+        .resource-detail-name { font-weight: 600; color: #152614; }
+        .resource-detail-meta { margin-top: 4px; color: #666; font-size: 0.9rem; }
     </style>
 </head>
 
@@ -104,6 +121,7 @@
                                 <th>Returned</th>
                                 <th>Unreturned</th>
                                 <th>Reservation Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="itemsTable">
@@ -116,20 +134,28 @@
                     <div class="empty-state-text">No students with unreturned items</div>
                 </div>
 
-                <div id="studentsList" style="margin-top: 30px;">
-                    <!-- Students with unreturned items will be displayed here -->
-                </div>
-                <div id="studentsEmptyState" class="empty-state" style="display: none;">
-                    <div class="empty-state-icon"></div>
-                    <div class="empty-state-text">No students with unreturned items</div>
-                </div>
+
+            </div>
         </main>
+    </div>
+
+    <div id="reservationDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Reservation Details</h2>
+                <button class="modal-close" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../../config/supabase.js"></script>
     <script src="../../js/sidebar_loader.js"></script>
     <script src="../../js/main.js"></script>
+    <script src="../../js/modal.js"></script>
     <script src="../../js/professor_unreturned.js"></script>
 </body>
 

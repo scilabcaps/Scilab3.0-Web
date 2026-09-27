@@ -3,18 +3,19 @@
  * Handles functionality for professor unreturned items page
  */
 
-const CACHE_KEY = 'professor_unreturned_cache';
+const CACHE_KEY = 'professor_unreturned_cache_v2';
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 const ProfessorUnreturned = {
     formattedItems: [],
-    studentsArray: [],
     currentPage: 1,
     pageSize: 10,
+    reservationModal: null,
 
     init() {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Professor') {
+            this.reservationModal = new Modal('reservationDetailsModal');
             this.loadUnreturnedItems();
         } else {
             window.location.href = '../../index.html';
@@ -62,10 +63,8 @@ const ProfessorUnreturned = {
             const cachedData = this.getCachedData();
             if (cachedData) {
                 this.formattedItems = cachedData.formattedItems;
-                this.studentsArray = cachedData.studentsArray;
                 this.currentPage = 1;
                 this.displayItems();
-                this.displayStudents();
                 return;
             }
 
@@ -88,6 +87,7 @@ const ProfessorUnreturned = {
             const unreturnedItems = items.filter(item => item.quantity_returned < item.quantity_borrowed);
 
             const formattedItems = unreturnedItems.map(item => ({
+                reservation_id: item.reservation_id,
                 student_name: item.reservations.user_info ?
                     `${item.reservations.user_info.first_name} ${item.reservations.user_info.last_name}` : 'N/A',
                 student_email: item.reservations.user_info?.email || 'N/A',
@@ -101,33 +101,14 @@ const ProfessorUnreturned = {
                 reservation_time: item.reservations.start_time
             }));
 
-            const studentsMap = new Map();
-            formattedItems.forEach(item => {
-                const key = item.student_name;
-                if (!studentsMap.has(key)) {
-                    studentsMap.set(key, {
-                        student_name: item.student_name,
-                        student_email: item.student_email,
-                        year_section: item.year_section,
-                        items: []
-                    });
-                }
-                studentsMap.get(key).items.push(item);
-            });
-
-            const studentsArray = Array.from(studentsMap.values());
-
             this.formattedItems = formattedItems;
-            this.studentsArray = studentsArray;
             this.currentPage = 1;
-            this.setCachedData({ formattedItems, studentsArray });
+            this.setCachedData({ formattedItems });
 
             this.displayItems();
-            this.displayStudents();
         } catch (error) {
             console.error('Error loading unreturned items:', error);
             this.displayItems([]);
-            this.displayStudents([]);
         }
     },
 
@@ -163,6 +144,7 @@ const ProfessorUnreturned = {
                     <td>${item.returned_quantity}</td>
                     <td class="unreturned-qty">${item.unreturned_quantity}</td>
                     <td>${item.reservation_date}</td>
+                    <td><button class="view-reservation-btn" onclick="ProfessorUnreturned.viewDetails(${item.reservation_id})">View</button></td>
                 </tr>
             `;
         }).join('');
@@ -218,44 +200,104 @@ const ProfessorUnreturned = {
         this.renderPaginationControls(this.formattedItems.length);
     },
 
-    displayStudents() {
-        const container = document.getElementById('studentsList');
-        if (this.studentsArray.length === 0) {
-            document.getElementById('studentsEmptyState').style.display = 'block';
-            container.innerHTML = '';
-        } else {
-            document.getElementById('studentsEmptyState').style.display = 'none';
-            container.innerHTML = `
-                <h3 style="color: #152614; margin-bottom: 20px;">Students Grouped by Student</h3>
-                ${this.studentsArray.map(student => {
-                const itemsHtml = student.items.map(item => `
-                    <div class="unreturned-item">
-                        <div class="item-info">
-                            <div class="item-name">${item.resource_name} (${item.resource_type})</div>
-                            <div class="item-details">
-                                Borrowed: ${item.borrowed_quantity} | Returned: ${item.returned_quantity} |
-                                <span class="unreturned-qty">Unreturned: ${item.unreturned_quantity}</span> |
-                                Reservation: ${item.reservation_date} ${item.reservation_time}
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
+    async viewDetails(reservationId) {
+        this.reservationModal.open('Reservation Details', '<p>Loading reservation resources...</p>');
 
-                return `
-                    <div class="student-section">
-                        <div class="student-header">
-                            <div class="student-name">${student.student_name}</div>
-                            <div class="student-info">
-                                ${student.year_section || 'N/A'} |
-                                Email: ${student.student_email}
-                            </div>
-                        </div>
-                        ${itemsHtml}
+        try {
+            const { data: reservation, error } = await supabase
+                .from('reservations')
+                .select(`
+                    reservation_id,
+                    reservation_date,
+                    start_time,
+                    end_time,
+                    rooms(room_name),
+                    user_info(first_name, last_name),
+                    reservation_items(
+                        quantity_borrowed,
+                        quantity_returned,
+                        is_returned,
+                        lab_assets(item_name, category)
+                    ),
+                    chemical_usage(
+                        quantity_used,
+                        unit,
+                        chemicals(chemical_name)
+                    )
+                `)
+                .eq('reservation_id', reservationId)
+                .single();
+
+            if (error) throw error;
+
+            const resources = [];
+            if (reservation.rooms?.room_name) {
+                resources.push(`
+                    <div class="resource-detail-row">
+                        <div class="resource-detail-name">${this.escapeHtml(reservation.rooms.room_name)} (Room)</div>
                     </div>
-                `;
-            }).join('')}
-            `;
+                `);
+            }
+
+            (reservation.reservation_items || []).forEach(item => {
+                const asset = item.lab_assets;
+                if (!asset) return;
+                const unreturned = Math.max(0, (item.quantity_borrowed || 0) - (item.quantity_returned || 0));
+                resources.push(`
+                    <div class="resource-detail-row">
+                        <div class="resource-detail-name">${this.escapeHtml(asset.item_name)} (${this.escapeHtml(asset.category || 'Asset')})</div>
+                        <div class="resource-detail-meta">Borrowed: ${item.quantity_borrowed || 0} | Returned: ${item.quantity_returned || 0} | Unreturned: ${unreturned}</div>
+                    </div>
+                `);
+            });
+
+            (reservation.chemical_usage || []).forEach(usage => {
+                const chemical = usage.chemicals;
+                if (!chemical) return;
+                resources.push(`
+                    <div class="resource-detail-row">
+                        <div class="resource-detail-name">${this.escapeHtml(chemical.chemical_name)} (Chemical)</div>
+                        <div class="resource-detail-meta">Used: ${usage.quantity_used || 0} ${this.escapeHtml(usage.unit || '')}</div>
+                    </div>
+                `);
+            });
+
+            const student = reservation.user_info ?
+                `${reservation.user_info.first_name || ''} ${reservation.user_info.last_name || ''}`.trim() : 'N/A';
+            this.reservationModal.open('Reservation Details', `
+                <div class="summary-item">
+                    <div class="summary-label">Student</div>
+                    <div class="summary-value">${this.escapeHtml(student)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Date</div>
+                    <div class="summary-value">${this.escapeHtml(reservation.reservation_date)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Time</div>
+                    <div class="summary-value">${this.escapeHtml(`${reservation.start_time} - ${reservation.end_time}`)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Resources</div>
+                    <div class="summary-value">
+                        ${resources.length ? resources.join('') : 'No resources found for this reservation.'}
+                    </div>
+                </div>
+            `);
+        } catch (error) {
+            console.error('Error loading reservation details:', error);
+            this.reservationModal.open('Reservation Details', '<p style="color: #d32f2f;">Failed to load reservation resources.</p>');
         }
+    },
+
+    escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[character]);
     }
 };
 
