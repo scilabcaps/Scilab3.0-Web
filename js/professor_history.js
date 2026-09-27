@@ -3,7 +3,7 @@
  * Handles functionality for professor reservation history page
  */
 
-const CACHE_KEY = 'professor_history_cache';
+const CACHE_KEY = 'professor_history_cache_v2';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 const ProfessorHistory = {
@@ -75,7 +75,15 @@ const ProfessorHistory = {
                 .select(`
                     *,
                     rooms(room_name),
-                    user_info!inner(first_name, last_name)
+                    reservation_items(
+                        quantity_borrowed,
+                        lab_assets(item_name)
+                    ),
+                    chemical_usage(
+                        quantity_used,
+                        unit,
+                        chemicals(chemical_name)
+                    )
                 `)
                 .in('status', ['Completed', 'Cancelled', 'Declined'])
                 .eq('user_id', user.id)
@@ -127,19 +135,38 @@ const ProfessorHistory = {
                 statusColor = '#f59e0b';
             }
 
-            let resourcesDisplay = res.room_name || 'Lab Room';
-            if (!resourcesDisplay) {
-                resourcesDisplay = '<span style="color: #6b7280;">No room specified</span>';
+            const resources = [];
+
+            if (res.rooms?.room_name) {
+                resources.push(res.rooms.room_name);
             }
 
-            const studentName = res.user_info ? `${res.user_info.first_name} ${res.user_info.last_name}` : 'Unknown';
+            (res.reservation_items || []).forEach(item => {
+                const name = item.lab_assets?.item_name;
+                if (name) {
+                    resources.push(`${name}${item.quantity_borrowed ? ` (${item.quantity_borrowed}x)` : ''}`);
+                }
+            });
+
+            (res.chemical_usage || []).forEach(usage => {
+                const name = usage.chemicals?.chemical_name;
+                if (name) {
+                    const quantity = usage.quantity_used != null
+                        ? ` (${usage.quantity_used}${usage.unit ? ` ${usage.unit}` : ''})`
+                        : '';
+                    resources.push(`${name}${quantity}`);
+                }
+            });
+
+            const resourcesDisplay = resources.length > 0
+                ? resources.join(', ')
+                : '<span style="color: #6b7280;">No resources specified</span>';
 
             return `
                 <tr>
                     <td>${res.reservation_date}</td>
                     <td>${res.start_time} - ${res.end_time}</td>
                     <td>${resourcesDisplay}</td>
-                    <td>${studentName}</td>
                     <td>${res.additional_note || 'N/A'}</td>
                     <td><span style="color: ${statusColor}; font-weight: 600;">${res.status}</span></td>
                     <td>
@@ -207,7 +234,15 @@ const ProfessorHistory = {
                 .select(`
                     *,
                     rooms(room_name),
-                    user_info!inner(first_name, last_name)
+                    reservation_items(
+                        quantity_borrowed,
+                        lab_assets(item_name)
+                    ),
+                    chemical_usage(
+                        quantity_used,
+                        unit,
+                        chemicals(chemical_name)
+                    )
                 `)
                 .eq('reservation_id', id)
                 .single();
@@ -223,9 +258,26 @@ const ProfessorHistory = {
                 statusColor = '#f59e0b';
             }
 
-            const studentName = reservation.user_info ?
-                `${reservation.user_info.first_name} ${reservation.user_info.last_name}` : 'Unknown';
-            const roomName = reservation.rooms?.room_name || 'Lab Room';
+            const resources = [];
+            if (reservation.rooms?.room_name) {
+                resources.push(reservation.rooms.room_name);
+            }
+            (reservation.reservation_items || []).forEach(item => {
+                const name = item.lab_assets?.item_name;
+                if (name) {
+                    resources.push(`${name}${item.quantity_borrowed ? ` (${item.quantity_borrowed}x)` : ''}`);
+                }
+            });
+            (reservation.chemical_usage || []).forEach(usage => {
+                const name = usage.chemicals?.chemical_name;
+                if (name) {
+                    const quantity = usage.quantity_used != null
+                        ? ` (${usage.quantity_used}${usage.unit ? ` ${usage.unit}` : ''})`
+                        : '';
+                    resources.push(`${name}${quantity}`);
+                }
+            });
+            const resourcesDisplay = resources.length > 0 ? resources.join(', ') : 'No resources specified';
 
             const content = `
                 <div class="summary-item">
@@ -241,12 +293,8 @@ const ProfessorHistory = {
                     <div class="summary-value">${reservation.start_time} - ${reservation.end_time}</div>
                 </div>
                 <div class="summary-item">
-                    <div class="summary-label">Room</div>
-                    <div class="summary-value">${roomName}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Student</div>
-                    <div class="summary-value">${studentName}</div>
+                    <div class="summary-label">Resources</div>
+                    <div class="summary-value">${resourcesDisplay}</div>
                 </div>
                 <div class="summary-item">
                     <div class="summary-label">Additional Note</div>
@@ -274,7 +322,7 @@ const ProfessorHistory = {
         const emptyState = document.getElementById('emptyState');
 
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
         }
         if (emptyState) emptyState.style.display = 'block';
         this.removePagination();
