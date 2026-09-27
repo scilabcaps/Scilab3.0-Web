@@ -93,7 +93,7 @@ const StudentApprovals = {
                     )
                 `)
                 .eq('professor_approval', 'Pending')
-                .ilike('professor', professorName.trim())
+                .eq('professor', professorName.trim())
                 .order('created_at', { ascending: false });
 
             console.log('Requests found:', requests);
@@ -261,17 +261,20 @@ const StudentApprovals = {
 
         if (confirmed) {
             try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                const professorName = `${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`.trim();
                 const { error } = await supabase
                     .from('reservations')
                     .update({
                         professor_approval: 'Approved',
                         status: 'Pending'
                     })
-                    .eq('reservation_id', id);
+                    .eq('reservation_id', id)
+                    .eq('professor', professorName)
+                    .eq('professor_approval', 'Pending');
 
                 if (error) throw error;
 
-                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
                 this.clearCache(`${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`);
                 showSuccessSnackbar('Request approved! Sent to admin for final approval.');
                 this.loadPendingRequests();
@@ -293,17 +296,20 @@ const StudentApprovals = {
 
         if (confirmed) {
             try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                const professorName = `${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`.trim();
                 const { error } = await supabase
                     .from('reservations')
                     .update({
                         professor_approval: 'Declined',
                         status: 'Declined'
                     })
-                    .eq('reservation_id', id);
+                    .eq('reservation_id', id)
+                    .eq('professor', professorName)
+                    .eq('professor_approval', 'Pending');
 
                 if (error) throw error;
 
-                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
                 this.clearCache(`${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`);
                 showSuccessSnackbar('Request declined successfully.');
                 this.loadPendingRequests();

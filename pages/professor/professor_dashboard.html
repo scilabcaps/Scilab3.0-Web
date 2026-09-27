@@ -1003,7 +1003,7 @@
                             <div class="action-icon">🔬</div>
                             <span>Reserve Equipment</span>
                         </a>
-                        <a href="professor_approved.html" class="quick-action-btn">
+                        <a href="student_approved_reservation.html" class="quick-action-btn">
                             <div class="action-icon">📆</div>
                             <span>View Schedule</span>
                         </a>
@@ -1110,10 +1110,17 @@
             );
             if (confirmed) {
                 try {
+                    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                    const professorName = [
+                        user.firstname || user.first_name || '',
+                        user.lastname || user.last_name || ''
+                    ].filter(Boolean).join(' ').trim();
                     const { error } = await supabase
                         .from('reservations')
                         .update({ professor_approval: 'Approved' })
-                        .eq('reservation_id', requestId);
+                        .eq('reservation_id', requestId)
+                        .eq('professor', professorName)
+                        .eq('professor_approval', 'Pending');
 
                     if (error) throw error;
 
@@ -1138,14 +1145,21 @@
                 const reason = prompt('Please provide a reason for rejection:');
                 if (reason) {
                     try {
+                        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                        const professorName = [
+                            user.firstname || user.first_name || '',
+                            user.lastname || user.last_name || ''
+                        ].filter(Boolean).join(' ').trim();
                         // Update reservation to declined
                         const { error: updateError } = await supabase
                             .from('reservations')
                             .update({ 
                                 professor_approval: 'Declined',
-                                additional_note: (await supabase.from('reservations').select('additional_note').eq('reservation_id', requestId).single()).data?.additional_note + `\nRejection reason: ${reason}`
+                                additional_note: (await supabase.from('reservations').select('additional_note').eq('reservation_id', requestId).eq('professor', professorName).single()).data?.additional_note + `\nRejection reason: ${reason}`
                             })
-                            .eq('reservation_id', requestId);
+                            .eq('reservation_id', requestId)
+                            .eq('professor', professorName)
+                            .eq('professor_approval', 'Pending');
 
                         if (updateError) throw updateError;
 
@@ -1258,6 +1272,7 @@
                     .from('reservations')
                     .select('user_info!inner(role)', { count: 'exact', head: true })
                     .eq('professor_approval', 'Pending')
+                    .eq('professor', professorName)
                     .eq('user_info.role', 'student');
                 
                 document.getElementById('pendingRequestsCount').textContent = pendingRequestsCount || 0;
@@ -1411,6 +1426,12 @@
         // Load student requests
         async function loadStudentRequests() {
             try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                const professorName = [
+                    user.firstname || user.first_name || '',
+                    user.lastname || user.last_name || ''
+                ].filter(Boolean).join(' ').trim();
+
                 // Query reservations with professor_approval = 'Pending' for students
                 const { data: reservations, error } = await supabase
                     .from('reservations')
@@ -1445,6 +1466,7 @@
                         )
                     `)
                     .eq('professor_approval', 'Pending')
+                    .eq('professor', professorName)
                     .eq('user_info.role', 'student')
                     .order('reservation_date', { ascending: true })
                     .order('start_time', { ascending: true });
