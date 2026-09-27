@@ -570,6 +570,83 @@
             font-size: 24px;
         }
 
+        .action-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .quick-action-btn:nth-child(1) .action-icon { background: #2E7D32; }
+        .quick-action-btn:nth-child(2) .action-icon { background: #2196F3; }
+        .quick-action-btn:nth-child(3) .action-icon { background: #FF9800; }
+        .quick-action-btn:nth-child(4) .action-icon { background: #7E57C2; }
+
+        .calendar-section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .calendar-widget { background: white; }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .calendar-header h3 {
+            color: #152614;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .calendar-nav-btn {
+            background: rgba(49, 203, 0, 0.1);
+            color: #31CB00;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .calendar-nav-btn:hover { background: #31CB00; color: white; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+        }
+
+        .calendar-day {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-day:hover { background: rgba(49, 203, 0, 0.1); transform: translateY(-2px); }
+        .day-header { font-weight: 600; color: #152614; font-size: 12px; margin-bottom: 4px; }
+        .day-date { font-size: 18px; font-weight: 700; color: #31CB00; margin-bottom: 8px; }
+        .day-events { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .event-item { font-size: 10px; padding: 2px 4px; border-radius: 4px; font-weight: 500; text-align: center; }
+        .event-item.approved { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
+
+        @media (max-width: 768px) {
+            .calendar-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .calendar-day { min-height: 80px; padding: 8px; }
+        }
+
         .today-schedule-section {
             background: white;
             border-radius: 12px;
@@ -996,23 +1073,19 @@
                     <h2 class="section-title">Quick Actions</h2>
                     <div class="quick-actions-grid">
                         <a href="professor_new_reservation.html" class="quick-action-btn">
-                            <div class="action-icon">➕</div>
+                            <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a2 2 0 0 1 2 2v6h6a2 2 0 1 1 0 4h-6v6a2 2 0 1 1-4 0v-6H4a2 2 0 1 1 0-4h6V4a2 2 0 0 1 2-2Z"/></svg></div>
                             <span>Reserve Laboratory</span>
                         </a>
                         <a href="professor_new_reservation.html" class="quick-action-btn">
-                            <div class="action-icon">🔬</div>
+                            <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 2h6v2h-1v5.59l5.7 8.55A2 2 0 0 1 18 21H6a2 2 0 0 1-1.7-2.86L10 9.59V4H9V2Zm3 9-5 8h10l-5-8Zm-1-7v6h2V4h-2Z"/></svg></div>
                             <span>Reserve Equipment</span>
                         </a>
-                        <a href="student_approved_reservation.html" class="quick-action-btn">
-                            <div class="action-icon">📆</div>
-                            <span>View Schedule</span>
-                        </a>
                         <a href="student_approvals.html" class="quick-action-btn">
-                            <div class="action-icon">⚙️</div>
+                            <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 5v4.59l3.2 3.2-1.4 1.42L11 12.41V7h2Zm-1 14a9 9 0 1 1 9-9 9 9 0 0 1-9 9Z"/></svg></div>
                             <span>Manage Requests</span>
                         </a>
                         <a href="professor_reservation_history.html" class="quick-action-btn">
-                            <div class="action-icon">📜</div>
+                            <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm2 4v2h8V6H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></div>
                             <span>Reservation History</span>
                         </a>
                     </div>
@@ -1040,6 +1113,27 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Weekly Schedule Preview -->
+                <div class="calendar-section">
+                    <h2 class="section-title">Weekly Schedule Preview</h2>
+                    <div class="calendar-widget">
+                        <div class="calendar-header">
+                            <button class="calendar-nav-btn" onclick="previousProfessorWeek()">Previous</button>
+                            <h3 id="professorWeekRange">Loading week...</h3>
+                            <button class="calendar-nav-btn" onclick="nextProfessorWeek()">Next</button>
+                        </div>
+                        <div class="calendar-grid" id="professorCalendarGrid">
+                            <div class="calendar-day"><div class="day-header">Mon</div><div class="day-date">-</div><div class="day-events"></div></div>
+                            <div class="calendar-day"><div class="day-header">Tue</div><div class="day-date">-</div><div class="day-events"></div></div>
+                            <div class="calendar-day"><div class="day-header">Wed</div><div class="day-date">-</div><div class="day-events"></div></div>
+                            <div class="calendar-day"><div class="day-header">Thu</div><div class="day-date">-</div><div class="day-events"></div></div>
+                            <div class="calendar-day"><div class="day-header">Fri</div><div class="day-date">-</div><div class="day-events"></div></div>
+                            <div class="calendar-day"><div class="day-header">Sat</div><div class="day-date">-</div><div class="day-events"></div></div>
+                            <div class="calendar-day"><div class="day-header">Sun</div><div class="day-date">-</div><div class="day-events"></div></div>
+                        </div>
                     </div>
                 </div>
 
@@ -1670,6 +1764,100 @@
             }
         }
 
+        let professorWeekOffset = 0;
+
+        function professorWeekDateKey(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function updateProfessorWeekDisplay() {
+            const today = new Date();
+            const currentWeek = new Date(today);
+            currentWeek.setDate(today.getDate() + (professorWeekOffset * 7));
+
+            const startOfWeek = new Date(currentWeek);
+            const day = startOfWeek.getDay();
+            startOfWeek.setDate(startOfWeek.getDate() - day + (day === 0 ? -6 : 1));
+
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('professorWeekRange').textContent =
+                `${startOfWeek.toLocaleDateString('en-US', options)} - ${endOfWeek.toLocaleDateString('en-US', options)}`;
+
+            loadProfessorWeekReservations(startOfWeek, endOfWeek);
+        }
+
+        async function loadProfessorWeekReservations(startOfWeek, endOfWeek) {
+            const calendarDays = document.querySelectorAll('#professorCalendarGrid .calendar-day');
+            const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+            try {
+                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                const { data: reservations, error } = await supabase
+                    .from('reservations')
+                    .select(`
+                        reservation_date,
+                        start_time,
+                        end_time,
+                        rooms(room_name)
+                    `)
+                    .eq('user_id', user.id)
+                    .eq('professor_approval', 'Approved')
+                    .eq('admin_approval', 'Approved')
+                    .gte('reservation_date', professorWeekDateKey(startOfWeek))
+                    .lte('reservation_date', professorWeekDateKey(endOfWeek))
+                    .order('reservation_date', { ascending: true })
+                    .order('start_time', { ascending: true });
+
+                if (error) throw error;
+
+                const reservationsByDate = {};
+                (reservations || []).forEach(reservation => {
+                    if (!reservationsByDate[reservation.reservation_date]) {
+                        reservationsByDate[reservation.reservation_date] = [];
+                    }
+                    reservationsByDate[reservation.reservation_date].push(reservation);
+                });
+
+                calendarDays.forEach((dayElement, index) => {
+                    const currentDate = new Date(startOfWeek);
+                    currentDate.setDate(startOfWeek.getDate() + index);
+                    const events = dayElement.querySelector('.day-events');
+
+                    dayElement.querySelector('.day-header').textContent = dayNames[index];
+                    dayElement.querySelector('.day-date').textContent = currentDate.getDate();
+                    events.innerHTML = '';
+
+                    (reservationsByDate[professorWeekDateKey(currentDate)] || []).forEach(reservation => {
+                        const event = document.createElement('div');
+                        event.className = 'event-item approved';
+                        event.textContent = `${reservation.rooms?.room_name || 'No room'} - ${formatTime(reservation.start_time)}`;
+                        events.appendChild(event);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading professor weekly schedule:', error);
+                calendarDays.forEach(dayElement => {
+                    dayElement.querySelector('.day-events').innerHTML = '';
+                });
+            }
+        }
+
+        function previousProfessorWeek() {
+            professorWeekOffset--;
+            updateProfessorWeekDisplay();
+        }
+
+        function nextProfessorWeek() {
+            professorWeekOffset++;
+            updateProfessorWeekDisplay();
+        }
+
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             updateDateTime();
@@ -1678,6 +1866,7 @@
             loadTodaySchedule();
             loadStudentRequests();
             loadUpcomingReservations();
+            updateProfessorWeekDisplay();
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
