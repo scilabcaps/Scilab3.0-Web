@@ -289,8 +289,9 @@
             const roomItem = cart.find(item => item.type === 'Laboratory Room');
             
             if (!roomItem) {
+                // Chemical-only and equipment-only reservations do not require a room.
+                // Render the open timeline without room-specific availability blocks.
                 renderTimeline([]);
-                showWarningSnackbar('Please select a room to view availability');
                 return;
             }
             
@@ -760,6 +761,7 @@
                     id: chemical.chemical_id,
                     name: chemical.chemical_name,
                     quantity: chemical.stock_quantity,
+                    unit: chemical.unit,
                     description: `${chemical.formula} - ${chemical.stock_quantity} ${chemical.unit}`
                 }));
                 renderResources('chemicals', chemicals);
@@ -854,7 +856,7 @@
                 let quantityDisplay;
                 let isDisabled = false;
                 let buttonText = 'Select';
-                let buttonAction = `addToCart(${resource.id}, '${resource.name}', '${typeName}', ${resource.quantity})`;
+                let buttonAction = `addToCart(${resource.id}, '${resource.name}', '${typeName}', ${resource.quantity}, '${resource.unit || ''}')`;
                 
                 if (type === 'rooms') {
                     const anotherRoomSelected = cart.some(item => item.type === 'Laboratory Room' && item.id !== resource.id);
@@ -872,7 +874,7 @@
                         quantityDisplay = resource.status;
                     }
                 } else {
-                    quantityDisplay = `Available: ${availableQuantity} ${inCartQuantity > 0 ? `(In cart: ${inCartQuantity})` : ''}`;
+                    quantityDisplay = `Available: ${availableQuantity} ${resource.unit || ''} ${inCartQuantity > 0 ? `(In cart: ${inCartQuantity} ${resource.unit || ''})` : ''}`;
                     if (availableQuantity === 0) {
                         isDisabled = true;
                         buttonText = 'Check Availability';
@@ -892,7 +894,7 @@
             `}).join('');
         }
 
-        function addToCart(id, name, type, available) {
+        function addToCart(id, name, type, available, unit = '') {
             if (type === 'Laboratory Room') {
                 const selectedRoom = cart.find(item => item.type === 'Laboratory Room');
                 if (selectedRoom && selectedRoom.id !== id) {
@@ -914,7 +916,7 @@
                     return;
                 }
             } else {
-                cart.push({ id, name, type, quantity: 1, available });
+                cart.push({ id, name, type, quantity: 1, available, unit });
             }
             updateCart();
             refreshResourcesDisplay();
@@ -944,13 +946,30 @@
                         <div class="cart-item-type">${item.type}</div>
                     </div>
                     <div class="quantity-controls">
-                        <button class="quantity-btn" onclick="decreaseQuantity(${index})">-</button>
-                        <span class="quantity-display">${item.quantity}</span>
-                        <button class="quantity-btn" onclick="increaseQuantity(${index})">+</button>
+                        ${item.type === 'chemicals' ? `
+                            <input class="quantity-input" type="number" min="0.01" step="any" max="${item.available}" value="${item.quantity}" onchange="updateChemicalQuantity(${index}, this.value)">
+                            <span class="quantity-unit">${item.unit || ''}</span>
+                        ` : `
+                            <button class="quantity-btn" onclick="decreaseQuantity(${index})">-</button>
+                            <span class="quantity-display">${item.quantity}</span>
+                            <button class="quantity-btn" onclick="increaseQuantity(${index})">+</button>
+                        `}
                     </div>
                     <button class="remove-item-btn" onclick="removeFromCart(${index})">Remove</button>
                 </div>
             `).join('');
+        }
+
+        function updateChemicalQuantity(index, value) {
+            const quantity = Number(value);
+            const item = cart[index];
+            if (!item || !Number.isFinite(quantity) || quantity <= 0 || quantity > item.available) {
+                showWarningSnackbar(`Enter a quantity between 0.01 and ${item?.available || 0} ${item?.unit || ''}.`);
+                updateCart();
+                return;
+            }
+            item.quantity = quantity;
+            refreshResourcesDisplay();
         }
 
         function increaseQuantity(index) {
@@ -1228,7 +1247,7 @@
                 <div class="summary-item">
                     <div class="summary-label">Resources:</div>
                     <div class="summary-value">
-                        ${cart.map(item => `${item.name} (${item.quantity}x)`).join('<br>')}
+                        ${cart.map(item => `${item.name} (${item.quantity}${item.type === 'chemicals' ? ` ${item.unit || ''}` : 'x'})`).join('<br>')}
                     </div>
                 </div>
             `;
@@ -1399,7 +1418,7 @@
                             reservation_id: reservationId,
                             chemical_id: item.id,
                             quantity_used: item.quantity,
-                            unit: 'mL',
+                            unit: item.unit || 'mL',
                             purpose: additionalNote || 'Laboratory use'
                         });
 

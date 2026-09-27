@@ -1026,7 +1026,7 @@ body {
     background: #f0f7ee;
     padding: 25px;
     border-radius: 10px;
-    margin-top: 30px;
+    margin: 30px 0;
     border: 1px solid #e0e0e0;
 }
 
@@ -1034,6 +1034,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 24px;
     padding: 15px;
     background: white;
     border-radius: 8px;
@@ -1059,7 +1060,9 @@ body {
 .quantity-controls {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
+    width: 110px;
+    flex-shrink: 0;
 }
 
 .quantity-btn {
@@ -1099,14 +1102,38 @@ body {
     color: #1E441E;
 }
 
+.quantity-input {
+    width: 76px;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    text-align: center;
+    font: inherit;
+    color: #1E441E;
+}
+
+.quantity-input:focus {
+    outline: 2px solid rgba(49, 203, 0, 0.25);
+    border-color: #31CB00;
+}
+
+.quantity-unit {
+    font-weight: 600;
+    color: #1E441E;
+}
+
 .remove-item-btn {
-    padding: 8px 15px;
+    width: 84px;
+    padding: 8px 0;
     background-color: #f44336;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9rem;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: background-color 0.3s;
     display: flex;
     align-items: center;

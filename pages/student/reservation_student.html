@@ -594,6 +594,7 @@
                     id: chemical.chemical_id,
                     name: chemical.chemical_name,
                     quantity: chemical.stock_quantity,
+                    unit: chemical.unit,
                     description: `${chemical.formula} - ${chemical.stock_quantity} ${chemical.unit}`
                 }));
 
@@ -655,10 +656,10 @@
                 let quantityDisplay;
                 let isDisabled = false;
                 let buttonText = 'Select';
-                let buttonAction = `addToCart(${resource.id}, '${escapeHtml(resource.name)}', '${typeName}', ${resource.quantity})`;
+                let buttonAction = `addToCart(${resource.id}, '${escapeHtml(resource.name)}', '${typeName}', ${resource.quantity}, '${escapeHtml(resource.unit || '')}')`;
                 
                 if (type === 'chemicals') {
-                    quantityDisplay = `Available: ${availableQuantity} ${inCartQuantity > 0 ? `(In cart: ${inCartQuantity})` : ''}`;
+                    quantityDisplay = `Available: ${availableQuantity} ${resource.unit || ''} ${inCartQuantity > 0 ? `(In cart: ${inCartQuantity} ${resource.unit || ''})` : ''}`;
                     if (availableQuantity === 0) {
                         isDisabled = true;
                         buttonText = 'Unavailable';
@@ -917,7 +918,7 @@
             }
         }
 
-        function addToCart(id, name, type, available) {
+        function addToCart(id, name, type, available, unit = '') {
             const existingItem = cart.find(item => item.id === id);
             if (existingItem) {
                 if (existingItem.quantity < available) {
@@ -927,7 +928,7 @@
                     return;
                 }
             } else {
-                cart.push({ id, name, type, quantity: 1, available });
+                cart.push({ id, name, type, quantity: 1, available, unit });
             }
             updateCart();
             refreshResourcesDisplay();
@@ -947,13 +948,30 @@
                         <div class="cart-item-type">${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>
                     </div>
                     <div class="quantity-controls">
-                        <button class="quantity-btn" onclick="decreaseQuantity(${index})">-</button>
-                        <span class="quantity-display">${item.quantity}</span>
-                        <button class="quantity-btn" onclick="increaseQuantity(${index})">+</button>
+                        ${item.type === 'chemicals' ? `
+                            <input class="quantity-input" type="number" min="0.01" step="any" max="${item.available}" value="${item.quantity}" onchange="updateChemicalQuantity(${index}, this.value)">
+                            <span class="quantity-unit">${item.unit || ''}</span>
+                        ` : `
+                            <button class="quantity-btn" onclick="decreaseQuantity(${index})">-</button>
+                            <span class="quantity-display">${item.quantity}</span>
+                            <button class="quantity-btn" onclick="increaseQuantity(${index})">+</button>
+                        `}
                     </div>
                     <button class="remove-item-btn" onclick="removeFromCart(${index})">Remove</button>
                 </div>
             `).join('');
+        }
+
+        function updateChemicalQuantity(index, value) {
+            const quantity = Number(value);
+            const item = cart[index];
+            if (!item || !Number.isFinite(quantity) || quantity <= 0 || quantity > item.available) {
+                showWarningSnackbar(`Enter a quantity between 0.01 and ${item?.available || 0} ${item?.unit || ''}.`);
+                updateCart();
+                return;
+            }
+            item.quantity = quantity;
+            refreshResourcesDisplay();
         }
 
         function increaseQuantity(index) {
@@ -1211,7 +1229,7 @@
                 <div class="summary-item">
                     <div class="summary-label">Resources:</div>
                     <div class="summary-value">
-                        ${cart.map(item => `${item.name} (${item.quantity}x)`).join('<br>')}
+                        ${cart.map(item => `${item.name} (${item.quantity}${item.type === 'chemicals' ? ` ${item.unit || ''}` : 'x'})`).join('<br>')}
                     </div>
                 </div>
             `;
@@ -1396,7 +1414,7 @@
                             reservation_id: reservationId,
                             chemical_id: item.id,
                             quantity_used: item.quantity,
-                            unit: 'mL',
+                            unit: item.unit || 'mL',
                             purpose: `Year & Section: ${year_section}`
                         });
 
