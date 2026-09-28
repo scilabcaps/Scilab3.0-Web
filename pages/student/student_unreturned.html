@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unreturned Items - Student</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/sidebar_theme.css">
+    <style>
+        .unreturned-overview {
+            padding: 22px 20px 20px;
+            margin-bottom: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .unreturned-overview h2 {
+            margin: 0 0 16px;
+            padding-bottom: 10px;
+            color: #267a27;
+            border-bottom: 2px solid #2a7221;
+            font-size: 1.15rem;
+        }
+        .unreturned-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .unreturned-summary-card {
+            min-height: 125px;
+            padding: 16px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-align: center;
+        }
+        .unreturned-summary-card--reservations {
+            color: #1c6424;
+            background: #f2faf0;
+            border-color: #b6d9b4;
+        }
+        .unreturned-summary-card--items {
+            color: #b35c00;
+            background: #fff5e8;
+            border-color: #ffd59b;
+        }
+        .unreturned-summary-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+        }
+        .unreturned-summary-card--reservations .unreturned-summary-icon {
+            background: #2a7a32;
+        }
+        .unreturned-summary-card--items .unreturned-summary-icon {
+            background: #f08a00;
+        }
+        .unreturned-summary-icon svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+            fill: currentColor;
+        }
+        .unreturned-summary-label {
+            font-weight: 500;
+        }
+        .unreturned-summary-value {
+            font-size: 1.45rem;
+            line-height: 1;
+            font-weight: 700;
+        }
+        .unreturned-quantity {
+            color: #b42318;
+            font-weight: 700;
+        }
+        .resource-name {
+            font-weight: 600;
+            color: #152614;
+        }
+        .resource-category {
+            color: #667085;
+            font-size: 0.9rem;
+        }
+        .unreturned-modal-resources {
+            display: grid;
+            gap: 10px;
+        }
+        .unreturned-modal-resource {
+            padding: 14px 16px;
+            background: #f4f8f2;
+            border-left: 3px solid #2a7221;
+            border-radius: 8px;
+        }
+        .unreturned-modal-resource h3 {
+            margin: 0 0 7px;
+            color: #152614;
+            font-size: 1rem;
+        }
+        .unreturned-modal-resource p {
+            margin: 3px 0;
+            color: #475467;
+        }
+        @media (max-width: 768px) {
+            .data-table { overflow-x: auto; }
+            .data-table table { min-width: 850px; }
+        }
+        @media (max-width: 540px) {
+            .unreturned-overview { padding: 18px 14px; }
+            .unreturned-summary { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1>Unreturned Items</h1>
+                    <img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
+                </div>
+            </div>
+            <div class="dashboard-content">
+                <section class="unreturned-overview" aria-labelledby="unreturnedOverviewTitle">
+                    <h2 id="unreturnedOverviewTitle">Items at a Glance</h2>
+                    <div class="unreturned-summary" aria-label="Outstanding items summary">
+                        <div class="unreturned-summary-card unreturned-summary-card--reservations">
+                            <span class="unreturned-summary-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2Zm2 4v2h10V8H7Zm0 4v2h10v-2H7Zm0 4v2h6v-2H7Z"/></svg>
+                            </span>
+                            <span class="unreturned-summary-label">Reservations with items due</span>
+                            <strong class="unreturned-summary-value" id="reservationCount">—</strong>
+                        </div>
+                        <div class="unreturned-summary-card unreturned-summary-card--items">
+                            <span class="unreturned-summary-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 4v5.4l3.2 1.9-1 1.7-4.2-2.5V6h2Z"/></svg>
+                            </span>
+                            <span class="unreturned-summary-label">Total units still in hand</span>
+                            <strong class="unreturned-summary-value" id="outstandingCount">—</strong>
+                        </div>
+                    </div>
+                </section>
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Reservation Date</th>
+                                <th>Reservation #</th>
+                                <th>Time</th>
+                                <th>Items Due</th>
+                                <th>Types</th>
+                                <th>Borrowed</th>
+                                <th>Returned</th>
+                                <th>Still in Hand</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unreturnedItemsTable">
+                            <tr><td colspan="9" style="text-align:center">Loading your items…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="empty-state" style="display:none">
+                    <div class="empty-state-icon"></div>
+                    <div class="empty-state-text">You have no items due for return.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="studentUnreturnedDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Reservation Items</h2>
+                <button class="modal-close" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body"><!-- Reservation items load here --></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../js/sidebar_loader.js"></script>
+    <script src="../../js/main.js"></script>
+    <script src="../../js/snackbar.js"></script>
+    <script src="../../js/modal.js"></script>
+    <script src="../../js/student_unreturned.js"></script>
+</body>
+</html>

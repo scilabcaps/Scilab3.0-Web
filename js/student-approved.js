@@ -60,7 +60,18 @@ class StudentApprovedReservations {
                 .from('reservations')
                 .select(`
                     *,
-                    rooms(room_name)
+                    rooms(room_name, is_deleted),
+                    reservation_items(
+                        quantity_borrowed,
+                        is_deleted,
+                        lab_assets(item_name, category, is_deleted)
+                    ),
+                    chemical_usage(
+                        quantity_used,
+                        unit,
+                        is_deleted,
+                        chemicals(chemical_name, is_deleted)
+                    )
                 `)
                 .eq('user_id', user.id)
                 .eq('professor_approval', 'Approved')
@@ -69,20 +80,47 @@ class StudentApprovedReservations {
 
             if (error) throw error;
 
-            // Format reservations to match expected structure
-            this.reservations = reservations.map(res => ({
-                id: res.reservation_id,
-                date: res.reservation_date,
-                startTime: res.start_time,
-                endTime: res.end_time,
-                resources: res.room_name || 'Lab Room',
-                year_section: res.year_section,
-                course: res.course,
-                professor: res.professor,
-                status: res.status,
-                professor_approval: res.professor_approval,
-                admin_approval: res.admin_approval
-            }));
+            // Keep one reservation row while listing every linked resource.
+            this.reservations = reservations.map(res => {
+                const resources = [];
+                const rooms = Array.isArray(res.rooms) ? res.rooms : [res.rooms];
+                rooms.forEach(room => {
+                    if (room?.room_name && !room.is_deleted) resources.push(room.room_name);
+                });
+
+                (res.reservation_items || []).forEach(item => {
+                    const asset = item.lab_assets;
+                    if (!item.is_deleted && asset?.item_name && !asset.is_deleted) {
+                        const quantity = Number(item.quantity_borrowed) || 0;
+                        resources.push(quantity > 1 ? `${asset.item_name} (x${quantity})` : asset.item_name);
+                    }
+                });
+
+                (res.chemical_usage || []).forEach(usage => {
+                    const chemical = usage.chemicals;
+                    if (!usage.is_deleted && chemical?.chemical_name && !chemical.is_deleted) {
+                        const amount = usage.quantity_used;
+                        const quantity = amount === null || amount === undefined
+                            ? ''
+                            : ` (${amount}${usage.unit ? ` ${usage.unit}` : ''})`;
+                        resources.push(`${chemical.chemical_name}${quantity}`);
+                    }
+                });
+
+                return {
+                    id: res.reservation_id,
+                    date: res.reservation_date,
+                    startTime: res.start_time,
+                    endTime: res.end_time,
+                    resources: resources.length ? resources.join(', ') : 'No resources recorded',
+                    year_section: res.year_section,
+                    course: res.course,
+                    professor: res.professor,
+                    status: res.status,
+                    professor_approval: res.professor_approval,
+                    admin_approval: res.admin_approval
+                };
+            });
 
             this.renderReservations();
         } catch (error) {
@@ -176,7 +214,7 @@ class StudentApprovedReservations {
             <tr>
                 <td>${reservation.date}</td>
                 <td>${timeRange}</td>
-                <td>${reservation.resources || 'No resources'}</td>
+                <td>${this.escapeHtml(reservation.resources || 'No resources recorded')}</td>
                 <td>${reservation.year_section || 'N/A'}</td>
                 <td>${reservation.course || 'N/A'}</td>
                 <td>${reservation.professor || 'N/A'}</td>
@@ -222,6 +260,16 @@ class StudentApprovedReservations {
                 ${type}: ${status}
             </span>
         `;
+    }
+
+    escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[character]);
     }
 
     getStatusColor(status) {

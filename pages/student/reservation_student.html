@@ -27,11 +27,17 @@
                 <div class="reservation-container">
                     <div class="form-section">
                         <h3 class="section-title">Available Resources</h3>
+                        <div class="resource-search">
+                            <label class="resource-search-label" for="resourceSearch">Search all resources</label>
+                            <input id="resourceSearch" type="search" placeholder="Search chemicals, equipment, or glassware" oninput="applyResourceSearch()" autocomplete="off">
+                            <p id="resourceSearchSummary" class="resource-search-summary" aria-live="polite">Search all resource categories.</p>
+                        </div>
                         <div class="inventory-tabs">
                             <button class="tab-btn active" onclick="switchTab('chemicals')">Chemicals</button>
                             <button class="tab-btn" onclick="switchTab('equipment')">Equipment</button>
                             <button class="tab-btn" onclick="switchTab('glassware')">Glassware</button>
                         </div>
+                        <div id="resourceSearchResults" class="resource-grid resource-search-results" hidden></div>
 
                         <div id="chemicals" class="tab-content active">
                             <div class="resource-grid" id="chemicalsGrid">
@@ -247,14 +253,15 @@
                 const dateStr = formatDateForInput(date);
                 const isToday = date.toDateString() === today.toDateString();
                 const isPast = date < today && !isToday;
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 const isSelected = selectedDate === dateStr;
                 
                 let classes = 'calendar-day';
                 if (isToday) classes += ' today';
-                if (isPast) classes += ' disabled';
+                if (isPast || isWeekend) classes += ' disabled';
                 if (isSelected) classes += ' selected';
                 
-                html += `<div class="${classes}" ${!isPast ? `onclick="selectDate('${dateStr}')"` : ''}>${day}</div>`;
+                html += `<div class="${classes}" ${!isPast && !isWeekend ? `onclick="selectDate('${dateStr}')"` : ''}>${day}</div>`;
             }
             
             calendarDays.innerHTML = html;
@@ -266,6 +273,12 @@
         }
 
         function selectDate(dateStr) {
+            const requestedDate = new Date(`${dateStr}T00:00:00`);
+            if (requestedDate.getDay() === 0 || requestedDate.getDay() === 6) {
+                showWarningSnackbar('Reservations are not available on Saturdays or Sundays');
+                return;
+            }
+
             // Clear earliest available time if user manually selects a different date
             if (selectedDate && selectedDate !== dateStr) {
                 earliestAvailableTime = null;
@@ -682,6 +695,68 @@
                     </button>
                 </div>
             `}).join('');
+            applyResourceSearch();
+        }
+
+        function applyResourceSearch() {
+            const searchInput = document.getElementById('resourceSearch');
+            const summary = document.getElementById('resourceSearchSummary');
+            if (!searchInput || !summary) return;
+
+            const query = searchInput.value.trim().toLocaleLowerCase();
+            const tabs = document.querySelector('.inventory-tabs');
+            const tabContents = Array.from(document.querySelectorAll('.tab-content'));
+            const resultsGrid = document.getElementById('resourceSearchResults');
+            const gridLabels = {
+                chemicalsGrid: 'Chemicals',
+                equipmentGrid: 'Equipment',
+                glasswareGrid: 'Glassware'
+            };
+            let totalMatches = 0;
+            const matchedCategories = [];
+            resultsGrid.replaceChildren();
+
+            if (!query) {
+                tabs.hidden = false;
+                tabContents.forEach(tab => { tab.hidden = false; });
+                resultsGrid.hidden = true;
+                summary.textContent = 'Search all resource categories.';
+                return;
+            }
+
+            Object.entries(gridLabels).forEach(([gridId, label]) => {
+                const grid = document.getElementById(gridId);
+                if (!grid) return;
+
+                const cards = Array.from(grid.querySelectorAll('.resource-card'));
+                const matches = cards.filter(card => card.textContent.toLocaleLowerCase().includes(query));
+
+                if (matches.length) {
+                    totalMatches += matches.length;
+                    matchedCategories.push(label);
+                    matches.forEach(card => {
+                        const resultCard = card.cloneNode(true);
+                        const category = document.createElement('span');
+                        category.className = 'resource-search-result-type';
+                        category.textContent = label;
+                        resultCard.prepend(category);
+                        resultsGrid.appendChild(resultCard);
+                    });
+                }
+            });
+
+            tabs.hidden = true;
+            tabContents.forEach(tab => { tab.hidden = true; });
+            resultsGrid.hidden = false;
+            if (totalMatches === 0) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'resource-search-no-results';
+                emptyMessage.textContent = 'No resources match your search.';
+                resultsGrid.appendChild(emptyMessage);
+                summary.textContent = 'No resources match your search.';
+            } else {
+                summary.textContent = `${totalMatches} ${totalMatches === 1 ? 'match' : 'matches'} in ${matchedCategories.join(', ')}.`;
+            }
         }
 
         function escapeHtml(text) {
@@ -1034,6 +1109,10 @@
 
             if (selectedDate < today) {
                 return { valid: false, message: 'Cannot make reservations in the past' };
+            }
+
+            if (selectedDate.getDay() === 0 || selectedDate.getDay() === 6) {
+                return { valid: false, message: 'Reservations are not available on Saturdays or Sundays' };
             }
 
             // If date is today, check if start time is in the past

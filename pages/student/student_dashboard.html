@@ -328,7 +328,7 @@
                 // Fetch reservation counts from Supabase
                 const { data: allReservations, error } = await supabase
                     .from('reservations')
-                    .select('status, professor_approval, admin_approval, reservation_date')
+                    .select('status, professor_approval, admin_approval, reservation_date, approved_at')
                     .eq('user_id', user.id);
                 
                 if (error) throw error;
@@ -339,11 +339,22 @@
                     r.professor_approval === 'Pending' || r.admin_approval === 'Pending'
                 ).length || 0;
                 
-                const today = new Date().toISOString().split('T')[0];
+                const manilaDate = date => {
+                    const parts = new Intl.DateTimeFormat('en-US', {
+                        timeZone: 'Asia/Manila',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    }).formatToParts(date);
+                    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+                    return `${values.year}-${values.month}-${values.day}`;
+                };
+                const today = manilaDate(new Date());
                 const approvedToday = allReservations?.filter(r => 
                     r.professor_approval === 'Approved' && 
                     r.admin_approval === 'Approved' && 
-                    r.reservation_date === today
+                    r.approved_at &&
+                    manilaDate(new Date(r.approved_at)) === today
                 ).length || 0;
                 
                 const upcomingSchedule = allReservations?.filter(r => 

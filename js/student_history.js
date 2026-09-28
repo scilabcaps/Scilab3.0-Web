@@ -7,10 +7,15 @@ const StudentHistory = {
     reservations: [],
     currentPage: 1,
     pageSize: 10,
+    reservationModal: null,
 
     init() {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Student') {
+            this.reservationModal = new Modal('studentHistoryModal');
+            this.reservationModal.modal.addEventListener('click', event => {
+                if (event.target === this.reservationModal.modal) event.stopPropagation();
+            });
             this.loadReservations(user.id);
         } else {
             window.location.href = '../../index.html';
@@ -28,7 +33,10 @@ const StudentHistory = {
             'Approved': '#31CB00',
             'Returned': '#31CB00',
             'Cancelled': '#f44336',
-            'Rejected': '#f44336'
+            'Rejected': '#f44336',
+            'Declined': '#f44336',
+            'Partially Returned': '#e68a00',
+            'Unreturned': '#e74c3c'
         };
         return statusColors[status] || '#7f8c8d';
     },
@@ -54,7 +62,17 @@ const StudentHistory = {
                 .from('reservations')
                 .select(`
                     *,
-                    rooms(room_name)
+                    rooms(room_name),
+                    reservation_items(
+                        quantity_borrowed,
+                        quantity_returned,
+                        lab_assets(item_name, category)
+                    ),
+                    chemical_usage(
+                        quantity_used,
+                        unit,
+                        chemicals(chemical_name)
+                    )
                 `)
                 .eq('user_id', userId)
                 .or('status.in.(Completed,Cancelled,Declined),and(status.in.(Approved,Ongoing,Partially Returned),reservation_date.lt.' + today + ')')
@@ -98,13 +116,14 @@ const StudentHistory = {
             const statusText = this.getStatusDisplayText(res.status);
             return `
                 <tr>
-                    <td>${res.reservation_date}</td>
-                    <td>${res.start_time} - ${res.end_time}</td>
-                    <td>${res.room_name || 'Lab Room'}</td>
-                    <td>${res.year_section || 'N/A'}</td>
-                    <td>${res.course || 'N/A'}</td>
-                    <td>${res.professor}</td>
-                    <td><span style="color: ${statusColor}; font-weight: 600;">${statusText}</span></td>
+                    <td>${this.escapeHtml(res.reservation_date || 'N/A')}</td>
+                    <td>${this.escapeHtml(`${res.start_time || 'N/A'} - ${res.end_time || 'N/A'}`)}</td>
+                    <td>${this.escapeHtml(this.getResourceSummary(res))}</td>
+                    <td>${this.escapeHtml(res.year_section || 'N/A')}</td>
+                    <td>${this.escapeHtml(res.course || 'N/A')}</td>
+                    <td>${this.escapeHtml(res.professor || 'N/A')}</td>
+                    <td><span style="color: ${statusColor}; font-weight: 600;">${this.escapeHtml(statusText)}</span></td>
+                    <td><button type="button" class="btn btn-view" onclick="StudentHistory.viewDetails(${res.reservation_id})">View</button></td>
                 </tr>
             `;
         }).join('');
@@ -165,7 +184,7 @@ const StudentHistory = {
         const emptyState = document.getElementById('emptyState');
 
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #e74c3c;">${this.escapeHtml(message)}</td></tr>`;
         }
         if (emptyState) emptyState.style.display = 'block';
         this.removePagination();
@@ -175,7 +194,70 @@ const StudentHistory = {
      * View details of a specific reservation
      */
     viewDetails(id) {
-        alert('Viewing reservation details for ID: ' + id);
+        const reservation = this.reservations.find(item => String(item.reservation_id) === String(id));
+        if (!reservation) {
+            this.reservationModal.open('Reservation Details', '<p>Reservation details could not be found.</p>');
+            return;
+        }
+
+        const rooms = (Array.isArray(reservation.rooms) ? reservation.rooms : [reservation.rooms])
+            .filter(room => room?.room_name)
+            .map(room => `<article class="history-detail-resource"><h3>${this.escapeHtml(room.room_name)}</h3><p>Room</p></article>`);
+        const assets = (reservation.reservation_items || []).filter(item => item.lab_assets).map(item => {
+            const borrowed = Number(item.quantity_borrowed) || 0;
+            const returned = Number(item.quantity_returned) || 0;
+            return `
+                <article class="history-detail-resource">
+                    <h3>${this.escapeHtml(item.lab_assets.item_name || 'Unknown item')}</h3>
+                    <p>Type: ${this.escapeHtml(item.lab_assets.category || 'Equipment')}</p>
+                    <p>Borrowed: ${borrowed} · Returned: ${returned} · Still in hand: ${Math.max(0, borrowed - returned)}</p>
+                </article>
+            `;
+        });
+        const chemicals = (reservation.chemical_usage || []).map(usage => `
+            <article class="history-detail-resource">
+                <h3>${this.escapeHtml(usage.chemicals?.chemical_name || 'Chemical')}</h3>
+                <p>Used: ${this.escapeHtml(usage.quantity_used)} ${this.escapeHtml(usage.unit || '')}</p>
+            </article>
+        `);
+        const resources = [...rooms, ...assets, ...chemicals];
+
+        this.reservationModal.open('Reservation Details', `
+            <div class="history-detail-grid">
+                <div><strong>Date</strong><span>${this.escapeHtml(reservation.reservation_date || 'N/A')}</span></div>
+                <div><strong>Time</strong><span>${this.escapeHtml(`${reservation.start_time || 'N/A'} - ${reservation.end_time || 'N/A'}`)}</span></div>
+                <div><strong>Year &amp; Section</strong><span>${this.escapeHtml(reservation.year_section || 'N/A')}</span></div>
+                <div><strong>Course</strong><span>${this.escapeHtml(reservation.course || 'N/A')}</span></div>
+                <div><strong>Professor</strong><span>${this.escapeHtml(reservation.professor || 'N/A')}</span></div>
+                <div><strong>Status</strong><span>${this.escapeHtml(this.getStatusDisplayText(reservation.status || 'N/A'))}</span></div>
+            </div>
+            ${reservation.additional_note ? `<div class="history-detail-note"><strong>Additional Note</strong><p>${this.escapeHtml(reservation.additional_note)}</p></div>` : ''}
+            <h3 class="history-detail-heading">Resources</h3>
+            <div class="history-detail-resources">
+                ${resources.length ? resources.join('') : '<p>No resources were recorded for this reservation.</p>'}
+            </div>
+        `);
+    },
+
+    getResourceSummary(reservation) {
+        const rooms = (Array.isArray(reservation.rooms) ? reservation.rooms : [reservation.rooms])
+            .filter(room => room?.room_name).map(room => room.room_name);
+        const assetCount = (reservation.reservation_items || []).filter(item => item.lab_assets).length;
+        const chemicalCount = (reservation.chemical_usage || []).length;
+        const summary = [...rooms];
+        if (assetCount) summary.push(`${assetCount} ${assetCount === 1 ? 'item' : 'items'}`);
+        if (chemicalCount) summary.push(`${chemicalCount} ${chemicalCount === 1 ? 'chemical' : 'chemicals'}`);
+        return summary.length ? summary.join(' · ') : 'No resources recorded';
+    },
+
+    escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[character]);
     }
 };
 
