@@ -986,9 +986,15 @@ body {
     flex: 1;
 }
 
+.reservation-container .reservation-details-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
 @media (max-width: 768px) {
-    .reservation-container .form-row {
-        grid-template-columns: 1fr;
+    .reservation-container .reservation-details-row {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 

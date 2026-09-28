@@ -112,7 +112,7 @@
                             </div>
                             <div id="availabilityStatus" class="availability-status"></div>
                             <div id="existingReservations" class="existing-reservations"></div>
-                            <div class="form-row">
+                            <div class="form-row reservation-details-row">
                                 <div class="form-group">
                                     <label for="year_section">Year & Section *</label>
                                     <input type="text" id="year_section" name="year_section" readonly required>
@@ -123,10 +123,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="professor">Professor *</label>
-                                    <select id="professor" name="professor" required>
-                                        <option value="">Select Professor</option>
-                                        <!-- Professors will be populated here -->
-                                    </select>
+                                    <input type="text" id="professor" name="professor" value="Loading assigned professor..." readonly>
                                 </div>
                             </div>
                             <button type="submit" class="submit-btn">Submit Reservation</button>
@@ -187,12 +184,13 @@
         let selectedStartTime = null;
         let selectedEndTime = null;
         let existingReservationsForDay = [];
+        let assignedProfessorName = '';
+        let summaryProfessorName = '';
 
         window.addEventListener('DOMContentLoaded', function () {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
             if (user.username && user.role === 'Student') {
                 loadResources();
-                loadProfessors();
                 initializeCalendar();
                 loadUserInfo();
             } else {
@@ -870,51 +868,46 @@
             pendingStockItem = null;
         }
 
-        async function loadProfessors() {
-            try {
-                const { data: professorsData, error } = await window.supabase
-                    .from('user_info')
-                    .select('first_name, last_name')
-                    .eq('role', 'professor');
-
-                if (error) throw error;
-
-                const professors = professorsData.map(p => ({
-                    name: `${p.first_name} ${p.last_name}`
-                }));
-
-                const professorSelect = document.getElementById('professor');
-                professorSelect.innerHTML = '<option value="">Select Professor</option>';
-                
-                professors.forEach(professor => {
-                    const option = document.createElement('option');
-                    option.value = professor.name;
-                    option.textContent = professor.name;
-                    professorSelect.appendChild(option);
-                });
-                
-            } catch (error) {
-                console.error('Error loading professors:', error);
-            }
-        }
-
         async function loadUserInfo() {
+            assignedProfessorName = '';
             try {
                 const user = JSON.parse(sessionStorage.getItem('user') || '{}');
                 const { data: userData, error } = await window.supabase
                     .from('user_info')
-                    .select('year_section, course')
+                    .select('year_section, course, professor')
                     .eq('id', user.id)
                     .single();
 
                 if (error) throw error;
-
-                if (userData) {
-                    document.getElementById('year_section').value = userData.year_section || '';
-                    document.getElementById('course').value = userData.course || '';
+                if (!userData.professor) {
+                    throw new Error('No professor is assigned to your account. Please contact your administrator.');
                 }
+
+                const { data: professor, error: professorError } = await window.supabase
+                    .from('user_info')
+                    .select('first_name, last_name')
+                    .eq('id', userData.professor)
+                    .eq('role', 'professor')
+                    .maybeSingle();
+
+                if (professorError) throw professorError;
+                const professorName = professor
+                    ? [professor.first_name, professor.last_name].filter(Boolean).join(' ').trim()
+                    : '';
+                if (!professorName) {
+                    throw new Error('Your assigned professor could not be found. Please contact your administrator.');
+                }
+
+                document.getElementById('year_section').value = userData.year_section || '';
+                document.getElementById('course').value = userData.course || '';
+                document.getElementById('professor').value = professorName;
+                assignedProfessorName = professorName;
+                return true;
             } catch (error) {
                 console.error('Error loading user info:', error);
+                document.getElementById('professor').value = 'Assigned professor unavailable';
+                showErrorSnackbar(error.message || 'Unable to load your assigned professor. Please try again.');
+                return false;
             }
         }
 
@@ -1174,7 +1167,7 @@
 
 
 
-        document.getElementById('reservationForm').addEventListener('submit', function (e) {
+        document.getElementById('reservationForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             if (cart.length === 0) {
                 showWarningSnackbar('Please add at least one resource to your cart');
@@ -1191,19 +1184,22 @@
                 return;
             }
 
+            if (!await loadUserInfo()) return;
+
             const formData = {
                 date: document.getElementById('date').value,
                 startTime: document.getElementById('startTime').value,
                 endTime: document.getElementById('endTime').value,
                 year_section: document.getElementById('year_section').value,
                 course: document.getElementById('course').value,
-                professor: document.getElementById('professor').value
+                professor: assignedProfessorName
             };
 
             showSummary(formData);
         });
 
         function showSummary(formData) {
+            summaryProfessorName = formData.professor;
             const summaryContent = document.getElementById('summaryContent');
             summaryContent.innerHTML = `
                 <div class="summary-item">
@@ -1224,7 +1220,7 @@
                 </div>
                 <div class="summary-item">
                     <div class="summary-label">Professor:</div>
-                    <div class="summary-value">${formData.professor}</div>
+                    <div class="summary-value">${escapeHtml(formData.professor)}</div>
                 </div>
                 <div class="summary-item">
                     <div class="summary-label">Resources:</div>
@@ -1246,12 +1242,22 @@
                 return;
             }
 
+            if (!await loadUserInfo()) {
+                closeModal('summaryModal');
+                return;
+            }
+            if (assignedProfessorName !== summaryProfessorName) {
+                closeModal('summaryModal');
+                showWarningSnackbar('Your assigned professor changed. Please review the reservation again.');
+                return;
+            }
+
             const date = document.getElementById('date').value;
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
             const year_section = document.getElementById('year_section').value;
             const course = document.getElementById('course').value;
-            const professor = document.getElementById('professor').value;
+            const professor = assignedProfessorName;
 
             console.log('Cart items:', cart);
             console.log('Cart item types:', cart.map(item => ({ name: item.name, type: item.type, typeLower: item.type?.toLowerCase() })));
@@ -1447,6 +1453,7 @@
                 cart = [];
                 updateCart();
                 document.getElementById('reservationForm').reset();
+                await loadUserInfo();
                 
                 // Refresh resources display to show updated stock from database
                 refreshResourcesDisplay();

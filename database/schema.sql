@@ -109,6 +109,7 @@ CREATE TABLE public.user_info (
   is_banned boolean DEFAULT false,
   isApproved integer CHECK ("isApproved" = ANY (ARRAY[0, 1, 2])),
   year_section text,
+  professor uuid REFERENCES public.user_info(id),
   course text,
   CONSTRAINT user_info_pkey PRIMARY KEY (id),
   CONSTRAINT user_info_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)

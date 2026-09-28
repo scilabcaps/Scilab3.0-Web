@@ -3,7 +3,7 @@
  * Handles functionality for professor unreturned items page
  */
 
-const CACHE_KEY = 'professor_unreturned_cache_v2';
+const CACHE_KEY = 'professor_unreturned_cache_v4';
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 const ProfessorUnreturned = {
@@ -11,11 +11,23 @@ const ProfessorUnreturned = {
     currentPage: 1,
     pageSize: 10,
     reservationModal: null,
+    detailsRequestId: 0,
 
     init() {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Professor') {
             this.reservationModal = new Modal('reservationDetailsModal');
+            const closeReservationModal = event => {
+                if (event.target === this.reservationModal.modal || event.target === this.reservationModal.modalBody) {
+                    // The global window.onclick handler also hides .modal with an inline
+                    // display:none, which prevents Modal.open() from showing it again.
+                    event.stopPropagation();
+                    this.detailsRequestId++;
+                    this.reservationModal.close();
+                }
+            };
+            this.reservationModal.modal.addEventListener('click', closeReservationModal);
+            this.reservationModal.modalBody.addEventListener('click', closeReservationModal);
             this.loadUnreturnedItems();
         } else {
             window.location.href = '../../index.html';
@@ -58,6 +70,12 @@ const ProfessorUnreturned = {
         localStorage.removeItem(CACHE_KEY);
     },
 
+    hasReservationEnded(date, endTime, now = Date.now()) {
+        if (!date || !endTime) return false;
+        const endTimestamp = new Date(`${date}T${endTime}`).getTime();
+        return Number.isFinite(endTimestamp) && endTimestamp < now;
+    },
+
     async loadUnreturnedItems() {
         try {
             const cachedData = this.getCachedData();
@@ -74,17 +92,23 @@ const ProfessorUnreturned = {
                     *,
                     reservations!inner(
                         reservation_date,
+                        end_time,
                         start_time,
-                        user_info!inner(first_name, last_name, email, year_section)
+                        user_info!inner(first_name, last_name, email, year_section, role)
                     ),
                     lab_assets!inner(item_name, category)
                 `)
                 .eq('is_returned', false)
+                .eq('reservations.user_info.role', 'student')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            const unreturnedItems = items.filter(item => item.quantity_returned < item.quantity_borrowed);
+            const now = Date.now();
+            const unreturnedItems = items.filter(item =>
+                item.quantity_returned < item.quantity_borrowed &&
+                this.hasReservationEnded(item.reservations.reservation_date, item.reservations.end_time, now)
+            );
 
             const formattedItems = unreturnedItems.map(item => ({
                 reservation_id: item.reservation_id,
@@ -98,6 +122,7 @@ const ProfessorUnreturned = {
                 returned_quantity: item.quantity_returned,
                 unreturned_quantity: item.quantity_borrowed - item.quantity_returned,
                 reservation_date: item.reservations.reservation_date,
+                reservation_end_time: item.reservations.end_time,
                 reservation_time: item.reservations.start_time
             }));
 
@@ -112,39 +137,72 @@ const ProfessorUnreturned = {
         }
     },
 
+    getReservationGroups(items = this.formattedItems) {
+        const groups = new Map();
+
+        items.forEach(item => {
+            const key = String(item.reservation_id);
+            if (!groups.has(key)) {
+                groups.set(key, {
+                    reservation_id: item.reservation_id,
+                    student_name: item.student_name,
+                    year_section: item.year_section,
+                    reservation_date: item.reservation_date,
+                    resources: [],
+                    borrowed_quantity: 0,
+                    returned_quantity: 0,
+                    unreturned_quantity: 0
+                });
+            }
+
+            const group = groups.get(key);
+            group.resources.push(item);
+            group.borrowed_quantity += Number(item.borrowed_quantity) || 0;
+            group.returned_quantity += Number(item.returned_quantity) || 0;
+            group.unreturned_quantity += Number(item.unreturned_quantity) || 0;
+        });
+
+        return Array.from(groups.values());
+    },
+
     displayItems(items) {
-        const itemsToDisplay = items || this.formattedItems;
+        const reservationsToDisplay = this.getReservationGroups(items || this.formattedItems);
         const tbody = document.getElementById('itemsTable');
 
-        if (itemsToDisplay.length === 0) {
+        if (reservationsToDisplay.length === 0) {
             document.getElementById('itemsEmptyState').style.display = 'block';
             tbody.innerHTML = '';
             this.removePagination();
         } else {
             document.getElementById('itemsEmptyState').style.display = 'none';
-            this.renderPage(itemsToDisplay);
-            this.renderPaginationControls(itemsToDisplay.length);
+            this.renderPage(reservationsToDisplay);
+            this.renderPaginationControls(reservationsToDisplay.length);
         }
     },
 
-    renderPage(items) {
+    renderPage(reservations) {
         const tbody = document.getElementById('itemsTable');
         const start = (this.currentPage - 1) * this.pageSize;
         const end = start + this.pageSize;
-        const pageData = items.slice(start, end);
+        const pageData = reservations.slice(start, end);
 
-        tbody.innerHTML = pageData.map(item => {
+        tbody.innerHTML = pageData.map(reservation => {
+            const resources = reservation.resources.map(item => `
+                <div class="reservation-resource">
+                    ${this.escapeHtml(item.resource_name)} <span class="resource-detail-meta">(${this.escapeHtml(item.resource_type || 'Asset')})</span>
+                </div>
+            `).join('');
+
             return `
                 <tr>
-                    <td>${item.student_name || 'N/A'}</td>
-                    <td>${item.year_section || 'N/A'}</td>
-                    <td>${item.resource_name}</td>
-                    <td>${item.resource_type}</td>
-                    <td>${item.borrowed_quantity}</td>
-                    <td>${item.returned_quantity}</td>
-                    <td class="unreturned-qty">${item.unreturned_quantity}</td>
-                    <td>${item.reservation_date}</td>
-                    <td><button class="view-reservation-btn" onclick="ProfessorUnreturned.viewDetails(${item.reservation_id})">View</button></td>
+                    <td>${this.escapeHtml(reservation.student_name || 'N/A')}</td>
+                    <td>${this.escapeHtml(reservation.year_section || 'N/A')}</td>
+                    <td><div class="reservation-resource-list">${resources}</div></td>
+                    <td>${reservation.borrowed_quantity}</td>
+                    <td>${reservation.returned_quantity}</td>
+                    <td class="unreturned-qty">${reservation.unreturned_quantity}</td>
+                    <td>${this.escapeHtml(reservation.reservation_date || 'N/A')}</td>
+                    <td><button class="view-reservation-btn" onclick="ProfessorUnreturned.viewDetails(${reservation.reservation_id})">View</button></td>
                 </tr>
             `;
         }).join('');
@@ -186,21 +244,24 @@ const ProfessorUnreturned = {
     },
 
     goToPage(page) {
-        const totalPages = Math.ceil(this.formattedItems.length / this.pageSize);
+        const reservations = this.getReservationGroups();
+        const totalPages = Math.ceil(reservations.length / this.pageSize);
         if (page < 1 || page > totalPages) return;
         this.currentPage = page;
-        this.renderPage(this.formattedItems);
-        this.renderPaginationControls(this.formattedItems.length);
+        this.renderPage(reservations);
+        this.renderPaginationControls(reservations.length);
     },
 
     changePageSize(size) {
         this.pageSize = parseInt(size);
         this.currentPage = 1;
-        this.renderPage(this.formattedItems);
-        this.renderPaginationControls(this.formattedItems.length);
+        const reservations = this.getReservationGroups();
+        this.renderPage(reservations);
+        this.renderPaginationControls(reservations.length);
     },
 
     async viewDetails(reservationId) {
+        const requestId = ++this.detailsRequestId;
         this.reservationModal.open('Reservation Details', '<p>Loading reservation resources...</p>');
 
         try {
@@ -246,7 +307,7 @@ const ProfessorUnreturned = {
                 resources.push(`
                     <div class="resource-detail-row">
                         <div class="resource-detail-name">${this.escapeHtml(asset.item_name)} (${this.escapeHtml(asset.category || 'Asset')})</div>
-                        <div class="resource-detail-meta">Borrowed: ${item.quantity_borrowed || 0} | Returned: ${item.quantity_returned || 0} | Unreturned: ${unreturned}</div>
+                        <div class="resource-detail-meta">Quantity: ${item.quantity_borrowed || 0} | Returned: ${item.quantity_returned || 0} | Unreturned: ${unreturned}</div>
                     </div>
                 `);
             });
@@ -264,6 +325,10 @@ const ProfessorUnreturned = {
 
             const student = reservation.user_info ?
                 `${reservation.user_info.first_name || ''} ${reservation.user_info.last_name || ''}`.trim() : 'N/A';
+            if (requestId !== this.detailsRequestId || !this.reservationModal.modal.classList.contains('active')) {
+                return;
+            }
+
             this.reservationModal.open('Reservation Details', `
                 <div class="summary-item">
                     <div class="summary-label">Student</div>
@@ -277,15 +342,17 @@ const ProfessorUnreturned = {
                     <div class="summary-label">Time</div>
                     <div class="summary-value">${this.escapeHtml(`${reservation.start_time} - ${reservation.end_time}`)}</div>
                 </div>
-                <div class="summary-item">
-                    <div class="summary-label">Resources</div>
-                    <div class="summary-value">
-                        ${resources.length ? resources.join('') : 'No resources found for this reservation.'}
-                    </div>
+                <div class="modal-resource-heading">Resources</div>
+                <div class="modal-resource-list">
+                    ${resources.length ? resources.join('') : '<div class="summary-item">No resources found for this reservation.</div>'}
                 </div>
             `);
         } catch (error) {
             console.error('Error loading reservation details:', error);
+            if (requestId !== this.detailsRequestId || !this.reservationModal.modal.classList.contains('active')) {
+                return;
+            }
+
             this.reservationModal.open('Reservation Details', '<p style="color: #d32f2f;">Failed to load reservation resources.</p>');
         }
     },

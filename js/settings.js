@@ -1,5 +1,9 @@
 // settings.js - Handles account settings functionality
 
+let currentAssignedProfessorId = null;
+let originalProfileFirstName = '';
+let originalProfileLastName = '';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Load user data and initialize forms
     loadUserData();
@@ -41,8 +45,16 @@ async function loadUserData() {
 
             if (firstNameInput) firstNameInput.value = userInfo.first_name || '';
             if (lastNameInput) lastNameInput.value = userInfo.last_name || '';
+            originalProfileFirstName = userInfo.first_name || '';
+            originalProfileLastName = userInfo.last_name || '';
             if (emailInput) emailInput.value = userInfo.email || '';
             if (roleInput) roleInput.value = userInfo.role || '';
+
+            if (String(userInfo.role || '').toLowerCase() === 'student') {
+                const professorGroup = document.getElementById('assignedProfessorGroup');
+                if (professorGroup) professorGroup.hidden = false;
+                await loadAssignedProfessorOptions(userInfo.professor || '');
+            }
             
             if (memberSinceSpan && userInfo.created_at) {
                 const createdDate = new Date(userInfo.created_at);
@@ -140,12 +152,50 @@ function initializeForms() {
     // Preferences form - removed as tab is no longer present
 }
 
+async function loadAssignedProfessorOptions(currentProfessorId) {
+    const professorSelect = document.getElementById('assignedProfessor');
+    if (!professorSelect) return;
+
+    try {
+        const { data: professors, error } = await window.supabase
+            .from('user_info')
+            .select('id, first_name, last_name')
+            .eq('role', 'professor')
+            .order('first_name', { ascending: true });
+
+        if (error) throw error;
+
+        professorSelect.replaceChildren(new Option('Select a professor', ''));
+        (professors || []).forEach(professor => {
+            const name = [professor.first_name, professor.last_name].filter(Boolean).join(' ').trim();
+            if (name) professorSelect.add(new Option(name, professor.id));
+        });
+
+        if (currentProfessorId && !Array.from(professorSelect.options).some(option => option.value === currentProfessorId)) {
+            throw new Error('Your currently assigned professor could not be found. Please contact your administrator.');
+        }
+        if (professorSelect.options.length === 1) {
+            throw new Error('No professors are available to select.');
+        }
+
+        professorSelect.value = currentProfessorId;
+        professorSelect.disabled = false;
+        currentAssignedProfessorId = currentProfessorId;
+    } catch (error) {
+        console.error('Error loading professors for account settings:', error);
+        professorSelect.replaceChildren(new Option('Professors unavailable', ''));
+        showErrorSnackbar(error.message || 'Failed to load professors. Please refresh the page.');
+    }
+}
+
 // Handle profile update
 async function handleProfileUpdate(e) {
     e.preventDefault();
     
     const firstName = document.getElementById('firstName').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
+    const professorSelect = document.getElementById('assignedProfessor');
+    const professorId = professorSelect?.value || '';
 
     // Validation
     if (!firstName || !lastName) {
@@ -153,8 +203,18 @@ async function handleProfileUpdate(e) {
         return;
     }
 
-    if (firstName.length < 2 || lastName.length < 2) {
+    if ((firstName !== originalProfileFirstName && firstName.length < 2) ||
+        (lastName !== originalProfileLastName && lastName.length < 2)) {
         showErrorSnackbar('Names must be at least 2 characters long.');
+        return;
+    }
+
+    if (professorSelect && professorSelect.disabled) {
+        showErrorSnackbar('Please wait for the professor list to finish loading.');
+        return;
+    }
+    if (professorSelect && !professorId) {
+        showErrorSnackbar('Please select an assigned professor.');
         return;
     }
 
@@ -172,12 +232,15 @@ async function handleProfileUpdate(e) {
         setButtonLoadingWithSpinner(submitBtn, true, null, 'Updating...');
 
         // Update user_info table
+        const profileUpdates = {
+            first_name: firstName,
+            last_name: lastName
+        };
+        if (professorSelect) profileUpdates.professor = professorId;
+
         const { error: updateError } = await window.supabase
             .from('user_info')
-            .update({
-                first_name: firstName,
-                last_name: lastName
-            })
+            .update(profileUpdates)
             .eq('id', user.id);
 
         if (updateError) {
@@ -201,6 +264,17 @@ async function handleProfileUpdate(e) {
         sessionUser.firstname = firstName;
         sessionUser.lastname = lastName;
         sessionStorage.setItem('user', JSON.stringify(sessionUser));
+        originalProfileFirstName = firstName;
+        originalProfileLastName = lastName;
+
+        if (professorSelect && professorId !== currentAssignedProfessorId) {
+            currentAssignedProfessorId = professorId;
+            // The assignment change can move pending account approvals to another professor.
+            for (let index = localStorage.length - 1; index >= 0; index--) {
+                const key = localStorage.key(index);
+                if (key && key.startsWith('account_approvals_cache:')) localStorage.removeItem(key);
+            }
+        }
 
         // Update sidebar
         updateSidebarUserInfo({

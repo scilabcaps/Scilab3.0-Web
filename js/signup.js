@@ -7,8 +7,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const verifyOtpBtn = document.getElementById('verifyOtpBtn');
     const otpSection = document.getElementById('otpSection');
     const otpInput = document.getElementById('otp');
+    const professorSelect = document.getElementById('professor');
 
     let pendingSignupData = null;
+
+    loadProfessors();
+
+    async function loadProfessors() {
+        if (!professorSelect) return;
+
+        try {
+            const { data: professors, error } = await window.supabase
+                .from('user_info')
+                .select('id, first_name, last_name')
+                .eq('role', 'professor')
+                .order('first_name', { ascending: true });
+
+            if (error) throw error;
+
+            professorSelect.replaceChildren(new Option('Select Professor', ''));
+            (professors || []).forEach(professor => {
+                const fullName = [professor.first_name, professor.last_name]
+                    .filter(Boolean)
+                    .join(' ')
+                    .trim();
+                if (fullName) professorSelect.add(new Option(fullName, professor.id));
+            });
+
+            if (!professors || professors.length === 0 || professorSelect.options.length === 1) {
+                professorSelect.replaceChildren(new Option('No professors available', ''));
+                showErrorSnackbar('No professors are available for registration right now.');
+                return;
+            }
+
+            professorSelect.disabled = false;
+        } catch (error) {
+            console.error('Error loading professors:', error);
+            professorSelect.replaceChildren(new Option('Unable to load professors', ''));
+            showErrorSnackbar('Could not load professors. Please refresh the page and try again.');
+        }
+    }
 
     if (sendOtpBtn) {
         sendOtpBtn.addEventListener('click', async function(e) {
@@ -18,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const firstname = document.getElementById('firstname').value.trim();
             const lastname = document.getElementById('lastname').value.trim();
             const yearSection = document.getElementById('yearSection').value.trim();
+            const professor = professorSelect.value;
             const course = document.getElementById('course').value;
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
@@ -25,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const role = 'student';
 
             // Validate all fields
-            if (!firstname || !lastname || !yearSection || !course || !email || !password || !confirmPassword) {
+            if (!firstname || !lastname || !yearSection || !professor || !course || !email || !password || !confirmPassword) {
                 showErrorSnackbar('Please fill in all fields.');
                 return;
             }
@@ -107,6 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     firstname,
                     lastname,
                     yearSection,
+                    professor,
                     course,
                     email,
                     password,
@@ -171,6 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         first_name: pendingSignupData.firstname,
                         last_name: pendingSignupData.lastname,
                         year_section: pendingSignupData.yearSection,
+                        professor: pendingSignupData.professor,
                         course: pendingSignupData.course,
                         role: pendingSignupData.role,
                         isApproved: 0

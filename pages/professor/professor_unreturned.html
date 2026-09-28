@@ -92,6 +92,18 @@
         .resource-detail-row:last-child { border-bottom: 0; }
         .resource-detail-name { font-weight: 600; color: #152614; }
         .resource-detail-meta { margin-top: 4px; color: #666; font-size: 0.9rem; }
+        .modal-resource-heading { margin: 18px 0 10px; font-weight: 600; color: #152614; }
+        .modal-resource-list { display: grid; gap: 10px; }
+        .modal-resource-list .resource-detail-row {
+            padding: 15px;
+            background: #f0f7ee;
+            border: 0;
+            border-left: 3px solid #31CB00;
+            border-radius: 8px;
+        }
+        .reservation-resource-list { display: grid; gap: 4px; }
+        .reservation-resource { line-height: 1.35; }
+        .reservation-resource + .reservation-resource { border-top: 1px solid #e5e7eb; padding-top: 4px; }
     </style>
 </head>
 
@@ -115,8 +127,7 @@
                             <tr>
                                 <th>Student Name</th>
                                 <th>Year & Section</th>
-                                <th>Item Name</th>
-                                <th>Type</th>
+                                <th>Resources</th>
                                 <th>Borrowed</th>
                                 <th>Returned</th>
                                 <th>Unreturned</th>

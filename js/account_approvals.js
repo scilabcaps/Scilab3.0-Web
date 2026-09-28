@@ -3,17 +3,23 @@
  * Handles functionality for professor account approvals page
  */
 
-const CACHE_KEY = 'account_approvals_cache';
+const CACHE_KEY_PREFIX = 'account_approvals_cache';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const AccountApprovals = {
     accounts: [],
     currentPage: 1,
     pageSize: 10,
+    professorId: null,
+
+    getCacheKey() {
+        return `${CACHE_KEY_PREFIX}:${this.professorId}`;
+    },
 
     init() {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-        if (user.username && user.role === 'Professor') {
+        if (user.username && user.role === 'Professor' && user.id) {
+            this.professorId = user.id;
             this.loadPendingAccounts();
         } else {
             window.location.href = '../../index.html';
@@ -22,14 +28,14 @@ const AccountApprovals = {
 
     getCachedData() {
         try {
-            const cached = localStorage.getItem(CACHE_KEY);
+            const cached = localStorage.getItem(this.getCacheKey());
             if (!cached) return null;
 
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
             if (now - timestamp > CACHE_TTL) {
-                localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(this.getCacheKey());
                 return null;
             }
 
@@ -46,14 +52,14 @@ const AccountApprovals = {
                 data: data,
                 timestamp: Date.now()
             };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            localStorage.setItem(this.getCacheKey(), JSON.stringify(cacheData));
         } catch (error) {
             console.error('Error setting cache:', error);
         }
     },
 
     clearCache() {
-        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem(this.getCacheKey());
     },
 
     async loadPendingAccounts() {
@@ -70,8 +76,10 @@ const AccountApprovals = {
 
             const { data: accounts, error } = await supabase
                 .from('user_info')
-                .select('*')
+                .select('id, first_name, last_name, email, course, year_section')
                 .eq('isApproved', 0)
+                .eq('role', 'student')
+                .eq('professor', this.professorId)
                 .order('created_at', { ascending: false });
 
             console.log('Pending accounts found:', accounts);
@@ -197,16 +205,7 @@ const AccountApprovals = {
 
         if (confirmed) {
             try {
-                const { error } = await supabase
-                    .from('user_info')
-                    .update({ isApproved: 1 })
-                    .eq('id', id);
-
-                if (error) throw error;
-
-                this.clearCache();
-                showSuccessSnackbar('Account approved successfully!');
-                this.loadPendingAccounts();
+                await this.updatePendingAccount(id, 1, 'approved');
             } catch (error) {
                 console.error('Error:', error);
                 showErrorSnackbar('Error approving account. Please try again.');
@@ -225,21 +224,36 @@ const AccountApprovals = {
 
         if (confirmed) {
             try {
-                const { error } = await supabase
-                    .from('user_info')
-                    .update({ isApproved: 2 })
-                    .eq('id', id);
-
-                if (error) throw error;
-
-                this.clearCache();
-                showSuccessSnackbar('Account rejected successfully.');
-                this.loadPendingAccounts();
+                await this.updatePendingAccount(id, 2, 'rejected');
             } catch (error) {
                 console.error('Error:', error);
                 showErrorSnackbar('Error rejecting account. Please try again.');
             }
         }
+    },
+
+    async updatePendingAccount(id, status, actionLabel) {
+        const { data, error } = await supabase
+            .from('user_info')
+            .update({ isApproved: status })
+            .eq('id', id)
+            .eq('isApproved', 0)
+            .eq('role', 'student')
+            .eq('professor', this.professorId)
+            .select('id')
+            .maybeSingle();
+
+        if (error) throw error;
+        if (!data) {
+            showErrorSnackbar('This account is no longer pending or is assigned to another professor.');
+            this.clearCache();
+            await this.loadPendingAccounts();
+            return;
+        }
+
+        this.clearCache();
+        showSuccessSnackbar(`Account ${actionLabel} successfully.`);
+        await this.loadPendingAccounts();
     },
 
     showError(message) {

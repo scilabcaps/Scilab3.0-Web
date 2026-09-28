@@ -16,6 +16,12 @@ const ProfessorHistory = {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Professor') {
             this.reservationModal = new Modal('reservationModal');
+            this.reservationModal.modal.addEventListener('click', event => {
+                if (event.target === this.reservationModal.modal) {
+                    // Prevent main.js from hiding the modal with inline display:none.
+                    event.stopPropagation();
+                }
+            });
             this.loadCompletedReservations();
         } else {
             window.location.href = '../../index.html';
