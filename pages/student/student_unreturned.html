@@ -80,6 +80,10 @@
             color: #b42318;
             font-weight: 700;
         }
+        .unreturned-quantity-list { display: grid; }
+        .unreturned-quantity-item { padding: 4px 0; line-height: 1.35; font-variant-numeric: tabular-nums; }
+        .unreturned-quantity-item + .unreturned-quantity-item { padding-top: 6px; border-top: 1px solid #e1e5e9; }
+        .unreturned-quantity-list--due { color: #d32f2f; }
         .resource-name {
             font-weight: 600;
             color: #152614;
@@ -87,25 +91,6 @@
         .resource-category {
             color: #667085;
             font-size: 0.9rem;
-        }
-        .unreturned-modal-resources {
-            display: grid;
-            gap: 10px;
-        }
-        .unreturned-modal-resource {
-            padding: 14px 16px;
-            background: #f4f8f2;
-            border-left: 3px solid #2a7221;
-            border-radius: 8px;
-        }
-        .unreturned-modal-resource h3 {
-            margin: 0 0 7px;
-            color: #152614;
-            font-size: 1rem;
-        }
-        .unreturned-modal-resource p {
-            margin: 3px 0;
-            color: #475467;
         }
         @media (max-width: 768px) {
             .data-table { overflow-x: auto; }
@@ -153,8 +138,7 @@
                                 <th>Reservation Date</th>
                                 <th>Reservation #</th>
                                 <th>Time</th>
-                                <th>Items Due</th>
-                                <th>Types</th>
+                                <th>Resources</th>
                                 <th>Borrowed</th>
                                 <th>Returned</th>
                                 <th>Still in Hand</th>
@@ -162,7 +146,7 @@
                             </tr>
                         </thead>
                         <tbody id="unreturnedItemsTable">
-                            <tr><td colspan="9" style="text-align:center">Loading your items…</td></tr>
+                            <tr><td colspan="8" style="text-align:center">Loading your items…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -174,7 +158,7 @@
         </main>
     </div>
     <div id="studentUnreturnedDetailsModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content reservation-dialog-content">
             <div class="modal-header">
                 <h2 class="modal-title">Reservation Items</h2>
                 <button class="modal-close" type="button" aria-label="Close">&times;</button>

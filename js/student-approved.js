@@ -17,6 +17,14 @@ class StudentApprovedReservations {
     }
 
     setupEventListeners() {
+        document.addEventListener('keydown', event => {
+            const modal = document.getElementById('studentApprovedDetailsModal');
+            if (event.key === 'Escape' && modal?.classList.contains('active')) this.closeDetails();
+        });
+        document.addEventListener('click', event => {
+            const modal = document.getElementById('studentApprovedDetailsModal');
+            if (event.target === modal) this.closeDetails();
+        });
         // DOM ready event
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.onDOMReady());
@@ -63,6 +71,7 @@ class StudentApprovedReservations {
                     rooms(room_name, is_deleted),
                     reservation_items(
                         quantity_borrowed,
+                        quantity_returned,
                         is_deleted,
                         lab_assets(item_name, category, is_deleted)
                     ),
@@ -85,14 +94,14 @@ class StudentApprovedReservations {
                 const resources = [];
                 const rooms = Array.isArray(res.rooms) ? res.rooms : [res.rooms];
                 rooms.forEach(room => {
-                    if (room?.room_name && !room.is_deleted) resources.push(room.room_name);
+                    if (room?.room_name && !room.is_deleted) resources.push({ name: room.room_name, meta: 'Room' });
                 });
 
                 (res.reservation_items || []).forEach(item => {
                     const asset = item.lab_assets;
                     if (!item.is_deleted && asset?.item_name && !asset.is_deleted) {
                         const quantity = Number(item.quantity_borrowed) || 0;
-                        resources.push(quantity > 1 ? `${asset.item_name} (x${quantity})` : asset.item_name);
+                        resources.push({ name: asset.item_name, meta: `${asset.category || 'Asset'}${quantity > 1 ? ` · x${quantity}` : ''}` });
                     }
                 });
 
@@ -103,7 +112,7 @@ class StudentApprovedReservations {
                         const quantity = amount === null || amount === undefined
                             ? ''
                             : ` (${amount}${usage.unit ? ` ${usage.unit}` : ''})`;
-                        resources.push(`${chemical.chemical_name}${quantity}`);
+                        resources.push({ name: chemical.chemical_name, meta: `Chemical${quantity ? ` · ${quantity.slice(2, -1)}` : ''}` });
                     }
                 });
 
@@ -112,7 +121,14 @@ class StudentApprovedReservations {
                     date: res.reservation_date,
                     startTime: res.start_time,
                     endTime: res.end_time,
-                    resources: resources.length ? resources.join(', ') : 'No resources recorded',
+                    reservation_date: res.reservation_date,
+                    start_time: res.start_time,
+                    end_time: res.end_time,
+                    reservation_items: res.reservation_items || [],
+                    chemical_usage: res.chemical_usage || [],
+                    rooms: res.rooms,
+                    additional_note: res.additional_note,
+                    resources,
                     year_section: res.year_section,
                     course: res.course,
                     professor: res.professor,
@@ -214,11 +230,14 @@ class StudentApprovedReservations {
             <tr>
                 <td>${reservation.date}</td>
                 <td>${timeRange}</td>
-                <td>${this.escapeHtml(reservation.resources || 'No resources recorded')}</td>
+                <td>${formatResourceCell(reservation.resources, 'No resources recorded')}</td>
                 <td>${reservation.year_section || 'N/A'}</td>
                 <td>${reservation.course || 'N/A'}</td>
                 <td>${reservation.professor || 'N/A'}</td>
                 <td>${approvalStatus}</td>
+                <td>
+                    <button type="button" class="btn btn-view" onclick="studentApproved.viewDetails(${Number(reservation.id)})">View</button>
+                </td>
             </tr>
         `;
     }
@@ -283,14 +302,38 @@ class StudentApprovedReservations {
     }
 
     viewDetails(reservationId) {
-        // Find the reservation data
-        const reservation = this.reservations.find(r => r.id === reservationId);
+        const reservation = this.reservations.find(r => String(r.id) === String(reservationId));
         if (reservation) {
-            // You can implement a modal or redirect to a details page
-            alert(`Reservation Details:\n\nID: ${reservation.id}\nDate: ${reservation.date}\nTime: ${reservation.startTime} - ${reservation.endTime}\nResources: ${reservation.resources}\nStatus: ${reservation.status}`);
+            const resources = [];
+            const rooms = Array.isArray(reservation.rooms) ? reservation.rooms : [reservation.rooms];
+            rooms.filter(room => room?.room_name && !room.is_deleted).forEach(room => resources.push({ name: room.room_name, type: 'Room' }));
+            (reservation.reservation_items || []).filter(item => !item.is_deleted && item.lab_assets?.item_name && !item.lab_assets.is_deleted).forEach(item => {
+                resources.push({ name: item.lab_assets.item_name, type: item.lab_assets.category || 'Asset', details: getReservationAssetDetails(reservation, item) });
+            });
+            (reservation.chemical_usage || []).filter(item => !item.is_deleted && item.chemicals?.chemical_name && !item.chemicals.is_deleted).forEach(item => {
+                resources.push({ name: item.chemicals.chemical_name, type: 'Chemical', details: getReservationChemicalDetails(reservation, item) });
+            });
+            const modal = document.getElementById('studentApprovedDetailsModal');
+            document.getElementById('studentApprovedDetailsBody').innerHTML = renderReservationDetails([
+                { label: 'Reservation ID', value: reservation.id },
+                { label: 'Date', value: reservation.date },
+                { label: 'Time', value: `${reservation.startTime} - ${reservation.endTime}` },
+                { label: 'Year & Section', value: reservation.year_section },
+                { label: 'Course', value: reservation.course },
+                { label: 'Professor', value: reservation.professor },
+                { label: 'Status', value: reservation.status }
+            ], resources, { note: reservation.additional_note });
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
         } else {
-            alert('Reservation not found');
+            console.error('Approved reservation not found:', reservationId);
         }
+    }
+
+    closeDetails() {
+        const modal = document.getElementById('studentApprovedDetailsModal');
+        if (modal) modal.classList.remove('active');
+        document.body.style.overflow = '';
     }
 
     showError(message) {

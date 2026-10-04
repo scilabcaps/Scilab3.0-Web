@@ -13,9 +13,16 @@ const StudentHistory = {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Student') {
             this.reservationModal = new Modal('studentHistoryModal');
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && this.reservationModal.modal.classList.contains('active')) this.reservationModal.close();
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && this.reservationModal.modal.classList.contains('active')) this.reservationModal.close();
+            });
             this.reservationModal.modal.addEventListener('click', event => {
                 if (event.target === this.reservationModal.modal) event.stopPropagation();
             });
+            this.reservationModal.closeBtn?.addEventListener('click', () => this.reservationModal.close());
             this.loadReservations(user.id);
         } else {
             window.location.href = '../../index.html';
@@ -118,7 +125,7 @@ const StudentHistory = {
                 <tr>
                     <td>${this.escapeHtml(res.reservation_date || 'N/A')}</td>
                     <td>${this.escapeHtml(`${res.start_time || 'N/A'} - ${res.end_time || 'N/A'}`)}</td>
-                    <td>${this.escapeHtml(this.getResourceSummary(res))}</td>
+                    <td>${formatResourceCell(this.getResourceSummary(res), 'No resources recorded')}</td>
                     <td>${this.escapeHtml(res.year_section || 'N/A')}</td>
                     <td>${this.escapeHtml(res.course || 'N/A')}</td>
                     <td>${this.escapeHtml(res.professor || 'N/A')}</td>
@@ -202,52 +209,40 @@ const StudentHistory = {
 
         const rooms = (Array.isArray(reservation.rooms) ? reservation.rooms : [reservation.rooms])
             .filter(room => room?.room_name)
-            .map(room => `<article class="history-detail-resource"><h3>${this.escapeHtml(room.room_name)}</h3><p>Room</p></article>`);
+            .map(room => ({ name: room.room_name, type: 'Room' }));
         const assets = (reservation.reservation_items || []).filter(item => item.lab_assets).map(item => {
-            const borrowed = Number(item.quantity_borrowed) || 0;
-            const returned = Number(item.quantity_returned) || 0;
-            return `
-                <article class="history-detail-resource">
-                    <h3>${this.escapeHtml(item.lab_assets.item_name || 'Unknown item')}</h3>
-                    <p>Type: ${this.escapeHtml(item.lab_assets.category || 'Equipment')}</p>
-                    <p>Borrowed: ${borrowed} · Returned: ${returned} · Still in hand: ${Math.max(0, borrowed - returned)}</p>
-                </article>
-            `;
+            return { name: item.lab_assets.item_name || 'Unknown item', type: item.lab_assets.category || 'Equipment', details: getReservationAssetDetails(reservation, item) };
         });
-        const chemicals = (reservation.chemical_usage || []).map(usage => `
-            <article class="history-detail-resource">
-                <h3>${this.escapeHtml(usage.chemicals?.chemical_name || 'Chemical')}</h3>
-                <p>Used: ${this.escapeHtml(usage.quantity_used)} ${this.escapeHtml(usage.unit || '')}</p>
-            </article>
-        `);
+        const chemicals = (reservation.chemical_usage || []).map(usage => ({
+            name: usage.chemicals?.chemical_name || 'Chemical',
+            type: 'Chemical',
+            details: getReservationChemicalDetails(reservation, usage)
+        }));
         const resources = [...rooms, ...assets, ...chemicals];
 
-        this.reservationModal.open('Reservation Details', `
-            <div class="history-detail-grid">
-                <div><strong>Date</strong><span>${this.escapeHtml(reservation.reservation_date || 'N/A')}</span></div>
-                <div><strong>Time</strong><span>${this.escapeHtml(`${reservation.start_time || 'N/A'} - ${reservation.end_time || 'N/A'}`)}</span></div>
-                <div><strong>Year &amp; Section</strong><span>${this.escapeHtml(reservation.year_section || 'N/A')}</span></div>
-                <div><strong>Course</strong><span>${this.escapeHtml(reservation.course || 'N/A')}</span></div>
-                <div><strong>Professor</strong><span>${this.escapeHtml(reservation.professor || 'N/A')}</span></div>
-                <div><strong>Status</strong><span>${this.escapeHtml(this.getStatusDisplayText(reservation.status || 'N/A'))}</span></div>
-            </div>
-            ${reservation.additional_note ? `<div class="history-detail-note"><strong>Additional Note</strong><p>${this.escapeHtml(reservation.additional_note)}</p></div>` : ''}
-            <h3 class="history-detail-heading">Resources</h3>
-            <div class="history-detail-resources">
-                ${resources.length ? resources.join('') : '<p>No resources were recorded for this reservation.</p>'}
-            </div>
-        `);
+        this.reservationModal.open('Reservation Details', renderReservationDetails([
+            { label: 'Reservation ID', value: reservation.reservation_id },
+            { label: 'Date', value: reservation.reservation_date || 'N/A' },
+            { label: 'Time', value: `${reservation.start_time || 'N/A'} - ${reservation.end_time || 'N/A'}` },
+            { label: 'Year & Section', value: reservation.year_section || 'N/A' },
+            { label: 'Course', value: reservation.course || 'N/A' },
+            { label: 'Professor', value: reservation.professor || 'N/A' },
+            { label: 'Status', value: this.getStatusDisplayText(reservation.status || 'N/A') }
+        ], resources, { note: reservation.additional_note }));
     },
 
     getResourceSummary(reservation) {
         const rooms = (Array.isArray(reservation.rooms) ? reservation.rooms : [reservation.rooms])
-            .filter(room => room?.room_name).map(room => room.room_name);
-        const assetCount = (reservation.reservation_items || []).filter(item => item.lab_assets).length;
-        const chemicalCount = (reservation.chemical_usage || []).length;
-        const summary = [...rooms];
-        if (assetCount) summary.push(`${assetCount} ${assetCount === 1 ? 'item' : 'items'}`);
-        if (chemicalCount) summary.push(`${chemicalCount} ${chemicalCount === 1 ? 'chemical' : 'chemicals'}`);
-        return summary.length ? summary.join(' · ') : 'No resources recorded';
+            .filter(room => room?.room_name).map(room => ({ name: room.room_name, meta: 'Room' }));
+        const assets = (reservation.reservation_items || []).filter(item => item.lab_assets?.item_name).map(item => ({
+            name: item.lab_assets.item_name,
+            meta: item.lab_assets.category || 'Asset'
+        }));
+        const chemicals = (reservation.chemical_usage || []).filter(usage => usage.chemicals?.chemical_name).map(usage => ({
+            name: usage.chemicals.chemical_name,
+            meta: 'Chemical'
+        }));
+        return [...rooms, ...assets, ...chemicals];
     },
 
     escapeHtml(value) {

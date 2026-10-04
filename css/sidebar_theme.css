@@ -7,6 +7,7 @@
     left: 0;
     top: 0;
     height: 100vh;
+    overflow: hidden;
     width: 280px;
     background: #2a7221;
     z-index: 1000;
@@ -26,11 +27,39 @@
 
 .dashboard-sidebar .sidebar-navigation {
     background: #f0f7ee;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .dashboard-sidebar .sidebar-footer {
     background: #e8f5e9;
     border-top: 1px solid #e9ecef;
+    flex: 0 0 auto;
+    padding: 8px 12px;
+}
+
+.dashboard-sidebar .sidebar-footer .nav-link {
+    padding: 10px;
+    border-radius: 6px;
+}
+
+/* Keep professor account controls visible while the navigation list scrolls. */
+.dashboard-sidebar.professor-sidebar,
+.dashboard-sidebar.student-sidebar {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    height: 100dvh;
+}
+
+.dashboard-sidebar.professor-sidebar .sidebar-navigation,
+.dashboard-sidebar.student-sidebar .sidebar-navigation {
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.dashboard-sidebar.professor-sidebar .sidebar-footer,
+.dashboard-sidebar.student-sidebar .sidebar-footer {
+    align-self: end;
 }
 
 .dashboard-sidebar .sidebar-brand h1 {
@@ -161,7 +190,8 @@
     overflow-wrap: anywhere;
 }
 
-.header-logout {
+.header-logout,
+.header-notifications {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -175,14 +205,148 @@
     cursor: pointer;
 }
 
-.header-logout:hover {
+.header-logout:hover,
+.header-notifications:hover {
     color: #2e7d32;
     background: #e8f5e9;
 }
 
-.header-logout:focus-visible {
+.header-logout:focus-visible,
+.header-notifications:focus-visible {
     outline: 2px solid #2e7d32;
     outline-offset: 2px;
+}
+
+.header-notifications-wrap {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.notification-count {
+    position: absolute;
+    top: 1px;
+    right: 0;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: #d93025;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 13px;
+    text-align: center;
+}
+
+.notifications-panel[hidden],
+.notification-count[hidden] {
+    display: none;
+}
+
+.notifications-panel {
+    position: absolute;
+    z-index: 1200;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(380px, calc(100vw - 32px));
+    max-height: min(520px, calc(100dvh - 120px));
+    overflow: hidden;
+    border: 1px solid #e1e7df;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(21, 38, 20, 0.2);
+    color: #152614;
+}
+
+.notifications-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid #e8eee6;
+}
+
+.notifications-panel-header h2 {
+    margin: 0;
+    color: #152614;
+    font-size: 16px;
+}
+
+.notifications-mark-all,
+.notification-mark-read {
+    padding: 5px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: #e8f5e9;
+    color: #256b27;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.notifications-list {
+    max-height: 440px;
+    overflow-y: auto;
+}
+
+.notifications-empty {
+    margin: 0;
+    padding: 24px 16px;
+    color: #667264;
+    font-size: 14px;
+    text-align: center;
+}
+
+.notification-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid #edf0ec;
+}
+
+.notification-item.unread {
+    background: #f4faf2;
+}
+
+.notification-item h3 {
+    margin: 0 0 5px;
+    font-size: 14px;
+}
+
+.notification-open {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+.notification-open:hover h3,
+.notification-open:focus-visible h3 {
+    color: #256b27;
+    text-decoration: underline;
+}
+
+.notification-open:focus-visible {
+    outline: 2px solid #2e7d32;
+    outline-offset: 3px;
+    border-radius: 3px;
+}
+
+.notification-item p {
+    margin: 0;
+    color: #465246;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.notification-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    color: #788176;
+    font-size: 11px;
 }
 
 @media (max-width: 480px) {
@@ -201,6 +365,13 @@
         width: 100%;
         height: auto;
         transform: none;
+    }
+
+    .dashboard-container .dashboard-sidebar.professor-sidebar,
+    .dashboard-container .dashboard-sidebar.student-sidebar {
+        grid-template-rows: auto auto auto auto;
+        height: auto;
+        overflow: visible;
     }
 
     .dashboard-sidebar .sidebar-brand h1,

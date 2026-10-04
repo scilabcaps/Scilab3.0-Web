@@ -54,19 +54,12 @@
                     <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-8.48 6H2l3.5 3.5L9 9H6.6A7 7 0 1 1 13 19a7 7 0 0 1-4.95-2.05l-1.41 1.41A9 9 0 1 0 13 3Zm-1 5v5l4 2 .9-1.8-2.9-1.45V8h-2Z"/></svg ></span><span class="nav-text">Reservation History</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="settings.html" class="nav-link" id="nav-settings">
-                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m19.43 12.98.04-.98-.04-.98 2.11-1.65-2-3.46-2.49 1a7.2 7.2 0 0 0-1.7-.98L15 3h-4l-.35 2.93a7.2 7.2 0 0 0-1.7.98l-2.49-1-2 3.46 2.11 1.65-.04.98.04.98-2.11 1.65 2 3.46 2.49-1c.53.4 1.1.72 1.7.98L11 21h4l.35-2.93a7.2 7.2 0 0 0 1.7-.98l2.49 1 2-3.46-2.11-1.65ZM13 15.5A3.5 3.5 0 1 1 13 8a3.5 3.5 0 0 1 0 7.5Z"/></svg ></span><span class="nav-text">Account Settings</span>
-                </a>
-            </li>
         </ul>
     </nav>
     <div class="sidebar-footer">
-        <a href="settings.html" class="nav-link" id="nav-settings-footer">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm0 10a5 5 0 0 1-4.5-2.8h9A5 5 0 0 1 12 17Z"/></svg></span><span class="nav-text">Account Settings</span>
-        </a>
-        <a href="#" class="logout-link" onclick="logout(); return false;">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 17v2H5V5h5v2H7v10h3Zm9-5-4-4v3H10v2h5v3l4-4Z"/></svg ></span><span class="nav-text">Log out</span>
+        <a href="settings.html" class="logout-link" id="nav-settings">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill-rule="evenodd" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm-2-6h4l.5 3 2 .9 2.7-1.1 2 3.4-2.3 2 .1 2-.1 2 2.3 2-2 3.4 2.7 1.1-2 .9L14 22h-4l-.5-3-2-.9-2.7 1.1-2-3.4 2.3-2-.1-2 .1-2-2.3-2 2-3.4 2.7 1.1 2-.9.5-3z"/></svg></span>
+            <span class="nav-text">Account Settings</span>
         </a>
     </div>
 </aside>
@@ -87,3 +80,4 @@
         </div>
     </div>
 </div>
+

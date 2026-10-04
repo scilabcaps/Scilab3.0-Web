@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Reservations - Student</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/sidebar_theme.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div id="sidebar-container"></div>
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1>Upcoming Reservations</h1>
+                    <img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
+                </div>
+            </div>
+            <div class="dashboard-content">
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr><th>Reservation #</th><th>Date</th><th>Time</th><th>Resources</th></tr>
+                        </thead>
+                        <tbody id="upcomingReservationsTable"></tbody>
+                    </table>
+                </div>
+                <div id="upcomingEmpty" class="empty-state">
+                    <div class="empty-state-text">No upcoming reservations found</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../config/supabase.js"></script>
+    <script src="../../js/sidebar_loader.js"></script>
+    <script src="../../js/main.js"></script>
+    <script src="../../js/student_upcoming.js"></script>
+</body>
+</html>

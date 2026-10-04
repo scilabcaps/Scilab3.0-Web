@@ -63,10 +63,8 @@
                             </div>
                             <div class="form-group" id="assignedProfessorGroup" hidden>
                                 <label for="assignedProfessor">Assigned Professor</label>
-                                <select id="assignedProfessor" name="assignedProfessor" required disabled>
-                                    <option value="">Loading professors...</option>
-                                </select>
-                                <small class="form-hint">Changing this affects future reservations. Existing reservations keep their current professor.</small>
+                                <input type="text" id="assignedProfessor" disabled aria-describedby="assignedProfessorHint">
+                                <small class="form-hint" id="assignedProfessorHint">Your assigned professor is managed by the administrator. Contact them if this needs to change.</small>
                             </div>
                             <button type="submit" class="submit-btn">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

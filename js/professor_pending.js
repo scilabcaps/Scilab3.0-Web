@@ -10,6 +10,7 @@ const ProfessorPending = {
     currentFilter: 'all',
     currentPage: 1,
     pageSize: 10,
+    detailsModal: null,
 
     init() {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -37,7 +38,9 @@ const ProfessorPending = {
                 return null;
             }
 
-            return data;
+            return (data || []).some(reservation =>
+                (reservation.reservation_items || []).some(item => !Object.prototype.hasOwnProperty.call(item, 'quantity_returned'))
+            ) ? null : data;
         } catch (error) {
             console.error('Error reading cache:', error);
             return null;
@@ -63,7 +66,6 @@ const ProfessorPending = {
     async loadPendingReservations() {
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-
             const { data: reservations, error } = await supabase
                 .from('reservations')
                 .select(`
@@ -71,9 +73,13 @@ const ProfessorPending = {
                     rooms(room_name),
                     user_info!inner(first_name, last_name),
                     reservation_items(
+                        quantity_borrowed,
+                        quantity_returned,
                         lab_assets(item_name, category)
                     ),
                     chemical_usage(
+                        quantity_used,
+                        unit,
                         chemicals(chemical_name)
                     )
                 `)
@@ -119,18 +125,15 @@ const ProfessorPending = {
         const pageData = reservations.slice(start, end);
 
         tbody.innerHTML = pageData.map(res => {
-            let resourcesDisplay = '';
-            if (res.room_id && res.rooms) {
-                resourcesDisplay = res.rooms.room_name || 'Lab Room';
-            } else if (res.chemical_usage && res.chemical_usage.length > 0) {
-                const chemicalNames = res.chemical_usage.map(cu => cu.chemicals?.chemical_name).filter(Boolean);
-                resourcesDisplay = chemicalNames.join(', ') || 'Chemicals';
-            } else if (res.reservation_items && res.reservation_items.length > 0) {
-                const assetNames = res.reservation_items.map(ri => ri.lab_assets?.item_name).filter(Boolean);
-                resourcesDisplay = assetNames.join(', ') || 'Assets';
-            } else {
-                resourcesDisplay = '<span style="color: #6b7280;">No resources specified</span>';
-            }
+            const resources = [];
+            if (res.rooms?.room_name) resources.push({ name: res.rooms.room_name, meta: 'Room' });
+            (res.reservation_items || []).forEach(item => {
+                if (item.lab_assets?.item_name) resources.push({ name: item.lab_assets.item_name, meta: item.lab_assets.category || 'Asset' });
+            });
+            (res.chemical_usage || []).forEach(item => {
+                if (item.chemicals?.chemical_name) resources.push({ name: item.chemicals.chemical_name, meta: 'Chemical' });
+            });
+            const resourcesDisplay = formatResourceCell(resources);
 
             const studentName = res.user_info ? `${res.user_info.first_name} ${res.user_info.last_name}` : 'Unknown';
 
@@ -142,6 +145,7 @@ const ProfessorPending = {
                     <td>${studentName}</td>
                     <td>${res.additional_note || 'N/A'}</td>
                     <td>${this.getApprovalStatus(res.admin_approval)}</td>
+                    <td><button type="button" class="btn btn-view" onclick="ProfessorPending.viewDetails(${Number(res.reservation_id)})">View</button></td>
                 </tr>
             `;
         }).join('');
@@ -234,7 +238,58 @@ const ProfessorPending = {
     },
 
     viewDetails(id) {
-        alert('Viewing reservation details for ID: ' + id);
+        const reservation = this.allReservations.find(item => String(item.reservation_id) === String(id));
+        if (!reservation) {
+            this.showReservationDetails('<p>Reservation details could not be found.</p>');
+            return;
+        }
+
+        const student = reservation.user_info ? `${reservation.user_info.first_name || ''} ${reservation.user_info.last_name || ''}`.trim() : 'Unknown';
+        const resources = [];
+        if (reservation.rooms?.room_name) resources.push({ name: reservation.rooms.room_name, type: 'Room' });
+        (reservation.reservation_items || []).forEach(item => {
+            if (!item.lab_assets?.item_name) return;
+            resources.push({ name: item.lab_assets.item_name, type: item.lab_assets.category || 'Asset', details: getReservationAssetDetails(reservation, item) });
+        });
+        (reservation.chemical_usage || []).forEach(item => {
+            if (item.chemicals?.chemical_name) resources.push({ name: item.chemicals.chemical_name, type: 'Chemical', details: getReservationChemicalDetails(reservation, item) });
+        });
+        const fields = [
+            { label: 'Reservation ID', value: reservation.reservation_id },
+            { label: 'Student', value: student },
+            { label: 'Date', value: reservation.reservation_date },
+            { label: 'Time', value: `${reservation.start_time} - ${reservation.end_time}` },
+            { label: 'Year & Section', value: reservation.year_section },
+            { label: 'Course', value: reservation.course },
+            { label: 'Professor', value: reservation.professor },
+            { label: 'Reservation Status', value: reservation.status },
+            { label: 'Professor Approval', value: reservation.professor_approval },
+            { label: 'Admin Approval', value: reservation.admin_approval }
+        ];
+        this.showReservationDetails(renderReservationDetails(fields, resources, { note: reservation.additional_note }));
+    },
+
+    showReservationDetails(content) {
+        let modal = document.getElementById('professorPendingViewModal');
+        if (!modal) {
+            document.body.insertAdjacentHTML('beforeend', `<div id="professorPendingViewModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="professorPendingViewTitle">
+                <div class="modal-content reservation-dialog-content"><div class="modal-header"><h2 id="professorPendingViewTitle" class="modal-title">Reservation Details</h2>
+                <button type="button" class="modal-close" aria-label="Close" onclick="ProfessorPending.closeReservationDetails()">&times;</button></div>
+                <div class="modal-body" id="professorPendingViewBody"></div></div></div>`);
+            modal = document.getElementById('professorPendingViewModal');
+            this.detailsModal = new Modal('professorPendingViewModal');
+            modal.addEventListener('click', event => { if (event.target === modal) this.closeReservationDetails(); });
+            document.addEventListener('keydown', event => { if (event.key === 'Escape') this.closeReservationDetails(); });
+        }
+        if (!this.detailsModal) this.detailsModal = new Modal('professorPendingViewModal');
+        document.getElementById('professorPendingViewBody').innerHTML = content;
+        this.detailsModal.open('Reservation Details', content);
+    },
+
+    closeReservationDetails() {
+        const modal = document.getElementById('professorPendingViewModal');
+        if (this.detailsModal) this.detailsModal.close();
+        else if (modal) modal.classList.remove('active');
     },
 
     showError(message) {
@@ -242,7 +297,7 @@ const ProfessorPending = {
         const emptyState = document.getElementById('emptyState');
 
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
         }
         if (emptyState) emptyState.style.display = 'block';
         this.removePagination();

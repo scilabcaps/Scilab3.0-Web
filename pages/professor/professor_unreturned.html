@@ -104,6 +104,10 @@
         .reservation-resource-list { display: grid; gap: 4px; }
         .reservation-resource { line-height: 1.35; }
         .reservation-resource + .reservation-resource { border-top: 1px solid #e5e7eb; padding-top: 4px; }
+        .unreturned-quantity-list { display: grid; }
+        .unreturned-quantity-item { padding: 4px 0; line-height: 1.35; font-variant-numeric: tabular-nums; }
+        .unreturned-quantity-item + .unreturned-quantity-item { padding-top: 6px; border-top: 1px solid #e1e5e9; }
+        .unreturned-quantity-list--due { color: #d32f2f; }
     </style>
 </head>
 
@@ -151,7 +155,7 @@
     </div>
 
     <div id="reservationDetailsModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content reservation-dialog-content">
             <div class="modal-header">
                 <h2 class="modal-title">Reservation Details</h2>
                 <button class="modal-close" type="button" aria-label="Close">&times;</button>

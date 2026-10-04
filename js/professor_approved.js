@@ -3,7 +3,7 @@
  * Handles functionality for professor approved student reservations page
  */
 
-const CACHE_KEY = 'professor_approved_cache_v2';
+const CACHE_KEY = 'professor_approved_cache_v4';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 const ProfessorApproved = {
@@ -22,6 +22,7 @@ const ProfessorApproved = {
                     event.stopPropagation();
                 }
             });
+            this.reservationModal.closeBtn?.addEventListener('click', () => this.reservationModal.close());
             this.loadApprovedReservations();
         } else {
             window.location.href = '../../index.html';
@@ -41,7 +42,9 @@ const ProfessorApproved = {
                 return null;
             }
 
-            return data;
+            return (data || []).some(reservation =>
+                (reservation.reservation_items || []).some(item => !Object.prototype.hasOwnProperty.call(item, 'quantity_returned'))
+            ) ? null : data;
         } catch (error) {
             console.error('Error reading cache:', error);
             return null;
@@ -68,13 +71,7 @@ const ProfessorApproved = {
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
-            const cachedData = this.getCachedData();
-            if (cachedData) {
-                this.reservations = cachedData || [];
-                this.currentPage = 1;
-                this.displayReservations();
-                return;
-            }
+            // Always refresh detail data to avoid serving an older cache shape.
 
             const professorFullName = user.firstname + ' ' + user.lastname;
             const { data: reservations, error } = await supabase
@@ -103,7 +100,6 @@ const ProfessorApproved = {
 
             if (error) throw error;
 
-            this.setCachedData(reservations);
             this.reservations = reservations || [];
             this.currentPage = 1;
             this.displayReservations();
@@ -142,22 +138,18 @@ const ProfessorApproved = {
             let items = [];
 
             if (res.reservation_items && res.reservation_items.length > 0) {
-                const assetNames = res.reservation_items
-                    .map(item => item.lab_assets ? item.lab_assets.item_name : 'Unknown')
-                    .filter(name => name !== 'Unknown');
-                items.push(...assetNames);
+                res.reservation_items.forEach(item => {
+                    if (item.lab_assets?.item_name) items.push({ name: item.lab_assets.item_name, meta: item.lab_assets.category });
+                });
             }
 
             if (res.chemical_usage && res.chemical_usage.length > 0) {
-                const chemicalNames = res.chemical_usage
-                    .map(chem => chem.chemicals ? chem.chemicals.chemical_name : 'Unknown')
-                    .filter(name => name !== 'Unknown');
-                items.push(...chemicalNames);
+                res.chemical_usage.forEach(usage => {
+                    if (usage.chemicals?.chemical_name) items.push({ name: usage.chemicals.chemical_name, meta: 'Chemical' });
+                });
             }
 
-            let resourcesDisplay = items.length > 0
-                ? items.join(', ')
-                : '<span style="color: #6b7280;">No items specified</span>';
+            const resourcesDisplay = formatResourceCell(items, 'No items specified');
 
             const studentName = res.user_info ? `${res.user_info.first_name} ${res.user_info.last_name}` : 'Unknown';
 
@@ -236,66 +228,31 @@ const ProfessorApproved = {
 
         const resources = [];
         if (reservation.rooms?.room_name) {
-            resources.push(`
-                <div class="summary-item">
-                    <div class="summary-label">${this.escapeHtml(reservation.rooms.room_name)} (Room)</div>
-                </div>
-            `);
+            resources.push({ name: reservation.rooms.room_name, type: 'Room' });
         }
 
         (reservation.reservation_items || []).forEach(item => {
             if (!item.lab_assets) return;
-            const quantity = Number(item.quantity_borrowed) || 0;
-            const returned = Number(item.quantity_returned) || 0;
-            const unreturned = Math.max(0, quantity - returned);
-            resources.push(`
-                <div class="summary-item">
-                    <div class="summary-label">${this.escapeHtml(item.lab_assets.item_name)} (${this.escapeHtml(item.lab_assets.category || 'Equipment')})</div>
-                    <div class="summary-value">Quantity: ${quantity} | Returned: ${returned} | Unreturned: ${unreturned}</div>
-                </div>
-            `);
+            resources.push({ name: item.lab_assets.item_name, type: item.lab_assets.category || 'Equipment', details: getReservationAssetDetails(reservation, item) });
         });
 
         (reservation.chemical_usage || []).forEach(usage => {
             if (!usage.chemicals) return;
-            resources.push(`
-                <div class="summary-item">
-                    <div class="summary-label">${this.escapeHtml(usage.chemicals.chemical_name)} (Chemical)</div>
-                    <div class="summary-value">Amount: ${this.escapeHtml(usage.quantity_used)} ${this.escapeHtml(usage.unit || '')}</div>
-                </div>
-            `);
+            resources.push({ name: usage.chemicals.chemical_name, type: 'Chemical', details: getReservationChemicalDetails(reservation, usage) });
         });
 
         const studentName = reservation.user_info
             ? `${reservation.user_info.first_name || ''} ${reservation.user_info.last_name || ''}`.trim()
             : 'Unknown';
         const adminStatus = reservation.admin_approval || 'Unknown';
-        this.reservationModal.open('Reservation Details', `
-            <div class="summary-item">
-                <div class="summary-label">Student</div>
-                <div class="summary-value">${this.escapeHtml(studentName)}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Date</div>
-                <div class="summary-value">${this.escapeHtml(reservation.reservation_date)}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Time</div>
-                <div class="summary-value">${this.escapeHtml(`${reservation.start_time} - ${reservation.end_time}`)}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Additional Note</div>
-                <div class="summary-value">${this.escapeHtml(reservation.additional_note || 'N/A')}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Admin Status</div>
-                <div class="summary-value"><span class="approval-status ${this.getStatusClass(adminStatus)}">${this.escapeHtml(adminStatus)}</span></div>
-            </div>
-            <h3 class="modal-resource-heading">Resources</h3>
-            <div class="modal-resource-list">
-                ${resources.length ? resources.join('') : '<div class="summary-item">No resources specified for this reservation.</div>'}
-            </div>
-        `);
+        this.reservationModal.open('Reservation Details', renderReservationDetails([
+            { label: 'Student', value: studentName },
+            { label: 'Date', value: reservation.reservation_date },
+            { label: 'Time', value: `${reservation.start_time} - ${reservation.end_time}` },
+            { label: 'Reservation Status', value: reservation.status },
+            { label: 'Admin Status', value: adminStatus },
+            { label: 'Professor Status', value: reservation.professor_approval }
+        ], resources, { note: reservation.additional_note }));
     },
 
     getStatusClass(status) {

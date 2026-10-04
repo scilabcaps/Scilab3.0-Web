@@ -783,6 +783,31 @@ body {
     border-collapse: collapse;
 }
 
+.resource-cell-list {
+    display: grid;
+    min-width: 0;
+}
+
+.resource-cell-item {
+    padding: 4px 0;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.resource-cell-item + .resource-cell-item {
+    padding-top: 6px;
+    border-top: 1px solid #e1e5e9;
+}
+
+.resource-cell-meta {
+    color: #697586;
+    font-size: 0.92em;
+}
+
+.resource-cell-empty {
+    color: #6b7280;
+}
+
 .data-table th {
     background-color: #152614;
     color: white;
@@ -1131,7 +1156,9 @@ body {
 
 .remove-item-btn {
     width: 84px;
-    padding: 8px 0;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 8px 12px;
     background-color: #f44336;
     color: white;
     border: none;
@@ -1142,8 +1169,10 @@ body {
     flex-shrink: 0;
     transition: background-color 0.3s;
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 5px;
+    text-align: center;
 }
 
 .remove-item-btn svg,
@@ -1229,6 +1258,33 @@ body {
     overflow: hidden;
 }
 
+.modal-content:has(.reservation-detail-layout), .modal-content.reservation-dialog-content {
+    width: min(92vw, 800px);
+    max-width: 800px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+}
+
+.reservation-detail-layout { color: #172517; }
+.reservation-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.reservation-detail-field { display: grid; align-content: start; gap: 5px; min-width: 0; padding: 14px; background: #f2f7f0; border-radius: 9px; }
+.reservation-detail-field strong, .reservation-detail-heading, .reservation-detail-note h3 { color: #214a22; }
+.reservation-detail-field span { overflow-wrap: anywhere; }
+.reservation-detail-heading { margin: 22px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #2a7221; }
+.reservation-detail-resources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.reservation-detail-resource { min-width: 0; padding: 14px 16px; background: #f2f7f0; border-left: 3px solid #31cb00; border-radius: 8px; }
+.reservation-detail-resource h3 { margin: 0 0 8px; font-size: 1rem; overflow-wrap: anywhere; }
+.reservation-detail-resource p { margin: 5px 0 0; color: #475467; overflow-wrap: anywhere; }
+.reservation-detail-resource .reservation-detail-type { margin: -2px 0 9px; color: #667085; font-size: .9rem; }
+.reservation-detail-resource p strong { color: #344054; }
+.reservation-detail-note { margin-top: 14px; padding: 13px 15px; background: #fff8e8; border-radius: 8px; }
+.reservation-detail-note h3 { margin: 0 0 5px; font-size: 1rem; }
+.reservation-detail-note p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.reservation-detail-empty { grid-column: 1 / -1; margin: 0; color: #667085; }
+@media (max-width: 600px) {
+    .reservation-detail-grid, .reservation-detail-resources { grid-template-columns: 1fr; }
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -1246,9 +1302,11 @@ body {
 }
 
 .modal-close {
-    background: rgba(255, 255, 255, 0.2);
+    flex: 0 0 32px;
+    background: rgba(255, 255, 255, 0.22);
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
     color: white;
     cursor: pointer;
     line-height: 1;
@@ -1263,8 +1321,14 @@ body {
 }
 
 .modal-close:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.34);
     color: white;
+}
+
+.modal-close:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.28);
 }
 
 .close-modal {

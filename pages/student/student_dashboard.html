@@ -237,11 +237,16 @@
                 const { data: reservations, error } = await supabase
                     .from('reservations')
                     .select(`
+                        reservation_id,
                         reservation_date,
                         start_time,
+                        end_time,
+                        additional_note,
                         professor_approval,
                         admin_approval,
-                        rooms(room_name)
+                        rooms(room_name),
+                        reservation_items(lab_assets(item_name)),
+                        chemical_usage(chemicals(chemical_name))
                     `)
                     .eq('user_id', user.id)
                     .eq('professor_approval', 'Approved')
@@ -281,9 +286,30 @@
                     const dayReservations = reservationsByDate[dateStr] || [];
                     
                     dayReservations.forEach(res => {
+                        const resources = [
+                            ...(res.reservation_items || []).map(item => item.lab_assets?.item_name),
+                            ...(res.chemical_usage || []).map(item => item.chemicals?.chemical_name)
+                        ].filter(Boolean);
+                        const locationOrResources = [
+                            ...(res.rooms?.room_name ? [res.rooms.room_name] : []),
+                            ...resources
+                        ];
+                        const reservationDetails = locationOrResources.length
+                            ? locationOrResources.join(', ')
+                            : (res.additional_note || 'Reservation');
+                        const formatScheduleTime = value => {
+                            if (!value) return '';
+                            const [hourText, minute = '00'] = value.split(':');
+                            const hour = Number(hourText);
+                            return `${hour % 12 || 12}:${minute} ${hour >= 12 ? 'PM' : 'AM'}`;
+                        };
                         const eventDiv = document.createElement('div');
                         eventDiv.className = 'event-item approved';
-                        eventDiv.textContent = `${res.rooms?.room_name || 'Lab Room'} - ${res.start_time}`;
+                        const timeRange = `${formatScheduleTime(res.start_time)}${res.end_time ? `–${formatScheduleTime(res.end_time)}` : ''}`;
+                        const fullDetails = `Reservation #${res.reservation_id}: ${reservationDetails}${timeRange ? ` · ${timeRange}` : ''}${res.additional_note ? ` · ${res.additional_note}` : ''}`;
+                        eventDiv.textContent = `#${res.reservation_id} ${reservationDetails} · ${timeRange}`;
+                        eventDiv.title = fullDetails;
+                        eventDiv.setAttribute('aria-label', fullDetails);
                         dayEvents.appendChild(eventDiv);
                     });
                 });

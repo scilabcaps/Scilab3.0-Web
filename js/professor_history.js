@@ -3,7 +3,7 @@
  * Handles functionality for professor reservation history page
  */
 
-const CACHE_KEY = 'professor_history_cache_v2';
+const CACHE_KEY = 'professor_history_cache_v3';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 const ProfessorHistory = {
@@ -16,12 +16,16 @@ const ProfessorHistory = {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Professor') {
             this.reservationModal = new Modal('reservationModal');
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && this.reservationModal.modal.classList.contains('active')) this.reservationModal.close();
+            });
             this.reservationModal.modal.addEventListener('click', event => {
                 if (event.target === this.reservationModal.modal) {
                     // Prevent main.js from hiding the modal with inline display:none.
                     event.stopPropagation();
                 }
             });
+            this.reservationModal.closeBtn?.addEventListener('click', () => this.reservationModal.close());
             this.loadCompletedReservations();
         } else {
             window.location.href = '../../index.html';
@@ -41,7 +45,9 @@ const ProfessorHistory = {
                 return null;
             }
 
-            return data;
+            return (data || []).some(reservation =>
+                (reservation.reservation_items || []).some(item => !Object.prototype.hasOwnProperty.call(item, 'quantity_returned'))
+            ) ? null : data;
         } catch (error) {
             console.error('Error reading cache:', error);
             return null;
@@ -68,13 +74,7 @@ const ProfessorHistory = {
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
-            const cachedData = this.getCachedData();
-            if (cachedData) {
-                this.reservations = cachedData || [];
-                this.currentPage = 1;
-                this.displayReservations();
-                return;
-            }
+            // Refresh so the details dialog receives the latest return quantities.
 
             const { data: reservations, error } = await supabase
                 .from('reservations')
@@ -83,6 +83,7 @@ const ProfessorHistory = {
                     rooms(room_name),
                     reservation_items(
                         quantity_borrowed,
+                        quantity_returned,
                         lab_assets(item_name)
                     ),
                     chemical_usage(
@@ -144,13 +145,13 @@ const ProfessorHistory = {
             const resources = [];
 
             if (res.rooms?.room_name) {
-                resources.push(res.rooms.room_name);
+                resources.push({ name: res.rooms.room_name, meta: 'Room' });
             }
 
             (res.reservation_items || []).forEach(item => {
                 const name = item.lab_assets?.item_name;
                 if (name) {
-                    resources.push(`${name}${item.quantity_borrowed ? ` (${item.quantity_borrowed}x)` : ''}`);
+                    resources.push({ name, meta: `${item.lab_assets?.category || 'Asset'}${item.quantity_borrowed ? ` · ${item.quantity_borrowed}x` : ''}` });
                 }
             });
 
@@ -160,13 +161,11 @@ const ProfessorHistory = {
                     const quantity = usage.quantity_used != null
                         ? ` (${usage.quantity_used}${usage.unit ? ` ${usage.unit}` : ''})`
                         : '';
-                    resources.push(`${name}${quantity}`);
+                    resources.push({ name, meta: `Chemical${quantity}` });
                 }
             });
 
-            const resourcesDisplay = resources.length > 0
-                ? resources.join(', ')
-                : '<span style="color: #6b7280;">No resources specified</span>';
+            const resourcesDisplay = formatResourceCell(resources, 'No resources specified');
 
             return `
                 <tr>
@@ -242,6 +241,7 @@ const ProfessorHistory = {
                     rooms(room_name),
                     reservation_items(
                         quantity_borrowed,
+                        quantity_returned,
                         lab_assets(item_name)
                     ),
                     chemical_usage(
@@ -255,71 +255,34 @@ const ProfessorHistory = {
 
             if (error) throw error;
 
-            let statusColor = '#119822';
-            if (reservation.status === 'Rejected' || reservation.status === 'Declined') {
-                statusColor = '#dc2626';
-            } else if (reservation.status === 'Completed') {
-                statusColor = '#6b7280';
-            } else if (reservation.status === 'Cancelled') {
-                statusColor = '#f59e0b';
-            }
-
             const resources = [];
             if (reservation.rooms?.room_name) {
-                resources.push(reservation.rooms.room_name);
+                resources.push({ name: reservation.rooms.room_name, type: 'Room' });
             }
             (reservation.reservation_items || []).forEach(item => {
                 const name = item.lab_assets?.item_name;
                 if (name) {
-                    resources.push(`${name}${item.quantity_borrowed ? ` (${item.quantity_borrowed}x)` : ''}`);
+                    resources.push({ name, type: item.lab_assets.category || 'Asset', details: getReservationAssetDetails(reservation, item) });
                 }
             });
             (reservation.chemical_usage || []).forEach(usage => {
                 const name = usage.chemicals?.chemical_name;
                 if (name) {
-                    const quantity = usage.quantity_used != null
-                        ? ` (${usage.quantity_used}${usage.unit ? ` ${usage.unit}` : ''})`
-                        : '';
-                    resources.push(`${name}${quantity}`);
+                    resources.push({ name, type: 'Chemical', details: getReservationChemicalDetails(reservation, usage) });
                 }
             });
-            const resourcesDisplay = resources.length > 0 ? resources.join(', ') : 'No resources specified';
-
-            const content = `
-                <div class="summary-item">
-                    <div class="summary-label">Reservation ID</div>
-                    <div class="summary-value">${reservation.reservation_id}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Date</div>
-                    <div class="summary-value">${reservation.reservation_date}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Time</div>
-                    <div class="summary-value">${reservation.start_time} - ${reservation.end_time}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Resources</div>
-                    <div class="summary-value">${resourcesDisplay}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Additional Note</div>
-                    <div class="summary-value">${reservation.additional_note || 'N/A'}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Status</div>
-                    <div class="summary-value" style="color: ${statusColor}; font-weight: 600;">${reservation.status}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Created At</div>
-                    <div class="summary-value">${new Date(reservation.created_at).toLocaleString()}</div>
-                </div>
-            `;
+            const content = renderReservationDetails([
+                { label: 'Reservation ID', value: reservation.reservation_id },
+                { label: 'Date', value: reservation.reservation_date },
+                { label: 'Time', value: `${reservation.start_time} - ${reservation.end_time}` },
+                { label: 'Status', value: reservation.status },
+                { label: 'Created At', value: reservation.created_at ? new Date(reservation.created_at).toLocaleString() : 'N/A' }
+            ], resources, { note: reservation.additional_note });
 
             this.reservationModal.open('Reservation Details', content);
         } catch (error) {
             console.error('Error fetching reservation details:', error);
-            this.reservationModal.open('Error', '<p style="color: #dc2626;">Failed to load reservation details.</p>');
+            this.reservationModal.open('Reservation Details', '<p style="color: #dc2626;">Failed to load reservation details.</p>');
         }
     },
 

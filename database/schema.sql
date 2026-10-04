@@ -153,3 +153,18 @@ CREATE TABLE public.notifications (
   action text DEFAULT 'view'::text,
   CONSTRAINT notifications_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.user_notifications (
+  notification_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  recipient_user_id uuid NOT NULL,
+  title text NOT NULL,
+  message text NOT NULL,
+  type text NOT NULL DEFAULT 'general'::text,
+  reservation_id integer,
+  is_read boolean NOT NULL DEFAULT false,
+  read_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_notifications_pkey PRIMARY KEY (notification_id),
+  CONSTRAINT user_notifications_recipient_user_id_fkey FOREIGN KEY (recipient_user_id) REFERENCES public.user_info(id) ON DELETE CASCADE,
+  CONSTRAINT user_notifications_reservation_id_fkey FOREIGN KEY (reservation_id) REFERENCES public.reservations(reservation_id) ON DELETE SET NULL,
+  CONSTRAINT user_notifications_read_at_consistent CHECK (((is_read AND read_at IS NOT NULL) OR (NOT is_read AND read_at IS NULL)))
+);

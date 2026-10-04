@@ -1,5 +1,76 @@
 // Main JavaScript file for common functionality
 
+function formatResourceCell(resources, fallback = 'No resources specified') {
+    if (!Array.isArray(resources) || resources.length === 0) {
+        return `<span class="resource-cell-empty">${escapeResourceCellText(fallback)}</span>`;
+    }
+
+    return `<div class="resource-cell-list">${resources.map(resource => {
+        const entry = typeof resource === 'string' ? { name: resource } : resource;
+        const name = escapeResourceCellText(entry.name || '');
+        const meta = entry.meta ? ` <span class="resource-cell-meta">(${escapeResourceCellText(entry.meta)})</span>` : '';
+        return `<div class="resource-cell-item">${name}${meta}</div>`;
+    }).join('')}</div>`;
+}
+
+function escapeResourceCellText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    })[character]);
+}
+
+function renderReservationDetails(fields = [], resources = [], options = {}) {
+    const escape = escapeResourceCellText;
+    const fieldMarkup = fields.filter(field => field && field.value !== undefined && field.value !== null && field.value !== '')
+        .map(field => `<div class="reservation-detail-field"><strong>${escape(field.label)}</strong><span>${escape(field.value)}</span></div>`).join('');
+    const resourceMarkup = resources.map(resource => `
+        <article class="reservation-detail-resource">
+            <h3>${escape(resource.name || 'Resource')}</h3>
+            ${resource.type ? `<p class="reservation-detail-type">${escape(resource.type)}</p>` : ''}
+            ${(resource.details || []).map(detail => `<p><strong>${escape(detail.label)}:</strong> ${escape(detail.value)}</p>`).join('')}
+        </article>
+    `).join('');
+
+    return `<div class="reservation-detail-layout">
+        <div class="reservation-detail-grid">${fieldMarkup}</div>
+        ${options.note ? `<section class="reservation-detail-note"><h3>Additional Note</h3><p>${escape(options.note)}</p></section>` : ''}
+        <h3 class="reservation-detail-heading">Resources</h3>
+        <div class="reservation-detail-resources">${resourceMarkup || `<p class="reservation-detail-empty">${escape(options.emptyResources || 'No resources were recorded for this reservation.')}</p>`}</div>
+    </div>`;
+}
+
+function reservationWasDeclined(reservation) {
+    const declinedStates = new Set(['declined', 'rejected']);
+    const approvalStates = [reservation?.status, reservation?.professor_approval, reservation?.admin_approval]
+        .map(value => String(value || '').trim().toLowerCase());
+
+    return approvalStates.some(status => declinedStates.has(status));
+}
+
+function getReservationAssetDetails(reservation, item) {
+    if (reservationWasDeclined(reservation)) return [{ label: 'Issuance', value: 'Not issued — reservation declined' }];
+
+    const borrowed = Number(item?.quantity_borrowed) || 0;
+    const returned = Number(item?.quantity_returned) || 0;
+    return [
+        { label: 'Borrowed', value: borrowed },
+        { label: 'Returned', value: returned },
+        { label: 'Still in hand', value: Math.max(0, borrowed - returned) }
+    ];
+}
+
+function getReservationChemicalDetails(reservation, usage) {
+    if (reservationWasDeclined(reservation)) return [{ label: 'Usage', value: 'Not used — reservation declined' }];
+
+    const amount = usage?.quantity_used ?? 0;
+    const unit = usage?.unit ? ` ${usage.unit}` : '';
+    return [{ label: 'Used', value: `${amount}${unit}` }];
+}
+
 // Toggle password visibility
 function togglePassword(inputId = 'password') {
     const input = document.getElementById(inputId);

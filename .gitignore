@@ -17,3 +17,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Agent workflow files and task records
+.agent/agents/
+.agent/.tasks_archive/
+.tasks/
+.archive_tasks/
+.agent/
+/AGENTS.md

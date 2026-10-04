@@ -4,23 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation History - Student</title>
+    <title>Upcoming Student Reservations - Professor</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/sidebar_theme.css">
     <style>
+        @media (max-width: 768px) {
+            .dashboard-main { margin-left: 0; }
+            .dashboard-sidebar { transform: translateX(-100%); }
+        }
+
+        .modal-resource-heading { margin: 18px 0 10px; color: #152614; }
+        .modal-resource-list { display: grid; gap: 10px; }
     </style>
 </head>
 
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar Navigation -->
-        <div id="sidebar-container"></div>
-
-        <!-- Main Content -->
         <main class="dashboard-main">
             <div class="dashboard-header">
                 <div class="header-left">
-                    <h1>Reservation History</h1>
+                    <h1>Upcoming Student Reservations</h1>
                     <img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
                 </div>
             </div>
@@ -29,35 +32,32 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Resources</th>
-                                <th>Year & Section</th>
-                                <th>Course</th>
-                                <th>Professor</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th scope="col">Student</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Time</th>
+                                <th scope="col">Resources</th>
+                                <th scope="col">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="reservationsTable">
-                            <!-- Data will be loaded dynamically -->
+                        <tbody id="reservationsTable" aria-live="polite">
+                            <tr><td colspan="5" style="text-align: center; padding: 24px;">Loading upcoming reservations…</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div id="emptyState" class="empty-state" style="display: none;">
                     <div class="empty-state-icon"></div>
-                    <div class="empty-state-text">No reservations found</div>
+                    <div class="empty-state-text">No upcoming student reservations</div>
                 </div>
             </div>
         </main>
     </div>
-    <div id="studentHistoryModal" class="modal">
+    <div id="upcomingReservationModal" class="modal">
         <div class="modal-content reservation-dialog-content">
             <div class="modal-header">
                 <h2 class="modal-title">Reservation Details</h2>
                 <button class="modal-close" type="button" aria-label="Close">&times;</button>
             </div>
-            <div class="modal-body"></div>
+            <div class="modal-body"><!-- Reservation details load here --></div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -65,7 +65,7 @@
     <script src="../../js/sidebar_loader.js"></script>
     <script src="../../js/main.js"></script>
     <script src="../../js/modal.js"></script>
-    <script src="../../js/student_history.js"></script>
+    <script src="../../js/student_upcoming_reservations.js"></script>
 </body>
 
 </html>

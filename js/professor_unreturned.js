@@ -3,7 +3,7 @@
  * Handles functionality for professor unreturned items page
  */
 
-const CACHE_KEY = 'professor_unreturned_cache_v4';
+const CACHE_KEY = 'professor_unreturned_cache_v5';
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 const ProfessorUnreturned = {
@@ -12,6 +12,7 @@ const ProfessorUnreturned = {
     pageSize: 10,
     reservationModal: null,
     detailsRequestId: 0,
+    requestedReservationId: new URLSearchParams(window.location.search).get('reservation_id'),
 
     init() {
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -27,6 +28,17 @@ const ProfessorUnreturned = {
                 }
             };
             this.reservationModal.modal.addEventListener('click', closeReservationModal);
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && this.reservationModal.modal.classList.contains('active')) {
+                    event.stopPropagation();
+                    this.detailsRequestId++;
+                    this.reservationModal.close();
+                }
+            });
+            this.reservationModal.closeBtn?.addEventListener('click', () => {
+                this.detailsRequestId++;
+                this.reservationModal.close();
+            });
             this.reservationModal.modalBody.addEventListener('click', closeReservationModal);
             this.loadUnreturnedItems();
         } else {
@@ -80,7 +92,7 @@ const ProfessorUnreturned = {
         try {
             const cachedData = this.getCachedData();
             if (cachedData) {
-                this.formattedItems = cachedData.formattedItems;
+                this.formattedItems = this.filterRequestedReservation(cachedData.formattedItems);
                 this.currentPage = 1;
                 this.displayItems();
                 return;
@@ -94,11 +106,14 @@ const ProfessorUnreturned = {
                         reservation_date,
                         end_time,
                         start_time,
+                        status,
                         user_info!inner(first_name, last_name, email, year_section, role)
                     ),
                     lab_assets!inner(item_name, category)
                 `)
                 .eq('is_returned', false)
+                .eq('is_deleted', false)
+                .eq('reservations.is_deleted', false)
                 .eq('reservations.user_info.role', 'student')
                 .order('created_at', { ascending: false });
 
@@ -106,6 +121,7 @@ const ProfessorUnreturned = {
 
             const now = Date.now();
             const unreturnedItems = items.filter(item =>
+                !['declined', 'rejected', 'cancelled'].includes(String(item.reservations.status || '').toLowerCase()) &&
                 item.quantity_returned < item.quantity_borrowed &&
                 this.hasReservationEnded(item.reservations.reservation_date, item.reservations.end_time, now)
             );
@@ -123,10 +139,11 @@ const ProfessorUnreturned = {
                 unreturned_quantity: item.quantity_borrowed - item.quantity_returned,
                 reservation_date: item.reservations.reservation_date,
                 reservation_end_time: item.reservations.end_time,
-                reservation_time: item.reservations.start_time
+                reservation_time: item.reservations.start_time,
+                reservation_status: item.reservations.status
             }));
 
-            this.formattedItems = formattedItems;
+            this.formattedItems = this.filterRequestedReservation(formattedItems);
             this.currentPage = 1;
             this.setCachedData({ formattedItems });
 
@@ -135,6 +152,11 @@ const ProfessorUnreturned = {
             console.error('Error loading unreturned items:', error);
             this.displayItems([]);
         }
+    },
+
+    filterRequestedReservation(items) {
+        if (!this.requestedReservationId) return items;
+        return items.filter(item => String(item.reservation_id) === this.requestedReservationId);
     },
 
     getReservationGroups(items = this.formattedItems) {
@@ -149,17 +171,11 @@ const ProfessorUnreturned = {
                     year_section: item.year_section,
                     reservation_date: item.reservation_date,
                     resources: [],
-                    borrowed_quantity: 0,
-                    returned_quantity: 0,
-                    unreturned_quantity: 0
                 });
             }
 
             const group = groups.get(key);
             group.resources.push(item);
-            group.borrowed_quantity += Number(item.borrowed_quantity) || 0;
-            group.returned_quantity += Number(item.returned_quantity) || 0;
-            group.unreturned_quantity += Number(item.unreturned_quantity) || 0;
         });
 
         return Array.from(groups.values());
@@ -187,20 +203,27 @@ const ProfessorUnreturned = {
         const pageData = reservations.slice(start, end);
 
         tbody.innerHTML = pageData.map(reservation => {
-            const resources = reservation.resources.map(item => `
-                <div class="reservation-resource">
-                    ${this.escapeHtml(item.resource_name)} <span class="resource-detail-meta">(${this.escapeHtml(item.resource_type || 'Asset')})</span>
+            const resources = formatResourceCell(reservation.resources.map(item => ({
+                name: item.resource_name,
+                meta: item.resource_type || 'Asset'
+            })));
+            const quantityList = (key, label, className = '') => `
+                <div class="unreturned-quantity-list ${className}" role="list" aria-label="${label} quantity per resource">
+                    ${reservation.resources.map(item => {
+                        const quantity = Number(item[key]) || 0;
+                        return `<div class="unreturned-quantity-item" role="listitem" aria-label="${this.escapeHtml(item.resource_name)}: ${quantity} ${label.toLowerCase()}">${quantity}</div>`;
+                    }).join('')}
                 </div>
-            `).join('');
+            `;
 
             return `
                 <tr>
                     <td>${this.escapeHtml(reservation.student_name || 'N/A')}</td>
                     <td>${this.escapeHtml(reservation.year_section || 'N/A')}</td>
-                    <td><div class="reservation-resource-list">${resources}</div></td>
-                    <td>${reservation.borrowed_quantity}</td>
-                    <td>${reservation.returned_quantity}</td>
-                    <td class="unreturned-qty">${reservation.unreturned_quantity}</td>
+                    <td>${resources}</td>
+                    <td>${quantityList('borrowed_quantity', 'Borrowed')}</td>
+                    <td>${quantityList('returned_quantity', 'Returned')}</td>
+                    <td>${quantityList('unreturned_quantity', 'Unreturned', 'unreturned-quantity-list--due')}</td>
                     <td>${this.escapeHtml(reservation.reservation_date || 'N/A')}</td>
                     <td><button class="view-reservation-btn" onclick="ProfessorUnreturned.viewDetails(${reservation.reservation_id})">View</button></td>
                 </tr>
@@ -272,6 +295,11 @@ const ProfessorUnreturned = {
                     reservation_date,
                     start_time,
                     end_time,
+                    status,
+                    additional_note,
+                    year_section,
+                    course,
+                    professor,
                     rooms(room_name),
                     user_info(first_name, last_name),
                     reservation_items(
@@ -292,35 +320,17 @@ const ProfessorUnreturned = {
             if (error) throw error;
 
             const resources = [];
-            if (reservation.rooms?.room_name) {
-                resources.push(`
-                    <div class="resource-detail-row">
-                        <div class="resource-detail-name">${this.escapeHtml(reservation.rooms.room_name)} (Room)</div>
-                    </div>
-                `);
-            }
 
             (reservation.reservation_items || []).forEach(item => {
                 const asset = item.lab_assets;
                 if (!asset) return;
-                const unreturned = Math.max(0, (item.quantity_borrowed || 0) - (item.quantity_returned || 0));
-                resources.push(`
-                    <div class="resource-detail-row">
-                        <div class="resource-detail-name">${this.escapeHtml(asset.item_name)} (${this.escapeHtml(asset.category || 'Asset')})</div>
-                        <div class="resource-detail-meta">Quantity: ${item.quantity_borrowed || 0} | Returned: ${item.quantity_returned || 0} | Unreturned: ${unreturned}</div>
-                    </div>
-                `);
+                resources.push({ name: asset.item_name, type: asset.category || 'Asset', details: getReservationAssetDetails(reservation, item) });
             });
 
             (reservation.chemical_usage || []).forEach(usage => {
                 const chemical = usage.chemicals;
                 if (!chemical) return;
-                resources.push(`
-                    <div class="resource-detail-row">
-                        <div class="resource-detail-name">${this.escapeHtml(chemical.chemical_name)} (Chemical)</div>
-                        <div class="resource-detail-meta">Used: ${usage.quantity_used || 0} ${this.escapeHtml(usage.unit || '')}</div>
-                    </div>
-                `);
+                resources.push({ name: chemical.chemical_name, type: 'Chemical', details: getReservationChemicalDetails(reservation, usage) });
             });
 
             const student = reservation.user_info ?
@@ -329,24 +339,17 @@ const ProfessorUnreturned = {
                 return;
             }
 
-            this.reservationModal.open('Reservation Details', `
-                <div class="summary-item">
-                    <div class="summary-label">Student</div>
-                    <div class="summary-value">${this.escapeHtml(student)}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Date</div>
-                    <div class="summary-value">${this.escapeHtml(reservation.reservation_date)}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Time</div>
-                    <div class="summary-value">${this.escapeHtml(`${reservation.start_time} - ${reservation.end_time}`)}</div>
-                </div>
-                <div class="modal-resource-heading">Resources</div>
-                <div class="modal-resource-list">
-                    ${resources.length ? resources.join('') : '<div class="summary-item">No resources found for this reservation.</div>'}
-                </div>
-            `);
+            if (reservation.rooms?.room_name) resources.unshift({ name: reservation.rooms.room_name, type: 'Room' });
+            this.reservationModal.open('Reservation Details', renderReservationDetails([
+                { label: 'Reservation ID', value: reservationId },
+                { label: 'Student', value: student },
+                { label: 'Date', value: reservation.reservation_date },
+                { label: 'Time', value: `${reservation.start_time} - ${reservation.end_time}` },
+                { label: 'Year & Section', value: reservation.year_section },
+                { label: 'Course', value: reservation.course },
+                { label: 'Professor', value: reservation.professor },
+                { label: 'Status', value: reservation.status }
+            ], resources, { note: reservation.additional_note }));
         } catch (error) {
             console.error('Error loading reservation details:', error);
             if (requestId !== this.detailsRequestId || !this.reservationModal.modal.classList.contains('active')) {

@@ -2,6 +2,7 @@
 const StudentUnreturnedItems = {
     items: [],
     detailsModal: null,
+    requestedReservationId: new URLSearchParams(window.location.search).get('reservation_id'),
 
     async init() {
         const sessionUser = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -15,7 +16,11 @@ const StudentUnreturnedItems = {
             this.detailsModal.modal.addEventListener('click', event => {
                 if (event.target === this.detailsModal.modal) event.stopPropagation();
             });
+            this.detailsModal.closeBtn?.addEventListener('click', () => this.detailsModal.close());
 
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && this.detailsModal?.modal.classList.contains('active')) this.detailsModal.close();
+            });
             const { data: { user }, error: authError } = await window.supabase.auth.getUser();
             if (authError || !user) throw authError || new Error('Please sign in again.');
             await this.loadItems(user.id);
@@ -33,6 +38,7 @@ const StudentUnreturnedItems = {
                 reservation_id,
                 quantity_borrowed,
                 quantity_returned,
+                is_returned,
                 reservations!inner(
                     reservation_date,
                     start_time,
@@ -59,7 +65,9 @@ const StudentUnreturnedItems = {
         });
 
         const outstandingItems = this.items.filter(item =>
-            (Number(item.quantity_borrowed) || 0) > (Number(item.quantity_returned) || 0)
+            item.is_returned === false
+            && (Number(item.quantity_borrowed) || 0) > (Number(item.quantity_returned) || 0)
+            && (!this.requestedReservationId || String(item.reservation_id) === this.requestedReservationId)
         );
         this.render(outstandingItems);
     },
@@ -82,22 +90,27 @@ const StudentUnreturnedItems = {
 
         emptyState.style.display = 'none';
         tbody.innerHTML = reservations.map(reservation => {
-            const itemNames = reservation.resources.map(item => this.escapeHtml(item.lab_assets?.item_name || 'Unknown item'));
-            const types = [...new Set(reservation.resources.map(item => item.lab_assets?.category || 'Item'))]
-                .map(type => this.escapeHtml(type));
-            const itemsLabel = reservation.resources.length === 1
-                ? itemNames[0]
-                : `${reservation.resources.length} items due`;
+            const resources = reservation.resources.map(item => ({
+                name: item.lab_assets?.item_name || 'Unknown item',
+                meta: item.lab_assets?.category || 'Item'
+            }));
+            const quantityList = (getQuantity, label, className = '') => `
+                <div class="unreturned-quantity-list ${className}" role="list" aria-label="${label} quantity per resource">
+                    ${reservation.resources.map((item, index) => {
+                        const quantity = getQuantity(item);
+                        return `<div class="unreturned-quantity-item" role="listitem" aria-label="${this.escapeHtml(resources[index].name)}: ${quantity} ${label.toLowerCase()}">${quantity}</div>`;
+                    }).join('')}
+                </div>
+            `;
             return `
                 <tr>
                     <td>${this.escapeHtml(this.formatDate(reservation.date))}</td>
                     <td>${this.escapeHtml(reservation.reservation_id)}</td>
                     <td>${this.escapeHtml(`${this.formatTime(reservation.startTime)} – ${this.formatTime(reservation.endTime)}`)}</td>
-                    <td><span class="resource-name">${itemsLabel}</span></td>
-                    <td><span class="resource-category">${types.join(', ')}</span></td>
-                    <td>${reservation.borrowed}</td>
-                    <td>${reservation.returned}</td>
-                    <td class="unreturned-quantity">${reservation.outstanding}</td>
+                    <td>${formatResourceCell(resources)}</td>
+                    <td>${quantityList(item => Number(item.quantity_borrowed) || 0, 'Borrowed')}</td>
+                    <td>${quantityList(item => Number(item.quantity_returned) || 0, 'Returned')}</td>
+                    <td class="unreturned-quantity">${quantityList(item => Math.max(0, (Number(item.quantity_borrowed) || 0) - (Number(item.quantity_returned) || 0)), 'Still in hand', 'unreturned-quantity-list--due')}</td>
                     <td><button type="button" class="btn btn-view" onclick="StudentUnreturnedItems.viewDetails(${reservation.reservation_id})">View</button></td>
                 </tr>
             `;
@@ -142,22 +155,16 @@ const StudentUnreturnedItems = {
 
         const resources = items.map(item => {
             const asset = item.lab_assets || {};
-            const borrowed = Number(item.quantity_borrowed) || 0;
-            const returned = Number(item.quantity_returned) || 0;
-            const outstanding = Math.max(0, borrowed - returned);
-            return `
-                <article class="unreturned-modal-resource">
-                    <h3>${this.escapeHtml(asset.item_name || 'Unknown item')}</h3>
-                    <p>Type: ${this.escapeHtml(asset.category || 'Item')}</p>
-                    <p>Borrowed: ${borrowed} · Returned: ${returned} · Still in hand: ${outstanding}</p>
-                </article>
-            `;
-        }).join('');
+            return { name: asset.item_name || 'Unknown item', type: asset.category || 'Item', details: getReservationAssetDetails(item.reservations || {}, item) };
+        });
 
-        this.detailsModal.open('Reservation Items', `
-            <p><strong>Reservation #${this.escapeHtml(reservationId)}</strong></p>
-            <div class="unreturned-modal-resources">${resources}</div>
-        `);
+        const reservation = items[0].reservations || {};
+        this.detailsModal.open('Reservation Details', renderReservationDetails([
+            { label: 'Reservation ID', value: reservationId },
+            { label: 'Date', value: reservation.reservation_date },
+            { label: 'Time', value: `${reservation.start_time || 'N/A'} - ${reservation.end_time || 'N/A'}` },
+            { label: 'Status', value: reservation.status }
+        ], resources));
     },
 
     formatDate(value) {
@@ -186,7 +193,7 @@ const StudentUnreturnedItems = {
 
     showError(message) {
         const tbody = document.getElementById('unreturnedItemsTable');
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#b42318">${this.escapeHtml(message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#b42318">${this.escapeHtml(message)}</td></tr>`;
     }
 };
 

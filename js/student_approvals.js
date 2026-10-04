@@ -86,7 +86,7 @@ const StudentApprovals = {
                     *,
                     rooms(room_name),
                     reservation_items(
-                        lab_assets(item_name)
+                        lab_assets(item_name, category)
                     ),
                     chemical_usage(
                         chemicals(chemical_name)
@@ -158,29 +158,25 @@ const StudentApprovals = {
             const yearSection = req.user_info?.year_section || 'N/A';
             const studentName = req.user_info ? `${req.user_info.first_name} ${req.user_info.last_name}` : 'N/A';
 
-            let resourcesDisplay = '';
+            const resources = [];
 
             if (req.room_name) {
-                resourcesDisplay += req.room_name;
+                resources.push({ name: req.room_name, meta: 'Room' });
             }
 
             if (req.reservation_items && req.reservation_items.length > 0) {
-                const assets = req.reservation_items
-                    .map(item => item.lab_assets ? item.lab_assets.item_name : 'Unknown')
-                    .join(', ');
-                if (resourcesDisplay) resourcesDisplay += '<br>';
-                resourcesDisplay += assets;
+                req.reservation_items.forEach(item => {
+                    if (item.lab_assets?.item_name) resources.push({ name: item.lab_assets.item_name, meta: item.lab_assets.category || 'Asset' });
+                });
             }
 
             if (req.chemical_usage && req.chemical_usage.length > 0) {
-                const chemicals = req.chemical_usage
-                    .map(chem => chem.chemicals ? chem.chemicals.chemical_name : 'Unknown')
-                    .join(', ');
-                if (resourcesDisplay) resourcesDisplay += '<br>';
-                resourcesDisplay += chemicals;
+                req.chemical_usage.forEach(usage => {
+                    if (usage.chemicals?.chemical_name) resources.push({ name: usage.chemicals.chemical_name, meta: 'Chemical' });
+                });
             }
 
-            if (!resourcesDisplay) resourcesDisplay = 'No resources';
+            const resourcesDisplay = formatResourceCell(resources);
 
             return `
                 <tr>
@@ -297,21 +293,15 @@ const StudentApprovals = {
         if (confirmed) {
             try {
                 const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-                const professorName = `${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`.trim();
-                const { error } = await supabase
-                    .from('reservations')
-                    .update({
-                        professor_approval: 'Declined',
-                        status: 'Declined'
-                    })
-                    .eq('reservation_id', id)
-                    .eq('professor', professorName)
-                    .eq('professor_approval', 'Pending');
+                const { error } = await supabase.rpc(
+                    'decline_reservation_and_restore_inventory',
+                    { p_reservation_id: id, p_reason: null }
+                );
 
                 if (error) throw error;
 
                 this.clearCache(`${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`);
-                showSuccessSnackbar('Request declined successfully.');
+                showSuccessSnackbar('Request declined and reserved inventory restored.');
                 this.loadPendingRequests();
             } catch (error) {
                 console.error('Error:', error);

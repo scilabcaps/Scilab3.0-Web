@@ -78,9 +78,13 @@ class StudentPendingReservations {
                     *,
                     rooms(room_name),
                     reservation_items(
-                        lab_assets(item_name)
+                        quantity_borrowed,
+                        quantity_returned,
+                        lab_assets(item_name, category)
                     ),
                     chemical_usage(
+                        quantity_used,
+                        unit,
                         chemicals(chemical_name)
                     )
                 `)
@@ -93,14 +97,14 @@ class StudentPendingReservations {
             // Format reservations to match expected structure
             this.reservations = reservations.map(res => {
                 const resources = [];
-                if (res.rooms?.room_name) resources.push(res.rooms.room_name);
+                if (res.rooms?.room_name) resources.push({ name: res.rooms.room_name, meta: 'Room' });
 
                 (res.reservation_items || []).forEach(item => {
-                    if (item.lab_assets?.item_name) resources.push(item.lab_assets.item_name);
+                    if (item.lab_assets?.item_name) resources.push({ name: item.lab_assets.item_name, meta: item.lab_assets.category || 'Asset' });
                 });
 
                 (res.chemical_usage || []).forEach(usage => {
-                    if (usage.chemicals?.chemical_name) resources.push(usage.chemicals.chemical_name);
+                    if (usage.chemicals?.chemical_name) resources.push({ name: usage.chemicals.chemical_name, meta: 'Chemical' });
                 });
 
                 return {
@@ -108,7 +112,11 @@ class StudentPendingReservations {
                     date: res.reservation_date,
                     start_time: res.start_time,
                     end_time: res.end_time,
-                    resources: resources.length > 0 ? resources.join(', ') : 'No resources',
+                    resources,
+                    room_name: res.rooms?.room_name,
+                    reservation_items: res.reservation_items || [],
+                    chemical_usage: res.chemical_usage || [],
+                    additional_note: res.additional_note,
                     year_section: res.year_section,
                     course: res.course,
                     professor_name: res.professor,
@@ -210,7 +218,7 @@ class StudentPendingReservations {
             <tr>
                 <td>${reservation.date}</td>
                 <td>${timeRange}</td>
-                <td>${reservation.resources || 'No resources'}</td>
+                <td>${formatResourceCell(reservation.resources)}</td>
                 <td>${reservation.year_section || 'N/A'}</td>
                 <td>${reservation.course || 'N/A'}</td>
                 <td>${reservation.professor_name || 'N/A'}</td>
@@ -273,67 +281,45 @@ class StudentPendingReservations {
     }
 
     viewDetails(reservationId) {
-        // Find the reservation data
-        const reservation = this.reservations.find(r => r.id === reservationId);
+        const reservation = this.reservations.find(r => String(r.id) === String(reservationId));
         if (reservation) {
             this.showModal(reservation);
         } else {
-            alert('Reservation not found');
+            this.showModal({ id: reservationId, resources: [], status: 'Unknown' });
         }
     }
 
     showModal(reservation) {
         const modal = document.getElementById('viewModal');
         const modalBody = document.getElementById('modalBody');
-        
-        const statusColor = this.getStatusColor(reservation.status);
-        const approvalStatus = this.getApprovalStatus(reservation.professor_approval, reservation.admin_approval);
-        
-        modalBody.innerHTML = `
-            <div class="summary-item">
-                <div class="summary-label">Reservation ID</div>
-                <div class="summary-value">#${reservation.id}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Date</div>
-                <div class="summary-value">${reservation.date}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Time</div>
-                <div class="summary-value">${reservation.start_time} - ${reservation.end_time}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Resources</div>
-                <div class="summary-value">${reservation.resources || 'No resources'}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Year & Section</div>
-                <div class="summary-value">${reservation.year_section || 'N/A'}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Course</div>
-                <div class="summary-value">${reservation.course || 'N/A'}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Professor</div>
-                <div class="summary-value">${reservation.professor_name || 'N/A'}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Overall Status</div>
-                <div class="summary-value" style="color: ${statusColor}; font-weight: 600;">${reservation.status}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Approval Status</div>
-                <div class="summary-value">${approvalStatus}</div>
-            </div>
-        `;
-        
+        const resources = [];
+        if (reservation.room_name) resources.push({ name: reservation.room_name, type: 'Room' });
+        (reservation.reservation_items || []).forEach(item => {
+            if (!item.lab_assets?.item_name) return;
+            resources.push({ name: item.lab_assets.item_name, type: item.lab_assets.category || 'Asset', details: getReservationAssetDetails(reservation, item) });
+        });
+        (reservation.chemical_usage || []).forEach(item => {
+            if (item.chemicals?.chemical_name) resources.push({ name: item.chemicals.chemical_name, type: 'Chemical', details: getReservationChemicalDetails(reservation, item) });
+        });
+        modalBody.innerHTML = renderReservationDetails([
+            { label: 'Reservation ID', value: `#${reservation.id}` },
+            { label: 'Date', value: reservation.date },
+            { label: 'Time', value: `${reservation.start_time} - ${reservation.end_time}` },
+            { label: 'Year & Section', value: reservation.year_section },
+            { label: 'Course', value: reservation.course },
+            { label: 'Professor', value: reservation.professor_name },
+            { label: 'Reservation Status', value: reservation.status },
+            { label: 'Professor Approval', value: reservation.professor_approval },
+            { label: 'Admin Approval', value: reservation.admin_approval }
+        ], resources, { note: reservation.additional_note });
         modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
     }
 
     closeModal() {
         const modal = document.getElementById('viewModal');
         modal.style.display = 'none';
+        document.body.style.overflow = '';
     }
 
     showError(message) {
