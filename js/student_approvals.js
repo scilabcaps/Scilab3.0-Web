@@ -9,9 +9,13 @@ const StudentApprovals = {
     requests: [],
     currentPage: 1,
     pageSize: 10,
+    initializedPath: null,
 
     init() {
         if (!window.location.pathname.endsWith('/student_approvals.html')) return;
+        if (this.initializedPath === window.location.pathname) return;
+
+        this.initializedPath = window.location.pathname;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && String(user.role || '').toLowerCase() === 'professor') {
             this.loadPendingRequests();
@@ -63,9 +67,26 @@ const StudentApprovals = {
     },
 
     async loadPendingRequests() {
+        const tbody = document.getElementById('reservationsTable');
+        const emptyState = document.getElementById('emptyState');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666; padding: 24px;">Loading pending requests…</td></tr>';
+        }
+        if (emptyState) emptyState.style.display = 'none';
+
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-            const professorName = `${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`.trim();
+            const { data: { user: authUser }, error: authError } = await window.supabase.auth.getUser();
+            if (authError || !authUser) throw authError || new Error('Your session has expired. Please sign in again.');
+
+            const { data: profile, error: profileError } = await window.supabase
+                .from('user_info')
+                .select('id, first_name, last_name, username')
+                .eq('id', authUser.id)
+                .single();
+            if (profileError) throw profileError;
+
+            const professorName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
 
             if (!professorName) {
                 throw new Error('Unable to determine the logged-in professor name');
@@ -73,26 +94,37 @@ const StudentApprovals = {
 
             console.log('Loading requests for professor:', professorName);
 
-            const { data: requests, error } = await supabase
+            const reservationSelect = `
+                *,
+                rooms(room_name),
+                reservation_items(
+                    lab_assets(item_name, category)
+                ),
+                chemical_usage(
+                    chemicals(chemical_name)
+                )
+            `;
+
+            const loadForProfessor = professorValue => window.supabase
                 .from('reservations')
-                .select(`
-                    *,
-                    rooms(room_name),
-                    reservation_items(
-                        lab_assets(item_name, category)
-                    ),
-                    chemical_usage(
-                        chemicals(chemical_name)
-                    )
-                `)
+                .select(reservationSelect)
                 .eq('professor_approval', 'Pending')
-                .eq('professor', professorName.trim())
+                .eq('professor', professorValue)
                 .order('created_at', { ascending: false });
 
-            console.log('Requests found:', requests);
-            console.log('Error:', error);
+            const queryValues = [professorName];
+            if (profile.id && profile.id !== professorName) queryValues.push(profile.id);
+            const queryResults = await Promise.all(queryValues.map(loadForProfessor));
+            const queryError = queryResults.find(result => result.error)?.error;
+            if (queryError) throw queryError;
 
-            if (error) throw error;
+            const requests = [...new Map(
+                queryResults
+                    .flatMap(result => result.data || [])
+                    .map(request => [request.reservation_id, request])
+            ).values()].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+
+            console.log('Requests found:', requests);
 
             if (requests && requests.length > 0) {
                 const userIds = [...new Set(requests.map(r => r.user_id).filter(id => id))];
@@ -152,8 +184,9 @@ const StudentApprovals = {
 
             const resources = [];
 
-            if (req.room_name) {
-                resources.push({ name: req.room_name, meta: 'Room' });
+            const roomName = req.rooms?.room_name || req.room_name;
+            if (roomName) {
+                resources.push({ name: roomName, meta: 'Room' });
             }
 
             if (req.reservation_items && req.reservation_items.length > 0) {
@@ -309,11 +342,11 @@ const StudentApprovals = {
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
         }
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
         this.removePagination();
     }
 };
 
-window.addEventListener('DOMContentLoaded', function () {
-    StudentApprovals.init();
-});
+const initializeStudentApprovals = () => StudentApprovals.init();
+window.addEventListener('DOMContentLoaded', initializeStudentApprovals);
+window.addEventListener('content:navigation', initializeStudentApprovals);
