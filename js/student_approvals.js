@@ -9,16 +9,17 @@ const StudentApprovals = {
     requests: [],
     currentPage: 1,
     pageSize: 10,
-    initializedPath: null,
+    loadPromise: null,
 
     init() {
         if (!window.location.pathname.endsWith('/student_approvals.html')) return;
-        if (this.initializedPath === window.location.pathname) return;
-
-        this.initializedPath = window.location.pathname;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && String(user.role || '').toLowerCase() === 'professor') {
-            this.loadPendingRequests();
+            if (!this.loadPromise) {
+                this.loadPromise = this.loadPendingRequests().finally(() => {
+                    this.loadPromise = null;
+                });
+            }
         } else {
             window.location.href = '../../index.html';
         }
