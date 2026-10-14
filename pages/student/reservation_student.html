@@ -144,11 +144,11 @@
     </div>
 
     <!-- Summary Modal -->
-    <div id="summaryModal" class="modal">
-        <div class="modal-content">
+    <div id="summaryModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="summaryModalTitle">
+        <div class="modal-content reservation-dialog-content">
             <div class="modal-header">
-                <h3 class="modal-title">Reservation Summary</h3>
-                <button class="close-modal" onclick="closeModal('summaryModal')">&times;</button>
+                <h2 id="summaryModalTitle" class="modal-title">Review Reservation</h2>
+                <button class="modal-close" type="button" aria-label="Close" onclick="closeModal('summaryModal')">&times;</button>
             </div>
             <div class="modal-body" id="summaryContent">
                 <!-- Summary will be populated here -->
@@ -1370,34 +1370,23 @@
         function showSummary(formData) {
             summaryProfessorName = formData.professor;
             const summaryContent = document.getElementById('summaryContent');
-            summaryContent.innerHTML = `
-                <div class="summary-item">
-                    <div class="summary-label">Date:</div>
-                    <div class="summary-value">${formData.date}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Time:</div>
-                    <div class="summary-value">${formData.startTime} - ${formData.endTime}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Year & Section:</div>
-                    <div class="summary-value">${formData.year_section}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Course:</div>
-                    <div class="summary-value">${formData.course}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Professor:</div>
-                    <div class="summary-value">${escapeHtml(formData.professor)}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Resources:</div>
-                    <div class="summary-value">
-                        ${cart.map(item => `${item.name} (${item.quantity}${item.type === 'chemicals' ? ` ${item.unit || ''}` : 'x'})`).join('<br>')}
-                    </div>
-                </div>
-            `;
+            const resources = cart.map(item => ({
+                name: item.name,
+                type: item.type,
+                details: [{
+                    label: 'Quantity',
+                    value: item.type.toLowerCase() === 'chemicals'
+                        ? `${item.quantity} ${item.unit || ''}`.trim()
+                        : `${item.quantity}x`
+                }]
+            }));
+            summaryContent.innerHTML = renderReservationDetails([
+                { label: 'Date', value: formData.date },
+                { label: 'Time', value: `${formData.startTime} - ${formData.endTime}` },
+                { label: 'Year & Section', value: formData.year_section },
+                { label: 'Course', value: formData.course },
+                { label: 'Professor', value: formData.professor }
+            ], resources);
             document.getElementById('summaryModal').style.display = 'block';
         }
 
