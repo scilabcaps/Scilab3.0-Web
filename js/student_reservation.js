@@ -1334,16 +1334,6 @@
 
                 if (reservationError) throw reservationError;
 
-                await window.createAdminNotification({
-                    title: 'New reservation submitted',
-                    message: `${studentName} submitted a new reservation for approval.`,
-                    type: 'reservation_submitted',
-                    relatedId: reservationData.reservation_id,
-                    entityType: 'reservation',
-                    entityId: reservationData.reservation_id,
-                    action: 'view'
-                });
-
                 const reservationId = reservationData.reservation_id;
                 console.log('Reservation ID:', reservationId);
 
