@@ -72,14 +72,6 @@ const StudentApprovals = {
 
             console.log('Loading requests for professor:', professorName);
 
-            const cachedData = this.getCachedData(professorName);
-            if (cachedData) {
-                this.requests = cachedData || [];
-                this.currentPage = 1;
-                this.displayRequests();
-                return;
-            }
-
             const { data: requests, error } = await supabase
                 .from('reservations')
                 .select(`
@@ -124,7 +116,6 @@ const StudentApprovals = {
 
             this.requests = requests || [];
             this.currentPage = 1;
-            this.setCachedData(professorName, this.requests);
             this.displayRequests();
         } catch (error) {
             console.error('Error loading requests:', error);

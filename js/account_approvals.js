@@ -233,15 +233,10 @@ const AccountApprovals = {
     },
 
     async updatePendingAccount(id, status, actionLabel) {
-        const { data, error } = await supabase
-            .from('user_info')
-            .update({ isApproved: status })
-            .eq('id', id)
-            .eq('isApproved', 0)
-            .eq('role', 'student')
-            .eq('professor', this.professorId)
-            .select('id')
-            .maybeSingle();
+        const { data, error } = await supabase.rpc('moderate_student_account', {
+            p_student_id: id,
+            p_status: status
+        });
 
         if (error) throw error;
         if (!data) {

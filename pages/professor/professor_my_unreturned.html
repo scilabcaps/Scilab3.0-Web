@@ -16,20 +16,30 @@
 <body>
     <div class="dashboard-container">
         <main class="dashboard-main">
-            <div class="dashboard-header"><div class="header-left"><h1>My Unreturned Items</h1><img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo"></div></div>
+            <div class="dashboard-header"><div class="header-left"><h1>My Unreturned Item</h1><img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo"></div></div>
             <div class="dashboard-content">
                 <div class="data-table"><table>
-                    <thead><tr><th>Reservation #</th><th>Resources</th><th>Borrowed</th><th>Returned</th><th>Unreturned</th><th>Reservation Date</th></tr></thead>
+                    <thead><tr><th>Reservation Date</th><th>Reservation #</th><th>Time</th><th>Resources</th><th>Borrowed</th><th>Returned</th><th>Unreturned</th><th>Actions</th></tr></thead>
                     <tbody id="myUnreturnedItemsTable"></tbody>
                 </table></div>
                 <div id="myUnreturnedEmpty" class="empty-state"><div class="empty-state-text">No unreturned items found</div></div>
             </div>
         </main>
     </div>
+    <div id="professorMyUnreturnedDetailsModal" class="modal">
+        <div class="modal-content reservation-dialog-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Reservation Items</h2>
+                <button class="modal-close" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body"></div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../../config/supabase.js"></script>
     <script src="../../js/sidebar_loader.js"></script>
     <script src="../../js/main.js"></script>
+    <script src="../../js/modal.js"></script>
     <script src="../../js/professor_my_unreturned.js"></script>
 </body>
 </html>

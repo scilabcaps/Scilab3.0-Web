@@ -40,11 +40,6 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="student_upcoming.html" class="nav-link" id="nav-upcoming">
-                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm1 15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8h16v8Zm0-10H4V7a1 1 0 0 1 1-1h1v2h2V6h8v2h2V6h1a1 1 0 0 1 1 1v2Z"/></svg></span><span class="nav-text">Upcoming Reservations</span>
-                </a>
-            </li>
-            <li class="nav-item">
                 <a href="student_unreturned.html" class="nav-link" id="nav-unreturned">
                     <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 5v5.4l3.2 1.9-1 1.7-4.2-2.5V7Z"/></svg></span><span class="nav-text">Unreturned Items</span>
                 </a>

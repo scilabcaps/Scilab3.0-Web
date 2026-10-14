@@ -18,10 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const { data: professors, error } = await window.supabase
-                .from('user_info')
-                .select('id, first_name, last_name')
-                .eq('role', 'professor')
-                .order('first_name', { ascending: true });
+                .rpc('get_professor_directory');
 
             if (error) throw error;
 
@@ -98,23 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Set loading state with spinner
                 setButtonLoadingWithSpinner('sendOtpBtn', true, null, 'Sending OTP...');
-
-                // Check if email already exists in user_info table
-                const { data: existingUser, error: checkError } = await window.supabase
-                    .from('user_info')
-                    .select('email')
-                    .eq('email', email)
-                    .maybeSingle();
-
-                if (checkError && checkError.code !== 'PGRST116') {
-                    throw checkError;
-                }
-
-                if (existingUser) {
-                    showErrorSnackbar('Email already registered. Please use a different email or log in.');
-                    setButtonLoading('sendOtpBtn', false);
-                    return;
-                }
 
                 // Create user with password first (this creates the auth user with password)
                 const { data: signUpData, error: signUpError } = await window.supabase.auth.signUp({

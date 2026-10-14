@@ -1,5 +1,7 @@
 // Sidebar Loader - Loads the shared sidebar component
 async function loadSidebar() {
+    if (window.__contentNavigationRefresh) return;
+    if (!(await enforceRoleRoute())) return;
     const header = document.querySelector('.dashboard-header');
     const currentPath = window.location.pathname;
     const isStudentOrProfessorPage = currentPath.includes('/pages/student/') || currentPath.includes('/pages/professor/');
@@ -74,6 +76,45 @@ async function loadSidebar() {
 
     } catch (error) {
         console.error('Error loading sidebar:', error);
+    }
+}
+
+async function enforceRoleRoute() {
+    const currentPath = window.location.pathname;
+    const isStudentRoute = currentPath.includes('/pages/student/');
+    const isProfessorRoute = currentPath.includes('/pages/professor/');
+    if (!isStudentRoute && !isProfessorRoute) return true;
+
+    try {
+        const { data: { user }, error: authError } = await window.supabase.auth.getUser();
+        if (authError || !user) {
+            window.location.replace('../../index.html');
+            return false;
+        }
+
+        const { data: userInfo, error: userError } = await window.supabase
+            .from('user_info')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+        if (userError || !userInfo) {
+            console.error('Unable to verify the current user role:', userError);
+            return true;
+        }
+
+        const role = String(userInfo.role || '').toLowerCase();
+        if (isStudentRoute && role !== 'student') {
+            window.location.replace('../professor/professor_dashboard.html');
+            return false;
+        }
+        if (isProfessorRoute && role !== 'professor') {
+            window.location.replace('../student/student_dashboard.html');
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error('Unable to verify the current user role:', error);
+        return true;
     }
 }
 

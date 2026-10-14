@@ -191,6 +191,133 @@ document.addEventListener('DOMContentLoaded', function() {
     initSidebarUser();
 });
 
+// Keep the dashboard shell mounted while navigating between dashboard pages.
+// Destination pages still provide their own main content and page-specific scripts.
+(function initContentNavigation() {
+    const dashboardPath = /\/pages\/(student|professor)\//;
+    const sharedScripts = new Set([
+        'sidebar_loader.js',
+        'main.js',
+        'supabase.js'
+    ]);
+    let navigationInProgress = false;
+
+    const isInternalDashboardLink = link => {
+        if (!link || !link.href || link.target === '_blank' || link.hasAttribute('download')) return false;
+        const url = new URL(link.href, window.location.href);
+        return url.origin === window.location.origin
+            && dashboardPath.test(url.pathname)
+            && url.pathname.endsWith('.html');
+    };
+
+    const loadPageAssets = (documentFragment, pageUrl) => {
+        [...documentFragment.querySelectorAll('link[rel="stylesheet"]')].forEach(sourceLink => {
+            const stylesheetUrl = new URL(sourceLink.getAttribute('href'), pageUrl);
+            const alreadyLoaded = [...document.querySelectorAll('link[rel="stylesheet"]')]
+                .some(link => new URL(link.href, window.location.href).href === stylesheetUrl.href);
+            if (alreadyLoaded) return;
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = stylesheetUrl.href;
+            link.dataset.contentAsset = stylesheetUrl.href;
+            document.head.appendChild(link);
+        });
+
+        documentFragment.querySelectorAll('style').forEach(sourceStyle => {
+            const style = document.createElement('style');
+            style.textContent = sourceStyle.textContent;
+            style.dataset.contentAsset = 'true';
+            document.head.appendChild(style);
+        });
+    };
+
+    const loadPageScripts = async (documentFragment, pageUrl) => {
+        const scripts = [...documentFragment.querySelectorAll('script[src], script:not([src])')];
+        const externalScripts = scripts.filter(sourceScript => sourceScript.src);
+        const inlineScripts = scripts.filter(sourceScript => !sourceScript.src && sourceScript.textContent.trim());
+
+        for (const sourceScript of externalScripts) {
+            if (sourceScript.src) {
+                const scriptUrl = new URL(sourceScript.getAttribute('src'), pageUrl);
+                const fileName = scriptUrl.pathname.split('/').pop();
+                const alreadyLoaded = [...document.scripts].some(script => {
+                    if (!script.src) return false;
+                    return new URL(script.src, window.location.href).href === scriptUrl.href;
+                });
+                if (sharedScripts.has(fileName) || alreadyLoaded) continue;
+
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = scriptUrl.href;
+                    script.dataset.contentScript = scriptUrl.href;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.body.appendChild(script);
+                });
+            }
+        }
+
+        inlineScripts.forEach(sourceScript => {
+            const script = document.createElement('script');
+            script.textContent = sourceScript.textContent;
+            document.body.appendChild(script);
+        });
+    };
+
+    const renderPage = async (url, { pushState = true } = {}) => {
+        if (navigationInProgress) return;
+        navigationInProgress = true;
+        const currentMain = document.querySelector('.dashboard-main');
+
+        try {
+            const response = await fetch(url.href, { headers: { 'X-Content-Navigation': 'true' } });
+            if (!response.ok) throw new Error(`Navigation failed: ${response.status}`);
+
+            const html = await response.text();
+            const parsed = new DOMParser().parseFromString(html, 'text/html');
+            const nextMain = parsed.querySelector('.dashboard-main');
+            if (!currentMain || !nextMain) throw new Error('Destination does not contain dashboard content');
+
+            loadPageAssets(parsed, url.href);
+            currentMain.replaceWith(nextMain);
+            document.title = parsed.title || document.title;
+            if (pushState) window.history.pushState({}, '', url.href);
+            if (typeof setActiveNavItem === 'function') setActiveNavItem();
+            await loadPageScripts(parsed, url.href);
+            window.__contentNavigationRefresh = true;
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+            window.dispatchEvent(new Event('DOMContentLoaded'));
+            window.__contentNavigationRefresh = false;
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        } catch (error) {
+            console.error('Content navigation failed; using normal navigation:', error);
+            window.location.assign(url.href);
+        } finally {
+            navigationInProgress = false;
+        }
+    };
+
+    document.addEventListener('click', event => {
+        const link = event.target.closest('a.nav-link');
+        if (!isInternalDashboardLink(link)) return;
+        event.preventDefault();
+
+        // Inline page scripts register global lifecycle handlers that cannot be
+        // removed when only the main element is replaced. Let those pages do a
+        // normal navigation so their handlers remain isolated to their document.
+        if (document.querySelector('script:not([src])')) {
+            window.location.assign(link.href);
+            return;
+        }
+        renderPage(new URL(link.href));
+    });
+
+    window.addEventListener('popstate', () => {
+        const url = new URL(window.location.href);
+        if (dashboardPath.test(url.pathname)) renderPage(url, { pushState: false });
+    });
+})();
+
 // Handle login form submission - Supabase authentication
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');

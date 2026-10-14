@@ -136,6 +136,9 @@ class StudentApprovedReservations {
                     professor_approval: res.professor_approval,
                     admin_approval: res.admin_approval
                 };
+            }).filter(reservation => {
+                const end = new Date(`${reservation.reservation_date}T${reservation.end_time}`).getTime();
+                return Number.isFinite(end) && end >= Date.now();
             });
 
             this.renderReservations();

@@ -33,9 +33,9 @@
                             <p id="resourceSearchSummary" class="resource-search-summary" aria-live="polite">Search all resource categories.</p>
                         </div>
                         <div class="inventory-tabs">
-                            <button class="tab-btn active" onclick="switchTab('chemicals')">Chemicals</button>
-                            <button class="tab-btn" onclick="switchTab('equipment')">Equipment</button>
-                            <button class="tab-btn" onclick="switchTab('glassware')">Glassware</button>
+                            <button class="tab-btn active" onclick="switchTab('chemicals', this)">Chemicals</button>
+                            <button class="tab-btn" onclick="switchTab('equipment', this)">Equipment</button>
+                            <button class="tab-btn" onclick="switchTab('glassware', this)">Glassware</button>
                         </div>
                         <div id="resourceSearchResults" class="resource-grid resource-search-results" hidden></div>
 
@@ -43,16 +43,19 @@
                             <div class="resource-grid" id="chemicalsGrid">
                                 <!-- Resources will be loaded dynamically -->
                             </div>
+                            <nav id="chemicalsPagination" class="resource-pagination" aria-label="Chemicals pages" hidden></nav>
                         </div>
                         <div id="equipment" class="tab-content">
                             <div class="resource-grid" id="equipmentGrid">
                                 <!-- Resources will be loaded dynamically -->
                             </div>
+                            <nav id="equipmentPagination" class="resource-pagination" aria-label="Equipment pages" hidden></nav>
                         </div>
                         <div id="glassware" class="tab-content">
                             <div class="resource-grid" id="glasswareGrid">
                                 <!-- Resources will be loaded dynamically -->
                             </div>
+                            <nav id="glasswarePagination" class="resource-pagination" aria-label="Glassware pages" hidden></nav>
                         </div>
                     </div>
 
@@ -204,7 +207,16 @@
             }
         });
 
-        function switchTab(tabName) {
+        const resourcePageSize = 9;
+        const resourceLists = { chemicals: [], equipment: [], glassware: [] };
+        const resourcePages = { chemicals: 1, equipment: 1, glassware: 1 };
+        const resourceCategoryLabels = {
+            chemicals: 'Chemicals',
+            equipment: 'Equipment',
+            glassware: 'Glassware'
+        };
+
+        function switchTab(tabName, button) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -215,7 +227,7 @@
 
             // Show selected tab
             document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            button.classList.add('active');
         }
 
         // Calendar Functions
@@ -635,19 +647,31 @@
                         description: asset.condition_notes || 'Available'
                     }));
 
-                renderResources('chemicals', chemicals);
-                renderResources('equipment', equipment);
-                renderResources('glassware', glassware);
+                setResources('chemicals', chemicals);
+                setResources('equipment', equipment);
+                setResources('glassware', glassware);
 
             } catch (error) {
                 console.error('Error loading resources:', error);
             }
         }
 
-        function renderResources(type, resources) {
+        function setResources(type, resources) {
+            resourceLists[type] = resources;
+            const totalPages = Math.max(1, Math.ceil(resources.length / resourcePageSize));
+            resourcePages[type] = Math.min(resourcePages[type], totalPages);
+            renderResources(type, resources);
+        }
+
+        function renderResources(type, resources = resourceLists[type]) {
             const grid = document.getElementById(type + 'Grid');
+            resourceLists[type] = resources;
+            const totalPages = Math.max(1, Math.ceil(resources.length / resourcePageSize));
+            resourcePages[type] = Math.min(Math.max(resourcePages[type], 1), totalPages);
+            const start = (resourcePages[type] - 1) * resourcePageSize;
+            const visibleResources = resources.slice(start, start + resourcePageSize);
             const typeName = type === 'rooms' ? 'Laboratory Room' : type;
-            grid.innerHTML = resources.map(resource => {
+            grid.innerHTML = visibleResources.map(resource => {
                 const cartItem = cart.find(item => item.id === resource.id);
                 const inCartQuantity = cartItem ? cartItem.quantity : 0;
                 const availableQuantity = resource.quantity - inCartQuantity;
@@ -695,7 +719,42 @@
                     </button>
                 </div>
             `}).join('');
+            renderResourcePagination(type, resources.length, totalPages, start);
             applyResourceSearch();
+        }
+
+        function renderResourcePagination(type, totalItems, totalPages, start) {
+            const container = document.getElementById(type + 'Pagination');
+            if (!container) return;
+
+            if (totalPages <= 1) {
+                container.hidden = true;
+                container.replaceChildren();
+                return;
+            }
+
+            const currentPage = resourcePages[type];
+            const end = Math.min(start + resourcePageSize, totalItems);
+            const categoryName = resourceCategoryLabels[type].toLowerCase();
+            container.hidden = false;
+            container.innerHTML = `
+                <div class="pagination-container">
+                    <div class="pagination-info" aria-live="polite">Showing ${start + 1}-${end} of ${totalItems} ${categoryName}</div>
+                    <div class="pagination-controls">
+                        <button type="button" onclick="goToResourcePage('${type}', 1)" ${currentPage === 1 ? 'disabled' : ''} aria-label="First ${categoryName} page">&laquo; First</button>
+                        <button type="button" onclick="goToResourcePage('${type}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} aria-label="Previous ${categoryName} page">&lsaquo; Prev</button>
+                        <span class="resource-page-status">Page ${currentPage} of ${totalPages}</span>
+                        <button type="button" onclick="goToResourcePage('${type}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} aria-label="Next ${categoryName} page">Next &rsaquo;</button>
+                        <button type="button" onclick="goToResourcePage('${type}', ${totalPages})" ${currentPage === totalPages ? 'disabled' : ''} aria-label="Last ${categoryName} page">Last &raquo;</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function goToResourcePage(type, page) {
+            const totalPages = Math.max(1, Math.ceil(resourceLists[type].length / resourcePageSize));
+            resourcePages[type] = Math.min(Math.max(page, 1), totalPages);
+            renderResources(type);
         }
 
         function applyResourceSearch() {
@@ -707,11 +766,6 @@
             const tabs = document.querySelector('.inventory-tabs');
             const tabContents = Array.from(document.querySelectorAll('.tab-content'));
             const resultsGrid = document.getElementById('resourceSearchResults');
-            const gridLabels = {
-                chemicalsGrid: 'Chemicals',
-                equipmentGrid: 'Equipment',
-                glasswareGrid: 'Glassware'
-            };
             let totalMatches = 0;
             const matchedCategories = [];
             resultsGrid.replaceChildren();
@@ -724,23 +778,17 @@
                 return;
             }
 
-            Object.entries(gridLabels).forEach(([gridId, label]) => {
-                const grid = document.getElementById(gridId);
-                if (!grid) return;
-
-                const cards = Array.from(grid.querySelectorAll('.resource-card'));
-                const matches = cards.filter(card => card.textContent.toLocaleLowerCase().includes(query));
+            Object.entries(resourceCategoryLabels).forEach(([type, label]) => {
+                const matches = resourceLists[type].filter(resource => {
+                    const searchableText = `${label} ${resource.name} ${resource.description || ''} ${resource.unit || ''}`;
+                    return searchableText.toLocaleLowerCase().includes(query);
+                });
 
                 if (matches.length) {
                     totalMatches += matches.length;
                     matchedCategories.push(label);
-                    matches.forEach(card => {
-                        const resultCard = card.cloneNode(true);
-                        const category = document.createElement('span');
-                        category.className = 'resource-search-result-type';
-                        category.textContent = label;
-                        resultCard.prepend(category);
-                        resultsGrid.appendChild(resultCard);
+                    matches.forEach(resource => {
+                        resultsGrid.insertAdjacentHTML('beforeend', renderSearchResourceCard(type, resource, label));
                     });
                 }
             });
@@ -757,6 +805,48 @@
             } else {
                 summary.textContent = `${totalMatches} ${totalMatches === 1 ? 'match' : 'matches'} in ${matchedCategories.join(', ')}.`;
             }
+        }
+
+        function renderSearchResourceCard(type, resource, label) {
+            const cartItem = cart.find(item => item.id === resource.id);
+            const inCartQuantity = cartItem ? cartItem.quantity : 0;
+            const availableQuantity = resource.quantity - inCartQuantity;
+            const typeName = type;
+            let quantityDisplay = type === 'chemicals'
+                ? `Available: ${availableQuantity} ${resource.unit || ''} ${inCartQuantity > 0 ? `(In cart: ${inCartQuantity} ${resource.unit || ''})` : ''}`
+                : `Available: ${availableQuantity} ${inCartQuantity > 0 ? `(In cart: ${inCartQuantity})` : ''}`;
+            let isDisabled = false;
+            let buttonText = 'Select';
+            let buttonAction = `addToCart(${resource.id}, '${escapeHtml(resource.name)}', '${typeName}', ${resource.quantity}, '${escapeHtml(resource.unit || '')}')`;
+
+            if (type === 'chemicals' && availableQuantity === 0) {
+                return `
+                    <div class="resource-card">
+                        <span class="resource-search-result-type">${label}</span>
+                        <div class="resource-name">${escapeHtml(resource.name)}</div>
+                        <div class="resource-info">${escapeHtml(resource.description)}</div>
+                        <div class="resource-quantity">There is currently no stock available. Please wait for further announcements.</div>
+                    </div>
+                `;
+            }
+
+            if (availableQuantity === 0) {
+                isDisabled = true;
+                buttonText = type === 'chemicals' ? 'Unavailable' : 'Check Availability';
+                buttonAction = type === 'chemicals'
+                    ? ''
+                    : `showStockModal(${resource.id}, '${typeName}', '${escapeHtml(resource.name)}')`;
+            }
+
+            return `
+                <div class="resource-card">
+                    <span class="resource-search-result-type">${label}</span>
+                    <div class="resource-name">${escapeHtml(resource.name)}</div>
+                    <div class="resource-info">${escapeHtml(resource.description)}</div>
+                    <div class="resource-quantity">${quantityDisplay}</div>
+                    <button class="add-to-cart-btn" onclick="${buttonAction}" ${isDisabled ? 'disabled' : ''}>${buttonText}</button>
+                </div>
+            `;
         }
 
         function escapeHtml(text) {
@@ -1468,25 +1558,6 @@
                             throw itemError;
                         } else {
                             console.log('Successfully inserted item:', item.name);
-                            
-                            // Update available stock in lab_assets
-                            const { data: currentAsset, error: fetchError } = await window.supabase
-                                .from('lab_assets')
-                                .select('available_stock')
-                                .eq('asset_id', item.id)
-                                .single();
-                            
-                            if (!fetchError && currentAsset) {
-                                const newStock = currentAsset.available_stock - item.quantity;
-                                const { error: stockError } = await window.supabase
-                                    .from('lab_assets')
-                                    .update({ available_stock: newStock })
-                                    .eq('asset_id', item.id);
-                                
-                                if (stockError) {
-                                    console.error('Error updating stock:', stockError);
-                                }
-                            }
                         }
                     }
                 }
@@ -1504,26 +1575,13 @@
                         });
 
                     if (chemicalError) throw chemicalError;
-                    
-                    // Update stock quantity in chemicals
-                    const { data: currentChemical, error: fetchChemicalError } = await window.supabase
-                        .from('chemicals')
-                        .select('stock_quantity')
-                        .eq('chemical_id', item.id)
-                        .single();
-                    
-                    if (!fetchChemicalError && currentChemical) {
-                        const newStock = currentChemical.stock_quantity - item.quantity;
-                        const { error: chemicalStockError } = await window.supabase
-                            .from('chemicals')
-                            .update({ stock_quantity: newStock })
-                            .eq('chemical_id', item.id);
-                        
-                        if (chemicalStockError) {
-                            console.error('Error updating chemical stock:', chemicalStockError);
-                        }
-                    }
                 }
+
+                const { error: inventoryError } = await window.supabase.rpc(
+                    'deduct_reservation_inventory',
+                    { p_reservation_id: reservationId }
+                );
+                if (inventoryError) throw inventoryError;
 
                 showSuccessSnackbar('Reservation submitted successfully! Reservation ID: ' + reservationId);
                 closeModal('summaryModal');
@@ -1534,8 +1592,8 @@
                 document.getElementById('reservationForm').reset();
                 await loadUserInfo();
                 
-                // Refresh resources display to show updated stock from database
-                refreshResourcesDisplay();
+                // Reservation submission changes database stock, so refresh it once here.
+                await loadResources();
 
             } catch (error) {
                 console.error('Error submitting reservation:', error);
@@ -1544,8 +1602,7 @@
         }
 
         function refreshResourcesDisplay() {
-            // Re-render all resource tabs to update available quantities
-            loadResources();
+            Object.keys(resourceLists).forEach(type => renderResources(type));
         }
 
         function closeModal(modalId) {

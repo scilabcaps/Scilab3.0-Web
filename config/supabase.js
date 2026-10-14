@@ -30,14 +30,14 @@ window.createAdminNotification = async function ({
 }) {
     if (!window.supabase) return { error: new Error('Supabase client is not initialized') };
 
-    const { error } = await window.supabase.from('notifications').insert({
-        title,
-        message,
-        type,
-        related_id: relatedId == null ? null : String(relatedId),
-        entity_type: entityType,
-        entity_id: entityId == null ? null : Number(entityId),
-        action
+    const { error } = await window.supabase.rpc('create_admin_notification', {
+        p_title: title,
+        p_message: message,
+        p_type: type,
+        p_related_id: relatedId == null ? null : String(relatedId),
+        p_entity_type: entityType,
+        p_entity_id: entityId == null ? null : Number(entityId),
+        p_action: action
     });
 
     if (error) console.error('Unable to create notification:', error);

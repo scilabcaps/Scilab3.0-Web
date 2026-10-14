@@ -34,6 +34,16 @@ async function loadUserData() {
             return;
         }
 
+        const role = String(userInfo?.role || '').toLowerCase();
+        if (window.location.pathname.includes('/pages/student/') && role !== 'student') {
+            window.location.replace('../professor/professor_dashboard.html');
+            return;
+        }
+        if (window.location.pathname.includes('/pages/professor/') && role !== 'professor') {
+            window.location.replace('../student/student_dashboard.html');
+            return;
+        }
+
         // Populate profile form
         if (userInfo) {
             const firstNameInput = document.getElementById('firstName');

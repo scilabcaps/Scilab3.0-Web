@@ -39,6 +39,7 @@ BEGIN
 
     UPDATE public.reservations
        SET professor_approval = 'Declined',
+           admin_approval = 'Declined',
            status = 'Declined',
            additional_note = CASE
                WHEN NULLIF(BTRIM(p_reason), '') IS NULL THEN additional_note
