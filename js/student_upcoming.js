@@ -23,7 +23,7 @@ const StudentUpcoming = {
             const { data, error } = await supabase
                 .from('reservations')
                 .select(`
-                    reservation_id, reservation_date, start_time, end_time,
+                    reservation_id, reservation_date, start_time, end_time, status,
                     is_deleted, rooms(room_name),
                     reservation_items(quantity_borrowed, quantity_returned, lab_assets(item_name, category)),
                     chemical_usage(quantity_used, unit, chemicals(chemical_name))
@@ -51,15 +51,24 @@ const StudentUpcoming = {
     render(reservations) {
         const rows = reservations.map(reservation => {
             const resources = [];
-            if (reservation.rooms?.room_name) resources.push({ name: reservation.rooms.room_name, meta: 'Room' });
+            if (reservation.rooms?.room_name) resources.push({ name: reservation.rooms.room_name, meta: 'Room · Qty 1' });
             (reservation.reservation_items || []).forEach(item => {
-                if (item.lab_assets?.item_name) resources.push({ name: item.lab_assets.item_name, meta: item.lab_assets.category || 'Asset' });
+                if (item.lab_assets?.item_name) resources.push({
+                    name: item.lab_assets.item_name,
+                    meta: `${item.lab_assets.category || 'Asset'} · Qty ${Number(item.quantity_borrowed) || 0}`
+                });
             });
             (reservation.chemical_usage || []).forEach(item => {
-                if (item.chemicals?.chemical_name) resources.push({ name: item.chemicals.chemical_name, meta: 'Chemical' });
+                if (item.chemicals?.chemical_name) {
+                    const unit = item.unit ? ` ${item.unit}` : '';
+                    resources.push({
+                        name: item.chemicals.chemical_name,
+                        meta: `Chemical · Qty ${Number(item.quantity_used) || 0}${unit}`
+                    });
+                }
             });
 
-            return `<tr><td>${this.escape(reservation.reservation_id)}</td><td>${this.escape(reservation.reservation_date)}</td><td>${this.escape(`${reservation.start_time} - ${reservation.end_time}`)}</td><td>${formatResourceCell(resources, 'None')}</td></tr>`;
+            return `<tr><td>${this.escape(reservation.reservation_date)}</td><td>${this.escape(`${reservation.start_time} - ${reservation.end_time}`)}</td><td>${formatResourceCell(resources, 'None')}</td><td><span class="status-badge approved">${this.escape(reservation.status || 'Approved')}</span></td></tr>`;
         }).join('');
 
         document.getElementById('upcomingReservationsTable').innerHTML = rows;

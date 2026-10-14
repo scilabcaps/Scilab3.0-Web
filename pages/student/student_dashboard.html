@@ -65,15 +65,6 @@
                             <div class="card-label">Approved Today</div>
                         </div>
                     </div>
-                    <div class="summary-card">
-                        <div class="card-icon">
-                            <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm1 15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9h16v9Zm0-11H4V7a1 1 0 0 1 1-1h1v2h2V6h8v2h2V6h1a1 1 0 0 1 1 1v1Z"/></svg></span>
-                        </div>
-                        <div class="card-content">
-                            <div class="card-value" id="upcomingScheduleCount">5</div>
-                            <div class="card-label">Upcoming Schedule</div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Quick Actions -->
@@ -104,7 +95,7 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Time</th>
-                                    <th>Room</th>
+                                    <th>Resources</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -383,19 +374,11 @@
                     manilaDate(new Date(r.approved_at)) === today
                 ).length || 0;
                 
-                const upcomingSchedule = allReservations?.filter(r => 
-                    r.professor_approval === 'Approved' && 
-                    r.admin_approval === 'Approved' && 
-                    r.reservation_date >= today
-                ).length || 0;
-                
                 // Update dashboard metrics
                 document.getElementById('myReservationsCount').textContent = totalReservations;
                 document.getElementById('pendingRequestsCount').textContent = pendingRequests;
                 document.getElementById('approvedTodayCount').textContent = approvedToday;
-                document.getElementById('upcomingScheduleCount').textContent = upcomingSchedule;
-                
-                // Load upcoming reservations table
+
                 loadUpcomingReservations();
                 
             } catch (error) {
@@ -404,74 +387,73 @@
                 document.getElementById('myReservationsCount').textContent = '0';
                 document.getElementById('pendingRequestsCount').textContent = '0';
                 document.getElementById('approvedTodayCount').textContent = '0';
-                document.getElementById('upcomingScheduleCount').textContent = '0';
             }
         }
-        
-        // Load upcoming reservations for the table
+
         async function loadUpcomingReservations() {
             try {
                 const user = JSON.parse(sessionStorage.getItem('user') || '{}');
                 const today = new Date().toISOString().split('T')[0];
-                
                 const { data: reservations, error } = await supabase
                     .from('reservations')
                     .select(`
                         reservation_date,
                         start_time,
                         end_time,
+                        status,
                         professor_approval,
                         admin_approval,
-                        rooms(room_name)
+                        rooms(room_name),
+                        reservation_items(quantity_borrowed, lab_assets(item_name, category)),
+                        chemical_usage(quantity_used, unit, chemicals(chemical_name))
                     `)
                     .eq('user_id', user.id)
                     .eq('professor_approval', 'Approved')
                     .eq('admin_approval', 'Approved')
                     .gte('reservation_date', today)
                     .order('reservation_date', { ascending: true })
+                    .order('start_time', { ascending: true })
                     .limit(5);
 
                 if (error) throw error;
 
                 const container = document.getElementById('upcomingReservationsList');
-                
                 if (!reservations || reservations.length === 0) {
-                    container.innerHTML = `
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: #666; padding: 20px;">
-                                No upcoming reservations
-                            </td>
-                        </tr>
-                    `;
+                    container.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#666;padding:20px;">No upcoming reservations</td></tr>';
                     return;
                 }
 
-                let html = '';
-                reservations.forEach(res => {
-                    const statusClass = 'approved';
-                    const statusText = 'Approved';
-                    
-                    html += `
+                container.innerHTML = reservations.map(reservation => {
+                    const resources = [];
+                    if (reservation.rooms?.room_name) resources.push({ name: reservation.rooms.room_name, meta: 'Room · Qty 1' });
+                    (reservation.reservation_items || []).forEach(item => {
+                        if (item.lab_assets?.item_name) resources.push({
+                            name: item.lab_assets.item_name,
+                            meta: `${item.lab_assets.category || 'Asset'} · Qty ${Number(item.quantity_borrowed) || 0}`
+                        });
+                    });
+                    (reservation.chemical_usage || []).forEach(item => {
+                        if (item.chemicals?.chemical_name) {
+                            const unit = item.unit ? ` ${item.unit}` : '';
+                            resources.push({
+                                name: item.chemicals.chemical_name,
+                                meta: `Chemical · Qty ${Number(item.quantity_used) || 0}${unit}`
+                            });
+                        }
+                    });
+
+                    return `
                         <tr>
-                            <td>${res.reservation_date}</td>
-                            <td>${res.start_time} - ${res.end_time}</td>
-                            <td>${res.rooms?.room_name || 'Lab Room'}</td>
-                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td>${reservation.reservation_date}</td>
+                            <td>${reservation.start_time} - ${reservation.end_time}</td>
+                            <td>${formatResourceCell(resources, 'No resources recorded')}</td>
+                            <td><span class="status-badge approved">${reservation.status || 'Approved'}</span></td>
                         </tr>
                     `;
-                });
-                
-                container.innerHTML = html;
+                }).join('');
             } catch (error) {
                 console.error('Error loading upcoming reservations:', error);
-                const container = document.getElementById('upcomingReservationsList');
-                container.innerHTML = `
-                    <tr>
-                        <td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">
-                            Error loading reservations
-                        </td>
-                    </tr>
-                `;
+                document.getElementById('upcomingReservationsList').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#e74c3c;padding:20px;">Error loading reservations</td></tr>';
             }
         }
 
