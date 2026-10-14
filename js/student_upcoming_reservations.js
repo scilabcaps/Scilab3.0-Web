@@ -8,6 +8,7 @@ const UpcomingStudentReservations = {
     reservationModal: null,
 
     init() {
+        if (!window.location.pathname.endsWith('/student_upcoming_reservations.html')) return;
         let user;
         try {
             user = JSON.parse(sessionStorage.getItem('user') || '{}');

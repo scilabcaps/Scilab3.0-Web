@@ -13,6 +13,7 @@ const ProfessorHistory = {
     reservationModal: null,
 
     init() {
+        if (!window.location.pathname.endsWith('/professor_reservation_history.html')) return;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Professor') {
             this.reservationModal = new Modal('reservationModal');

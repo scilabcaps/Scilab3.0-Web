@@ -1,6 +1,7 @@
 // Shows future reservations owned by the authenticated professor.
 const ProfessorMyUpcoming = {
     async init() {
+        if (!window.location.pathname.endsWith('/professor_my_upcoming.html')) return;
         const sessionUser = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (String(sessionUser.role || '').toLowerCase() !== 'professor') {
             window.location.href = '../../index.html';

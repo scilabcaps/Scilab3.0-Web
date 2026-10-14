@@ -17,6 +17,7 @@ const AccountApprovals = {
     },
 
     init() {
+        if (!window.location.pathname.endsWith('/account_approvals.html')) return;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Professor' && user.id) {
             this.professorId = user.id;

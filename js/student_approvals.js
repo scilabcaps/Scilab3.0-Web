@@ -11,6 +11,7 @@ const StudentApprovals = {
     pageSize: 10,
 
     init() {
+        if (!window.location.pathname.endsWith('/student_approvals.html')) return;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && String(user.role || '').toLowerCase() === 'professor') {
             this.loadPendingRequests();

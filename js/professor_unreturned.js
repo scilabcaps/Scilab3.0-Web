@@ -15,6 +15,7 @@ const ProfessorUnreturned = {
     requestedReservationId: new URLSearchParams(window.location.search).get('reservation_id'),
 
     init() {
+        if (!window.location.pathname.endsWith('/professor_unreturned.html')) return;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Professor') {
             this.reservationModal = new Modal('reservationDetailsModal');

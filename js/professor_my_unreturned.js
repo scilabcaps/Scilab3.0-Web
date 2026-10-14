@@ -5,6 +5,7 @@ const ProfessorMyUnreturned = {
     requestedReservationId: new URLSearchParams(window.location.search).get('reservation_id'),
 
     async init() {
+        if (!window.location.pathname.endsWith('/professor_my_unreturned.html')) return;
         const sessionUser = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (String(sessionUser.role || '').toLowerCase() !== 'professor') {
             window.location.href = '../../index.html';

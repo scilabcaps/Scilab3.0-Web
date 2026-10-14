@@ -343,3 +343,10 @@ const studentPending = new StudentPendingReservations();
 
 // Make it globally accessible for onclick handlers
 window.studentPending = studentPending;
+
+window.addEventListener('content:navigation', () => {
+    if (window.location.pathname.endsWith('/student_pending.html')) {
+        studentPending.loadUserInfo();
+        studentPending.loadPendingReservations();
+    }
+});

@@ -360,3 +360,10 @@ const studentApproved = new StudentApprovedReservations();
 
 // Make it globally accessible for onclick handlers
 window.studentApproved = studentApproved;
+
+window.addEventListener('content:navigation', () => {
+    if (window.location.pathname.endsWith('/student_approved.html')) {
+        studentApproved.loadUserInfo();
+        studentApproved.loadApprovedReservations();
+    }
+});

@@ -231,8 +231,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
+    const syncPageOverlays = documentFragment => {
+        const currentOverlays = [...document.querySelectorAll('.modal')]
+            .filter(overlay => overlay.id !== 'logoutModal');
+        currentOverlays.forEach(overlay => overlay.remove());
+
+        documentFragment.querySelectorAll('.modal').forEach(overlay => {
+            if (overlay.id !== 'logoutModal') {
+                document.body.appendChild(overlay.cloneNode(true));
+            }
+        });
+    };
+
     const loadPageScripts = async (documentFragment, pageUrl) => {
-        const scripts = [...documentFragment.querySelectorAll('script[src], script:not([src])')];
+        const scripts = [...documentFragment.querySelectorAll('script[src], script:not([src]):not([type])')];
         const externalScripts = scripts.filter(sourceScript => sourceScript.src);
         const inlineScripts = scripts.filter(sourceScript => !sourceScript.src && sourceScript.textContent.trim());
 
@@ -268,6 +280,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (navigationInProgress) return;
         navigationInProgress = true;
         const currentMain = document.querySelector('.dashboard-main');
+        const sharedHeaderControls = currentMain
+            ? [...currentMain.querySelectorAll('.header-notifications-wrap, .header-logout')]
+            : [];
 
         try {
             const response = await fetch(url.href, { headers: { 'X-Content-Navigation': 'true' } });
@@ -279,11 +294,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!currentMain || !nextMain) throw new Error('Destination does not contain dashboard content');
 
             loadPageAssets(parsed, url.href);
+            syncPageOverlays(parsed);
             currentMain.replaceWith(nextMain);
+            const nextHeader = nextMain.querySelector('.dashboard-header');
+            if (nextHeader) {
+                const nextLogout = nextHeader.querySelector('.header-logout');
+                sharedHeaderControls.forEach(control => {
+                    if (control.classList.contains('header-notifications-wrap')) {
+                        nextHeader.insertBefore(control, nextLogout || null);
+                    } else {
+                        nextHeader.appendChild(control);
+                    }
+                });
+            }
             document.title = parsed.title || document.title;
             if (pushState) window.history.pushState({}, '', url.href);
             if (typeof setActiveNavItem === 'function') setActiveNavItem();
             await loadPageScripts(parsed, url.href);
+            window.dispatchEvent(new CustomEvent('content:navigation', {
+                detail: { path: url.pathname }
+            }));
             window.__contentNavigationRefresh = true;
             document.dispatchEvent(new Event('DOMContentLoaded'));
             window.dispatchEvent(new Event('DOMContentLoaded'));
@@ -302,13 +332,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isInternalDashboardLink(link)) return;
         event.preventDefault();
 
-        // Inline page scripts register global lifecycle handlers that cannot be
-        // removed when only the main element is replaced. Let those pages do a
-        // normal navigation so their handlers remain isolated to their document.
-        if (document.querySelector('script:not([src])')) {
-            window.location.assign(link.href);
-            return;
-        }
         renderPage(new URL(link.href));
     });
 

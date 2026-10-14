@@ -13,6 +13,7 @@ const ProfessorApproved = {
     reservationModal: null,
 
     init() {
+        if (!window.location.pathname.endsWith('/student_approved_reservation.html')) return;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && user.role === 'Professor') {
             this.reservationModal = new Modal('approvedReservationModal');

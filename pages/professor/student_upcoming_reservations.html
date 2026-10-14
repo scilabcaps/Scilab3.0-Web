@@ -15,6 +15,16 @@
 
         .modal-resource-heading { margin: 18px 0 10px; color: #152614; }
         .modal-resource-list { display: grid; gap: 10px; }
+        .compact-action-table th:last-child,
+        .compact-action-table td:last-child {
+            width: 1%;
+            white-space: nowrap;
+        }
+
+        .compact-action-table th,
+        .compact-action-table td {
+            padding: 16px 20px;
+        }
     </style>
 </head>
 
@@ -29,7 +39,7 @@
             </div>
             <div class="dashboard-content">
                 <div class="data-table">
-                    <table>
+                    <table class="compact-action-table">
                         <thead>
                             <tr>
                                 <th scope="col">Student</th>
@@ -43,10 +53,10 @@
                             <tr><td colspan="5" style="text-align: center; padding: 24px;">Loading upcoming reservations…</td></tr>
                         </tbody>
                     </table>
-                </div>
-                <div id="emptyState" class="empty-state" style="display: none;">
-                    <div class="empty-state-icon"></div>
-                    <div class="empty-state-text">No upcoming student reservations</div>
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon"></div>
+                        <div class="empty-state-text">No upcoming student reservations</div>
+                    </div>
                 </div>
             </div>
         </main>
