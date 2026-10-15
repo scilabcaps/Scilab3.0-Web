@@ -68,6 +68,7 @@ const UpcomingStudentReservations = {
                 .from('reservations')
                 .select(`
                     reservation_id,
+                    created_at,
                     reservation_date,
                     start_time,
                     end_time,
@@ -97,8 +98,8 @@ const UpcomingStudentReservations = {
                 .in('status', ['Approved', 'Ongoing'])
                 .eq('is_deleted', false)
                 .gte('reservation_date', now.date)
-                .order('reservation_date', { ascending: true })
-                .order('start_time', { ascending: true });
+                .order('created_at', { ascending: false })
+                .order('reservation_id', { ascending: false });
 
             if (error) throw error;
 

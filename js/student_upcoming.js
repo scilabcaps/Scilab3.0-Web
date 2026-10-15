@@ -24,7 +24,7 @@ const StudentUpcoming = {
             const { data, error } = await supabase
                 .from('reservations')
                 .select(`
-                    reservation_id, reservation_date, start_time, end_time, status,
+                    reservation_id, created_at, reservation_date, start_time, end_time, status,
                     is_deleted, rooms(room_name),
                     reservation_items(quantity_borrowed, quantity_returned, lab_assets(item_name, category)),
                     chemical_usage(quantity_used, unit, chemicals(chemical_name))
@@ -34,8 +34,8 @@ const StudentUpcoming = {
                 .eq('admin_approval', 'Approved')
                 .eq('is_deleted', false)
                 .in('status', ['Approved', 'Ongoing', 'Partially Returned'])
-                .order('reservation_date', { ascending: true })
-                .order('start_time', { ascending: true });
+                .order('created_at', { ascending: false })
+                .order('reservation_id', { ascending: false });
 
             if (error) throw error;
 

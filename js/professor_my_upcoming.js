@@ -19,7 +19,7 @@ const ProfessorMyUpcoming = {
             const { data, error } = await supabase
                 .from('reservations')
                 .select(`
-                    reservation_id, reservation_date, start_time, end_time, status,
+                    reservation_id, created_at, reservation_date, start_time, end_time, status,
                     professor_approval, admin_approval,
                     is_deleted, rooms(room_name),
                     reservation_items(quantity_borrowed, quantity_returned, lab_assets(item_name, category)),
@@ -30,8 +30,8 @@ const ProfessorMyUpcoming = {
                 .eq('professor_approval', 'Approved')
                 .eq('admin_approval', 'Approved')
                 .in('status', ['Approved', 'Ongoing', 'Partially Returned'])
-                .order('reservation_date', { ascending: true })
-                .order('start_time', { ascending: true });
+                .order('created_at', { ascending: false })
+                .order('reservation_id', { ascending: false });
 
             if (error) throw error;
             const now = new Date();

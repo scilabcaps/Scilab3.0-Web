@@ -586,6 +586,14 @@
             }
         }
 
+        function sortReservationsNewestFirst(records = []) {
+            return [...records].sort((left, right) => {
+                const createdComparison = String(right.created_at || '').localeCompare(String(left.created_at || ''));
+                if (createdComparison !== 0) return createdComparison;
+                return Number(right.reservation_id || 0) - Number(left.reservation_id || 0);
+            });
+        }
+
         function displayComprehensiveResults(data) {
             const resultsDiv = document.getElementById('reportResults');
             
@@ -639,7 +647,7 @@
                                     <tr><th>ID</th><th>Date</th><th>User</th><th>Room</th><th>Status</th><th>Duration</th></tr>
                                 </thead>
                                 <tbody>
-                                    ${data.reservations.slice(0, 20).map(reservation => `
+                                    ${sortReservationsNewestFirst(data.reservations).slice(0, 20).map(reservation => `
                                         <tr>
                                             <td>#${reservation.reservation_id}</td>
                                             <td>${formatDate(reservation.reservation_date)}</td>
@@ -776,7 +784,7 @@
                                 <tr><th>ID</th><th>Date</th><th>User</th><th>Room</th><th>Status</th><th>Description</th><th>Duration</th><th>Created</th></tr>
                             </thead>
                             <tbody>
-                                ${data.audit_trail.slice(0, 50).map(entry => `
+                                ${sortReservationsNewestFirst(data.audit_trail).slice(0, 50).map(entry => `
                                     <tr>
                                         <td>#${entry.reservation_id}</td>
                                         <td>${formatDate(entry.reservation_date)}</td>

@@ -525,6 +525,14 @@
             `;
         }
 
+        function sortReservationsNewestFirst(records = []) {
+            return [...records].sort((left, right) => {
+                const createdComparison = String(right.created_at || '').localeCompare(String(left.created_at || ''));
+                if (createdComparison !== 0) return createdComparison;
+                return Number(right.reservation_id || 0) - Number(left.reservation_id || 0);
+            });
+        }
+
         function displayDetailedResults(data) {
             const resultsDiv = document.getElementById('reportResults');
             
@@ -547,7 +555,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.reservations.slice(0, 50).map(reservation => `
+                                ${sortReservationsNewestFirst(data.reservations).slice(0, 50).map(reservation => `
                                     <tr>
                                         <td>#${reservation.reservation_id}</td>
                                         <td>${formatDate(reservation.reservation_date)}</td>

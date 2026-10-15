@@ -217,6 +217,8 @@
                 const { data: reservations, error } = await supabase
                     .from('reservations')
                     .select(`
+                        reservation_id,
+                        created_at,
                         reservation_date,
                         start_time,
                         end_time,
@@ -231,8 +233,8 @@
                     .eq('professor_approval', 'Approved')
                     .eq('admin_approval', 'Approved')
                     .gte('reservation_date', today)
-                    .order('reservation_date', { ascending: true })
-                    .order('start_time', { ascending: true })
+                    .order('created_at', { ascending: false })
+                    .order('reservation_id', { ascending: false })
                     .limit(5);
 
                 if (error) throw error;
