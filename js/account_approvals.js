@@ -3,8 +3,8 @@
  * Handles functionality for professor account approvals page
  */
 
-const CACHE_KEY_PREFIX = 'account_approvals_cache';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const ACCOUNT_APPROVALS_CACHE_KEY_PREFIX = 'account_approvals_cache';
+const ACCOUNT_APPROVALS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const AccountApprovals = {
     accounts: [],
@@ -13,7 +13,7 @@ const AccountApprovals = {
     professorId: null,
 
     getCacheKey() {
-        return `${CACHE_KEY_PREFIX}:${this.professorId}`;
+        return `${ACCOUNT_APPROVALS_CACHE_KEY_PREFIX}:${this.professorId}`;
     },
 
     init() {
@@ -35,7 +35,7 @@ const AccountApprovals = {
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
-            if (now - timestamp > CACHE_TTL) {
+            if (now - timestamp > ACCOUNT_APPROVALS_CACHE_TTL) {
                 localStorage.removeItem(this.getCacheKey());
                 return null;
             }
@@ -259,7 +259,7 @@ const AccountApprovals = {
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
         }
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
         this.removePagination();
     }
 };

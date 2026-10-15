@@ -3,7 +3,7 @@
  * Handles functionality for professor pending reservations page
  */
 
-const CACHE_TTL = 60 * 1000; // 1 minute
+const PROFESSOR_PENDING_CACHE_TTL = 60 * 1000; // 1 minute
 
 const ProfessorPending = {
     allReservations: [],
@@ -34,7 +34,7 @@ const ProfessorPending = {
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
-            if (now - timestamp > CACHE_TTL) {
+            if (now - timestamp > PROFESSOR_PENDING_CACHE_TTL) {
                 localStorage.removeItem(this.getCacheKey(userId));
                 return null;
             }
@@ -300,7 +300,7 @@ const ProfessorPending = {
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
         }
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
         this.removePagination();
     }
 };

@@ -60,6 +60,7 @@ const ProfessorMyUpcoming = {
 
     showMessage(message) {
         document.getElementById('myUpcomingReservationsTable').innerHTML = `<tr><td colspan="4">${this.escape(message)}</td></tr>`;
+        document.getElementById('myUpcomingEmpty').style.display = 'none';
     },
 
     escape(value) {

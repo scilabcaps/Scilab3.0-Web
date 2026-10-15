@@ -72,8 +72,16 @@ const StudentUpcoming = {
             return `<tr><td>${this.escape(reservation.reservation_date)}</td><td>${this.escape(`${reservation.start_time} - ${reservation.end_time}`)}</td><td>${formatResourceCell(resources, 'None')}</td><td><span class="status-badge approved">${this.escape(reservation.status || 'Approved')}</span></td></tr>`;
         }).join('');
 
-        document.getElementById('upcomingReservationsTable').innerHTML = rows;
-        document.getElementById('upcomingEmpty').style.display = rows ? 'none' : 'block';
+        const tbody = document.getElementById('upcomingReservationsTable');
+        const emptyState = document.getElementById('upcomingEmpty');
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No upcoming reservations found</td></tr>';
+            emptyState.style.display = 'none';
+            return;
+        }
+
+        tbody.innerHTML = rows;
+        emptyState.style.display = 'none';
     },
 
     showMessage(message) {
@@ -87,3 +95,6 @@ const StudentUpcoming = {
 };
 
 window.addEventListener('DOMContentLoaded', () => StudentUpcoming.init());
+window.addEventListener('content:navigation', () => {
+    if (window.location.pathname.endsWith('/student_upcoming.html')) StudentUpcoming.init();
+});

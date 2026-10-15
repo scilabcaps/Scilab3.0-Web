@@ -3,8 +3,8 @@
  * Handles functionality for professor reservation history page
  */
 
-const CACHE_KEY = 'professor_history_cache_v3';
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const PROFESSOR_HISTORY_CACHE_KEY = 'professor_history_cache_v3';
+const PROFESSOR_HISTORY_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 const ProfessorHistory = {
     reservations: [],
@@ -35,14 +35,14 @@ const ProfessorHistory = {
 
     getCachedData() {
         try {
-            const cached = localStorage.getItem(CACHE_KEY);
+            const cached = localStorage.getItem(PROFESSOR_HISTORY_CACHE_KEY);
             if (!cached) return null;
 
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
-            if (now - timestamp > CACHE_TTL) {
-                localStorage.removeItem(CACHE_KEY);
+            if (now - timestamp > PROFESSOR_HISTORY_CACHE_TTL) {
+                localStorage.removeItem(PROFESSOR_HISTORY_CACHE_KEY);
                 return null;
             }
 
@@ -61,14 +61,14 @@ const ProfessorHistory = {
                 data: data,
                 timestamp: Date.now()
             };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            localStorage.setItem(PROFESSOR_HISTORY_CACHE_KEY, JSON.stringify(cacheData));
         } catch (error) {
             console.error('Error setting cache:', error);
         }
     },
 
     clearCache() {
-        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem(PROFESSOR_HISTORY_CACHE_KEY);
     },
 
     async loadCompletedReservations() {
@@ -294,7 +294,7 @@ const ProfessorHistory = {
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
         }
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
         this.removePagination();
     }
 };

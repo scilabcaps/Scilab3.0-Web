@@ -115,6 +115,7 @@ const ProfessorMyUnreturned = {
 
     showMessage(message) {
         document.getElementById('myUnreturnedItemsTable').innerHTML = `<tr><td colspan="8">${this.escape(message)}</td></tr>`;
+        document.getElementById('myUnreturnedEmpty').style.display = 'none';
     },
 
     escape(value) {

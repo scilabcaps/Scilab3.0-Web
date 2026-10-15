@@ -194,6 +194,7 @@ const StudentUnreturnedItems = {
     showError(message) {
         const tbody = document.getElementById('unreturnedItemsTable');
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#b42318">${this.escapeHtml(message)}</td></tr>`;
+        document.getElementById('emptyState').style.display = 'none';
     }
 };
 

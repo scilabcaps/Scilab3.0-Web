@@ -3,8 +3,8 @@
  * Handles functionality for professor unreturned items page
  */
 
-const CACHE_KEY = 'professor_unreturned_cache_v5';
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const PROFESSOR_UNRETURNED_CACHE_KEY = 'professor_unreturned_cache_v5';
+const PROFESSOR_UNRETURNED_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 const ProfessorUnreturned = {
     formattedItems: [],
@@ -49,14 +49,14 @@ const ProfessorUnreturned = {
 
     getCachedData() {
         try {
-            const cached = localStorage.getItem(CACHE_KEY);
+            const cached = localStorage.getItem(PROFESSOR_UNRETURNED_CACHE_KEY);
             if (!cached) return null;
 
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
-            if (now - timestamp > CACHE_TTL) {
-                localStorage.removeItem(CACHE_KEY);
+            if (now - timestamp > PROFESSOR_UNRETURNED_CACHE_TTL) {
+                localStorage.removeItem(PROFESSOR_UNRETURNED_CACHE_KEY);
                 return null;
             }
 
@@ -73,14 +73,14 @@ const ProfessorUnreturned = {
                 data: data,
                 timestamp: Date.now()
             };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            localStorage.setItem(PROFESSOR_UNRETURNED_CACHE_KEY, JSON.stringify(cacheData));
         } catch (error) {
             console.error('Error setting cache:', error);
         }
     },
 
     clearCache() {
-        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem(PROFESSOR_UNRETURNED_CACHE_KEY);
     },
 
     hasReservationEnded(date, endTime, now = Date.now()) {
@@ -151,7 +151,7 @@ const ProfessorUnreturned = {
             this.displayItems();
         } catch (error) {
             console.error('Error loading unreturned items:', error);
-            this.displayItems([]);
+            this.showError('Failed to load unreturned items');
         }
     },
 
@@ -195,6 +195,16 @@ const ProfessorUnreturned = {
             this.renderPage(reservationsToDisplay);
             this.renderPaginationControls(reservationsToDisplay.length);
         }
+    },
+
+    showError(message) {
+        const tbody = document.getElementById('itemsTable');
+        const emptyState = document.getElementById('itemsEmptyState');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #e74c3c;">${this.escapeHtml(message)}</td></tr>`;
+        }
+        if (emptyState) emptyState.style.display = 'none';
+        this.removePagination();
     },
 
     renderPage(reservations) {

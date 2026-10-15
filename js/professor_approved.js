@@ -3,8 +3,8 @@
  * Handles functionality for professor approved student reservations page
  */
 
-const CACHE_KEY = 'professor_approved_cache_v4';
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const PROFESSOR_APPROVED_CACHE_KEY = 'professor_approved_cache_v4';
+const PROFESSOR_APPROVED_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 const ProfessorApproved = {
     reservations: [],
@@ -32,14 +32,14 @@ const ProfessorApproved = {
 
     getCachedData() {
         try {
-            const cached = localStorage.getItem(CACHE_KEY);
+            const cached = localStorage.getItem(PROFESSOR_APPROVED_CACHE_KEY);
             if (!cached) return null;
 
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
-            if (now - timestamp > CACHE_TTL) {
-                localStorage.removeItem(CACHE_KEY);
+            if (now - timestamp > PROFESSOR_APPROVED_CACHE_TTL) {
+                localStorage.removeItem(PROFESSOR_APPROVED_CACHE_KEY);
                 return null;
             }
 
@@ -58,14 +58,14 @@ const ProfessorApproved = {
                 data: data,
                 timestamp: Date.now()
             };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            localStorage.setItem(PROFESSOR_APPROVED_CACHE_KEY, JSON.stringify(cacheData));
         } catch (error) {
             console.error('Error setting cache:', error);
         }
     },
 
     clearCache() {
-        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem(PROFESSOR_APPROVED_CACHE_KEY);
     },
 
     async loadApprovedReservations() {
@@ -281,7 +281,7 @@ const ProfessorApproved = {
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #e74c3c;">${message}</td></tr>`;
         }
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
         this.removePagination();
     }
 };

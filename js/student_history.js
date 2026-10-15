@@ -193,7 +193,7 @@ const StudentHistory = {
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #e74c3c;">${this.escapeHtml(message)}</td></tr>`;
         }
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
         this.removePagination();
     },
 

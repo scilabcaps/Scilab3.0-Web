@@ -472,6 +472,15 @@
             loadAnnouncements();
         });
 
+        window.addEventListener('content:navigation', function() {
+            if (!document.getElementById('currentDate')) return;
+            updateDateTime();
+            updateWeekDisplay();
+            loadStudentData();
+            loadUserData();
+            loadAnnouncements();
+        });
+
         function quickReserve(assetId) {
             // Pre-fill reservation form with this item
             sessionStorage.setItem('preselectedItem', assetId);

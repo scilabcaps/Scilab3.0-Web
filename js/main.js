@@ -13,6 +13,38 @@ function formatResourceCell(resources, fallback = 'No resources specified') {
     }).join('')}</div>`;
 }
 
+function getTableColumnCount(tbody) {
+    const headerRow = tbody?.closest('table')?.querySelector('thead tr:last-child');
+    if (!headerRow) return 1;
+
+    return [...headerRow.cells].reduce((count, cell) => count + (Number(cell.colSpan) || 1), 0);
+}
+
+function showTableLoadingState(tbody, message = 'Loading…') {
+    if (!tbody) return;
+
+    const normalizedText = tbody.textContent.trim().toLowerCase();
+    const hasRows = tbody.children.length > 0;
+    const isLoadingRow = hasRows && normalizedText.startsWith('loading');
+    if (hasRows && !isLoadingRow) return;
+
+    const colspan = getTableColumnCount(tbody);
+    tbody.innerHTML = `
+        <tr class="table-loading-row" aria-busy="true">
+            <td colspan="${colspan}">
+                <span class="table-loading-content" role="status" aria-live="polite">
+                    <span class="table-loading-spinner" aria-hidden="true"></span>
+                    <span>${message}</span>
+                </span>
+            </td>
+        </tr>
+    `;
+}
+
+function initializeTableLoadingStates() {
+    document.querySelectorAll('table tbody').forEach(tbody => showTableLoadingState(tbody));
+}
+
 function escapeResourceCellText(value) {
     return String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;',
@@ -215,6 +247,7 @@ async function loadSidebarComponent(containerId, sidebarPath) {
 document.addEventListener('DOMContentLoaded', function() {
     setActiveNavLink();
     initSidebarUser();
+    initializeTableLoadingStates();
 });
 
 // Keep the dashboard shell mounted while navigating between dashboard pages.

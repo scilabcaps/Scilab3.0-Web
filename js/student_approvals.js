@@ -3,7 +3,7 @@
  * Handles functionality for professor student review page
  */
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const STUDENT_APPROVALS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const StudentApprovals = {
     requests: [],
@@ -45,7 +45,7 @@ const StudentApprovals = {
             const { data, timestamp } = JSON.parse(cached);
             const now = Date.now();
 
-            if (now - timestamp > CACHE_TTL) {
+            if (now - timestamp > STUDENT_APPROVALS_CACHE_TTL) {
                 localStorage.removeItem(this.getCacheKey(professorName));
                 return null;
             }
