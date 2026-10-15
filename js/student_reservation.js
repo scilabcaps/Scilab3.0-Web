@@ -1368,12 +1368,6 @@
                     if (chemicalError) throw chemicalError;
                 }
 
-                const { error: inventoryError } = await window.supabase.rpc(
-                    'deduct_reservation_inventory',
-                    { p_reservation_id: reservationId }
-                );
-                if (inventoryError) throw inventoryError;
-
                 showSuccessSnackbar('Reservation submitted successfully! Reservation ID: ' + reservationId);
                 closeModal('summaryModal');
                 
@@ -1383,7 +1377,7 @@
                 document.getElementById('reservationForm').reset();
                 await loadUserInfo();
                 
-                // Reservation submission changes database stock, so refresh it once here.
+                // Refresh the resource display after submission. Inventory is deducted by admin approval.
                 await loadResources();
 
             } catch (error) {

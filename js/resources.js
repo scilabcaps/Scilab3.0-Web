@@ -138,26 +138,6 @@ async function submitReservationToSupabase(formData, cart) {
 
             if (itemsError) throw itemsError;
             
-            // Update available stock in lab_assets
-            for (const item of assetItems) {
-                const { data: currentAsset, error: fetchError } = await supabase
-                    .from('lab_assets')
-                    .select('available_stock')
-                    .eq('asset_id', item.id)
-                    .single();
-                
-                if (!fetchError && currentAsset) {
-                    const newStock = currentAsset.available_stock - item.quantity;
-                    const { error: stockError } = await supabase
-                        .from('lab_assets')
-                        .update({ available_stock: newStock })
-                        .eq('asset_id', item.id);
-                    
-                    if (stockError) {
-                        console.error('Error updating stock:', stockError);
-                    }
-                }
-            }
         }
 
         // Insert chemical usage for chemicals
@@ -176,26 +156,6 @@ async function submitReservationToSupabase(formData, cart) {
 
             if (chemUsageError) throw chemUsageError;
             
-            // Update stock quantity in chemicals
-            for (const item of chemicalItems) {
-                const { data: currentChemical, error: fetchChemicalError } = await supabase
-                    .from('chemicals')
-                    .select('stock_quantity')
-                    .eq('chemical_id', item.id)
-                    .single();
-                
-                if (!fetchChemicalError && currentChemical) {
-                    const newStock = currentChemical.stock_quantity - item.quantity;
-                    const { error: chemicalStockError } = await supabase
-                        .from('chemicals')
-                        .update({ stock_quantity: newStock })
-                        .eq('chemical_id', item.id);
-                    
-                    if (chemicalStockError) {
-                        console.error('Error updating chemical stock:', chemicalStockError);
-                    }
-                }
-            }
         }
 
         return { success: true, reservationId: reservation.reservation_id };
