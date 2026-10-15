@@ -86,11 +86,12 @@ async function enforceRoleRoute() {
     if (!isStudentRoute && !isProfessorRoute) return true;
 
     try {
-        const { data: { user }, error: authError } = await window.supabase.auth.getUser();
-        if (authError || !user) {
+        const { user, error: authError, transient } = await getCurrentAuthUser();
+        if (!user && !transient) {
             window.location.replace('../../index.html');
             return false;
         }
+        if (!user) return true;
 
         const { data: userInfo, error: userError } = await window.supabase
             .from('user_info')

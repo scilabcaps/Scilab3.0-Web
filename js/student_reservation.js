@@ -1341,42 +1341,30 @@
                 const assetItems = [...equipmentItems, ...glasswareItems];
                 console.log('Asset items to insert:', assetItems);
 
-                if (assetItems.length === 0) {
-                    console.log('No asset items to insert into reservation_items');
-                } else {
-                    for (const item of assetItems) {
-                        console.log('Inserting item:', item);
-                        const { error: itemError } = await window.supabase
-                            .from('reservation_items')
-                            .insert({
-                                reservation_id: reservationId,
-                                asset_id: item.id,
-                                quantity_borrowed: item.quantity,
-                                quantity_returned: 0,
-                                is_returned: false
-                            });
-
-                        if (itemError) {
-                            console.error('Error inserting item:', itemError);
-                            throw itemError;
-                        } else {
-                            console.log('Successfully inserted item:', item.name);
-                        }
-                    }
+                if (assetItems.length > 0) {
+                    const { error: itemError } = await window.supabase
+                        .from('reservation_items')
+                        .insert(assetItems.map(item => ({
+                            reservation_id: reservationId,
+                            asset_id: item.id,
+                            quantity_borrowed: item.quantity,
+                            quantity_returned: 0,
+                            is_returned: false
+                        })));
+                    if (itemError) throw itemError;
                 }
 
                 // Insert chemicals into chemical_usage
-                for (const item of chemicalItems) {
+                if (chemicalItems.length > 0) {
                     const { error: chemicalError } = await window.supabase
                         .from('chemical_usage')
-                        .insert({
+                        .insert(chemicalItems.map(item => ({
                             reservation_id: reservationId,
                             chemical_id: item.id,
                             quantity_used: item.quantity,
                             unit: item.unit || 'mL',
                             purpose: `Year & Section: ${year_section}`
-                        });
-
+                        })));
                     if (chemicalError) throw chemicalError;
                 }
 

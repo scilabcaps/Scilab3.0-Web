@@ -10,6 +10,9 @@ const StudentApprovals = {
     currentPage: 1,
     pageSize: 10,
     loadPromise: null,
+    realtimeChannel: null,
+    realtimeProfessor: null,
+    focusListenerBound: false,
 
     init() {
         if (!window.location.pathname.endsWith('/student_approvals.html')) return;
@@ -22,6 +25,11 @@ const StudentApprovals = {
             }
         } else {
             window.location.href = '../../index.html';
+        }
+
+        if (!this.focusListenerBound) {
+            window.addEventListener('focus', () => this.init());
+            this.focusListenerBound = true;
         }
     },
 
@@ -77,8 +85,11 @@ const StudentApprovals = {
 
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-            const { data: { user: authUser }, error: authError } = await window.supabase.auth.getUser();
-            if (authError || !authUser) throw authError || new Error('Your session has expired. Please sign in again.');
+            const { user: authUser, error: authError, transient } = await getCurrentAuthUser();
+            if (!authUser) {
+                if (transient) throw new Error('Unable to verify your session right now. Please try again.');
+                throw authError || new Error('Your session has expired. Please sign in again.');
+            }
 
             const { data: profile, error: profileError } = await window.supabase
                 .from('user_info')
@@ -115,9 +126,14 @@ const StudentApprovals = {
 
             const queryValues = [professorName];
             if (profile.id && profile.id !== professorName) queryValues.push(profile.id);
-            const queryResults = await Promise.all(queryValues.map(loadForProfessor));
-            const queryError = queryResults.find(result => result.error)?.error;
-            if (queryError) throw queryError;
+            let primaryResult = await loadForProfessor(queryValues[0]);
+            if (primaryResult.error) throw primaryResult.error;
+            let queryResults = [primaryResult];
+            if ((!primaryResult.data || primaryResult.data.length === 0) && queryValues[1]) {
+                const fallbackResult = await loadForProfessor(queryValues[1]);
+                if (fallbackResult.error) throw fallbackResult.error;
+                queryResults.push(fallbackResult);
+            }
 
             const requests = [...new Map(
                 queryResults
@@ -151,10 +167,38 @@ const StudentApprovals = {
             this.requests = requests || [];
             this.currentPage = 1;
             this.displayRequests();
+            this.subscribeToReservations(professorName, profile.id);
         } catch (error) {
             console.error('Error loading requests:', error);
             this.showError('Failed to load pending requests');
         }
+    },
+
+    subscribeToReservations(professorName, professorId) {
+        if (this.realtimeProfessor === professorName && this.realtimeChannel) return;
+        if (this.realtimeChannel) {
+            window.supabase.removeChannel(this.realtimeChannel);
+            this.realtimeChannel = null;
+        }
+
+        this.realtimeProfessor = professorName;
+        this.realtimeChannel = window.supabase
+            .channel(`professor-approvals-${professorId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'reservations'
+            }, payload => {
+                const reservation = payload.new || {};
+                const belongsToProfessor = reservation.professor === professorName || reservation.professor === professorId;
+                const isPending = reservation.professor_approval === 'Pending';
+                if (belongsToProfessor && isPending) this.init();
+            })
+            .subscribe(status => {
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    console.warn('Professor approvals realtime refresh unavailable:', status);
+                }
+            });
     },
 
     displayRequests() {

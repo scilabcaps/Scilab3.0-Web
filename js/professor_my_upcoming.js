@@ -8,11 +8,12 @@ const ProfessorMyUpcoming = {
             return;
         }
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
+        const { user, transient } = await getCurrentAuthUser();
+        if (!user && !transient) {
             window.location.href = '../../index.html';
             return;
         }
+        if (!user) return;
 
         try {
             const { data, error } = await supabase

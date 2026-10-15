@@ -71,6 +71,32 @@ function getReservationChemicalDetails(reservation, usage) {
     return [{ label: 'Used', value: `${amount}${unit}` }];
 }
 
+// Keep the local Supabase session as the source of truth for authentication.
+// A transient getUser() failure should not eject a user who still has a valid
+// locally cached session; only an actually missing session should redirect.
+async function getCurrentAuthUser() {
+    if (!window.supabase?.auth) {
+        return { user: null, error: new Error('Supabase authentication is unavailable.') };
+    }
+
+    const { data: sessionData, error: sessionError } = await window.supabase.auth.getSession();
+    if (sessionError) {
+        console.warn('Unable to read the current auth session:', sessionError);
+        return { user: null, error: sessionError, transient: true };
+    }
+
+    const sessionUser = sessionData?.session?.user || null;
+    if (!sessionUser) return { user: null, error: null, transient: false };
+
+    const { data: userData, error: userError } = await window.supabase.auth.getUser();
+    if (userError) {
+        console.warn('Unable to validate the auth session right now:', userError);
+        return { user: sessionUser, error: userError, transient: true };
+    }
+
+    return { user: userData?.user || sessionUser, error: null, transient: false };
+}
+
 // Toggle password visibility
 function togglePassword(inputId = 'password') {
     const input = document.getElementById(inputId);
