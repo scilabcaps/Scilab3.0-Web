@@ -675,42 +675,6 @@
             .calendar-day { min-height: 80px; padding: 8px; }
         }
 
-        .today-schedule-section {
-            background: white;
-            border-radius: 12px;
-            padding: 32px;
-            margin-bottom: 32px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-
-        .schedule-table-container {
-            overflow-x: auto;
-        }
-
-        .schedule-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .schedule-table th {
-            background: #f8f9fa;
-            color: #152614;
-            font-weight: 600;
-            text-align: left;
-            padding: 16px;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .schedule-table td {
-            padding: 16px;
-            border-bottom: 1px solid #e9ecef;
-            color: #152614;
-        }
-
-        .schedule-table tr:hover {
-            background: rgba(49, 203, 0, 0.05);
-        }
-
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -1119,31 +1083,6 @@
                     </div>
                 </div>
 
-                <!-- Today's Schedule -->
-                <div class="today-schedule-section">
-                    <h2 class="section-title">Today's Schedule</h2>
-                    <div class="schedule-table-container">
-                        <table class="schedule-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Room</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="todayScheduleList">
-                                <tr>
-                                    <td colspan="3" style="text-align: center; padding: 40px; color: #666;">
-                                        <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
-                                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Loading Schedule...</div>
-                                        <div style="font-size: 14px;">Please wait while we fetch today's schedule</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
                 <!-- Weekly Schedule Preview -->
                 <div class="calendar-section">
                     <h2 class="section-title">Weekly Schedule Preview</h2>
@@ -1182,6 +1121,14 @@
                                 <!-- Data will be loaded dynamically -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Announcements Section -->
+                <div class="announcements-section">
+                    <h2 class="section-title">Announcements</h2>
+                    <div class="announcements-list" id="announcementsList">
+                        <!-- Announcements will be loaded dynamically -->
                     </div>
                 </div>
 
@@ -1376,122 +1323,6 @@
             }
         }
 
-        // Load today's schedule
-        async function loadTodaySchedule() {
-            try {
-                const today = new Date().toISOString().split('T')[0];
-                const now = new Date();
-                
-                // Fetch all rooms with their status
-                const { data: rooms, error: roomsError } = await supabase
-                    .from('rooms')
-                    .select('room_id, room_name, status')
-                    .eq('is_deleted', false)
-                    .order('room_name');
-
-                if (roomsError) throw roomsError;
-
-                // Fetch current active reservations for today (for occupied rooms)
-                const { data: reservations, error } = await supabase
-                    .from('reservations')
-                    .select(`
-                        reservation_id,
-                        created_at,
-                        reservation_date,
-                        start_time,
-                        end_time,
-                        room_id,
-                        user_info (
-                            first_name,
-                            last_name
-                        )
-                    `)
-                    .eq('reservation_date', today)
-                    .not('room_id', 'is', null)
-                    .neq('status', 'Cancelled')
-                    .neq('status', 'Declined')
-                    .neq('status', 'Completed');
-
-                if (error) throw error;
-
-                const container = document.getElementById('todayScheduleList');
-                
-                if (rooms && rooms.length > 0) {
-                    let html = '';
-                    
-                    // Create a map of room_id to current reservation
-                    const reservationMap = {};
-                    if (reservations) {
-                        reservations.forEach(res => {
-                            const startTime = new Date(`${res.reservation_date}T${res.start_time}`);
-                            const endTime = new Date(`${res.reservation_date}T${res.end_time}`);
-                            
-                            // Only include if currently active
-                            if (now >= startTime && now <= endTime) {
-                                reservationMap[res.room_id] = res;
-                            }
-                        });
-                    }
-                    
-                    rooms.forEach(room => {
-                        const reservation = reservationMap[room.room_id];
-                        
-                        // Determine status class based on room status
-                        let statusClass = 'approved'; // default for Available
-                        if (room.status === 'Occupied') statusClass = 'pending';
-                        if (room.status === 'Maintenance') statusClass = 'rejected';
-                        if (room.status === 'Over Time') statusClass = 'critical';
-                        
-                        if (reservation && room.status === 'Occupied') {
-                            // Show current reservation time
-                            html += `
-                                <tr>
-                                    <td>${formatTime(reservation.start_time)} - ${formatTime(reservation.end_time)}</td>
-                                    <td>${room.room_name}</td>
-                                    <td><span class="status-badge ${statusClass}">${room.status}</span></td>
-                                </tr>
-                            `;
-                        } else {
-                            // No current reservation - show room status
-                            html += `
-                                <tr>
-                                    <td>00:00 - 00:00</td>
-                                    <td>${room.room_name}</td>
-                                    <td><span class="status-badge ${statusClass}">${room.status}</span></td>
-                                </tr>
-                            `;
-                        }
-                    });
-                    
-                    container.innerHTML = html;
-                } else {
-                    container.innerHTML = `
-                        <tr>
-                            <td colspan="3" style="text-align: center; padding: 40px; color: #666;">
-                                <div style="font-size: 48px; margin-bottom: 16px;">🏢</div>
-                                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">No Rooms Available</div>
-                                <div style="font-size: 14px;">No rooms found in the system</div>
-                            </td>
-                        </tr>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading today\'s schedule:', error);
-                const container = document.getElementById('todayScheduleList');
-                if (container) {
-                    container.innerHTML = `
-                        <tr>
-                            <td colspan="3" style="text-align: center; padding: 40px; color: #f44336;">
-                                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-                                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Error Loading Schedule</div>
-                                <div style="font-size: 14px;">Please refresh the page to try again</div>
-                            </td>
-                        </tr>
-                    `;
-                }
-            }
-        }
-
         // Load student requests
         async function loadStudentRequests() {
             try {
@@ -1671,6 +1502,72 @@
             if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
             if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
             return 'Just now';
+        }
+
+        // Load announcements from Supabase
+        async function loadAnnouncements() {
+            try {
+                const now = new Date().toISOString();
+
+                const { data: announcements, error } = await supabase
+                    .from('announcement')
+                    .select('title, content, publish_at')
+                    .eq('is_published', true)
+                    .lte('publish_at', now)
+                    .or('expires_at.is.null,expires_at.gte.' + now)
+                    .order('publish_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                const container = document.getElementById('announcementsList');
+                if (!container) return;
+
+                if (!announcements || announcements.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📢</div>
+                            <div class="empty-state-text">No announcements</div>
+                            <div class="empty-state-subtext">Check back later for updates</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const icons = ['📋', '🔧', '🎉', '⚠️', 'ℹ️', '📢'];
+                const html = announcements.map((announcement, index) => {
+                    const date = new Date(announcement.publish_at).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+
+                    return `
+                        <div class="announcement-item">
+                            <div class="announcement-icon">${icons[index % icons.length]}</div>
+                            <div class="announcement-content">
+                                <h4>${announcement.title}</h4>
+                                <p>${announcement.content}</p>
+                                <span class="announcement-date">${date}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                const container = document.getElementById('announcementsList');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">❌</div>
+                            <div class="empty-state-text">Error loading announcements</div>
+                            <div class="empty-state-subtext">Please try refreshing the page</div>
+                        </div>
+                    `;
+                }
+            }
         }
 
         // Load professor's upcoming reservations
@@ -1861,10 +1758,16 @@
             updateDateTime();
             setInterval(updateDateTime, 1000);
             loadProfessorData();
-            loadTodaySchedule();
             loadStudentRequests();
             loadUpcomingReservations();
+            loadAnnouncements();
             updateProfessorWeekDisplay();
+        });
+
+        window.addEventListener('content:navigation', function() {
+            if (!document.getElementById('currentDate')) return;
+            updateDateTime();
+            loadAnnouncements();
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
