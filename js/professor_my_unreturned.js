@@ -26,7 +26,7 @@ const ProfessorMyUnreturned = {
                 .from('reservation_items')
                 .select(`
                     detail_id, reservation_id, quantity_borrowed, quantity_returned, is_returned,
-                    reservations!inner(reservation_date, start_time, end_time, user_id, status, is_deleted),
+                    reservations!inner(reservation_date, start_time, end_time, user_id, status, professor_approval, admin_approval, is_deleted),
                     lab_assets!inner(item_name, category)
                 `)
                 .eq('reservations.user_id', user.id)
@@ -37,12 +37,7 @@ const ProfessorMyUnreturned = {
 
             if (error) throw error;
             const now = Date.now();
-            this.items = (data || []).filter(item => {
-                const reservation = item.reservations;
-                const end = new Date(`${reservation.reservation_date}T${reservation.end_time}`).getTime();
-                return Number(item.quantity_returned) < Number(item.quantity_borrowed)
-                    && Number.isFinite(end) && end < now;
-            });
+            this.items = (data || []).filter(item => this.isUnreturnedItem(item, now));
             this.render(this.requestedReservationId
                 ? this.items.filter(item => String(item.reservation_id) === this.requestedReservationId)
                 : this.items);
@@ -50,6 +45,22 @@ const ProfessorMyUnreturned = {
             console.error('Unable to load professor unreturned items:', error);
             this.showMessage('Unable to load your unreturned items. Please refresh the page.');
         }
+    },
+
+    isUnreturnedItem(item, now = Date.now()) {
+        const reservation = item?.reservations || {};
+        const excludedStates = new Set(['declined', 'rejected', 'cancelled']);
+        const hasExcludedState = [
+            reservation.status,
+            reservation.professor_approval,
+            reservation.admin_approval
+        ].some(value => excludedStates.has(String(value || '').trim().toLowerCase()));
+        if (hasExcludedState) return false;
+
+        const end = new Date(`${reservation.reservation_date}T${reservation.end_time}`).getTime();
+        return Number(item.quantity_returned) < Number(item.quantity_borrowed)
+            && Number.isFinite(end)
+            && end < now;
     },
 
     render(items) {
