@@ -3,8 +3,6 @@
  * Handles functionality for professor pending reservations page
  */
 
-const PROFESSOR_PENDING_CACHE_TTL = 60 * 1000; // 1 minute
-
 const ProfessorPending = {
     allReservations: [],
     currentFilter: 'all',
@@ -20,48 +18,6 @@ const ProfessorPending = {
         } else {
             window.location.href = '../../index.html';
         }
-    },
-
-    getCacheKey(userId) {
-        return `professor_pending_cache:${userId}`;
-    },
-
-    getCachedData(userId) {
-        try {
-            const cached = localStorage.getItem(this.getCacheKey(userId));
-            if (!cached) return null;
-
-            const { data, timestamp } = JSON.parse(cached);
-            const now = Date.now();
-
-            if (now - timestamp > PROFESSOR_PENDING_CACHE_TTL) {
-                localStorage.removeItem(this.getCacheKey(userId));
-                return null;
-            }
-
-            return (data || []).some(reservation =>
-                (reservation.reservation_items || []).some(item => !Object.prototype.hasOwnProperty.call(item, 'quantity_returned'))
-            ) ? null : data;
-        } catch (error) {
-            console.error('Error reading cache:', error);
-            return null;
-        }
-    },
-
-    setCachedData(userId, data) {
-        try {
-            const cacheData = {
-                data: data,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(this.getCacheKey(userId), JSON.stringify(cacheData));
-        } catch (error) {
-            console.error('Error setting cache:', error);
-        }
-    },
-
-    clearCache(userId) {
-        if (userId) localStorage.removeItem(this.getCacheKey(userId));
     },
 
     async loadPendingReservations() {
@@ -257,9 +213,10 @@ const ProfessorPending = {
         });
         const fields = [
             { label: 'Reservation ID', value: reservation.reservation_id },
+            { label: 'Created At', value: reservation.created_at ? new Date(reservation.created_at).toLocaleString() : 'N/A' },
             { label: 'Student', value: student },
-            { label: 'Date', value: reservation.reservation_date },
-            { label: 'Time', value: `${reservation.start_time} - ${reservation.end_time}` },
+            { label: 'Reservation Date', value: reservation.reservation_date || 'N/A' },
+            { label: 'Reservation Time', value: `${reservation.start_time || 'N/A'} - ${reservation.end_time || 'N/A'}` },
             { label: 'Year & Section', value: reservation.year_section },
             { label: 'Course', value: reservation.course },
             { label: 'Professor', value: reservation.professor },
@@ -267,7 +224,10 @@ const ProfessorPending = {
             { label: 'Professor Approval', value: reservation.professor_approval },
             { label: 'Admin Approval', value: reservation.admin_approval }
         ];
-        this.showReservationDetails(renderReservationDetails(fields, resources, { note: reservation.additional_note }));
+        this.showReservationDetails(renderReservationDetails(fields, resources, {
+            note: reservation.additional_note,
+            emptyResources: 'None'
+        }));
     },
 
     showReservationDetails(content) {

@@ -3,9 +3,6 @@
  * Handles functionality for professor reservation history page
  */
 
-const PROFESSOR_HISTORY_CACHE_KEY = 'professor_history_cache_v3';
-const PROFESSOR_HISTORY_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-
 const ProfessorHistory = {
     reservations: [],
     currentPage: 1,
@@ -33,44 +30,6 @@ const ProfessorHistory = {
         }
     },
 
-    getCachedData() {
-        try {
-            const cached = localStorage.getItem(PROFESSOR_HISTORY_CACHE_KEY);
-            if (!cached) return null;
-
-            const { data, timestamp } = JSON.parse(cached);
-            const now = Date.now();
-
-            if (now - timestamp > PROFESSOR_HISTORY_CACHE_TTL) {
-                localStorage.removeItem(PROFESSOR_HISTORY_CACHE_KEY);
-                return null;
-            }
-
-            return (data || []).some(reservation =>
-                (reservation.reservation_items || []).some(item => !Object.prototype.hasOwnProperty.call(item, 'quantity_returned'))
-            ) ? null : data;
-        } catch (error) {
-            console.error('Error reading cache:', error);
-            return null;
-        }
-    },
-
-    setCachedData(data) {
-        try {
-            const cacheData = {
-                data: data,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(PROFESSOR_HISTORY_CACHE_KEY, JSON.stringify(cacheData));
-        } catch (error) {
-            console.error('Error setting cache:', error);
-        }
-    },
-
-    clearCache() {
-        localStorage.removeItem(PROFESSOR_HISTORY_CACHE_KEY);
-    },
-
     async loadCompletedReservations() {
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -93,13 +52,12 @@ const ProfessorHistory = {
                         chemicals(chemical_name)
                     )
                 `)
-                .in('status', ['Completed', 'Cancelled', 'Declined'])
+                .in('status', ['Approved', 'Ongoing', 'Partially Returned', 'Unreturned', 'Completed', 'Cancelled', 'Declined'])
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            this.setCachedData(reservations);
             this.reservations = reservations || [];
             this.currentPage = 1;
             this.displayReservations();
@@ -133,9 +91,9 @@ const ProfessorHistory = {
 
         tbody.innerHTML = pageData.map(res => {
             let statusColor = '#119822';
-            if (res.status === 'Approved') {
+            if (res.status === 'Approved' || res.status === 'Ongoing' || res.status === 'Partially Returned') {
                 statusColor = '#119822';
-            } else if (res.status === 'Rejected' || res.status === 'Declined') {
+            } else if (res.status === 'Rejected' || res.status === 'Declined' || res.status === 'Unreturned') {
                 statusColor = '#dc2626';
             } else if (res.status === 'Completed') {
                 statusColor = '#6b7280';
@@ -174,7 +132,7 @@ const ProfessorHistory = {
                     <td>${res.start_time} - ${res.end_time}</td>
                     <td>${resourcesDisplay}</td>
                     <td>${res.additional_note || 'N/A'}</td>
-                    <td><span style="color: ${statusColor}; font-weight: 600;">${res.status}</span></td>
+                    <td><span style="color: ${statusColor}; font-weight: 600;">${res.status === 'Approved' ? 'Upcoming' : res.status}</span></td>
                     <td>
                         <button class="btn btn-view" onclick="ProfessorHistory.viewDetails(${res.reservation_id})">View</button>
                     </td>

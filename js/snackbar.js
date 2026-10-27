@@ -19,6 +19,8 @@ function showSnackbar(message, type = 'info', duration = 3000) {
     // Create snackbar element
     const snackbar = document.createElement('div');
     snackbar.className = `snackbar ${type}`;
+    snackbar.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    snackbar.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
     
     // Get icon based on type
     const icon = getSnackbarIcon(type);
@@ -28,8 +30,20 @@ function showSnackbar(message, type = 'info', duration = 3000) {
         <span class="snackbar-message">${message}</span>
     `;
 
-    // Add to DOM
-    document.body.appendChild(snackbar);
+    // Native dialogs render in the browser top layer, above body-level fixed elements.
+    // Place the snackbar inside the topmost open dialog so it remains visible there.
+    const getSnackbarHost = () => {
+        const openDialogs = [...document.querySelectorAll('dialog[open]')];
+        return openDialogs.at(-1) || document.body;
+    };
+    const host = getSnackbarHost();
+    host.appendChild(snackbar);
+
+    if (host instanceof HTMLDialogElement) {
+        host.addEventListener('close', () => {
+            if (snackbar.isConnected) getSnackbarHost().appendChild(snackbar);
+        }, { once: true });
+    }
 
     // Trigger animation
     setTimeout(() => {

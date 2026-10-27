@@ -549,7 +549,7 @@
     align-items: center;
     gap: 16px;
     transition: all 0.3s ease;
-    border-left: 4px solid #31CB00;
+    border: 1px solid #e7ebe5;
 }
 
 .summary-card:hover {
@@ -728,7 +728,7 @@
     padding: 20px;
     background: rgba(49, 203, 0, 0.05);
     border-radius: 12px;
-    border-left: 4px solid #31CB00;
+    border: 1px solid rgba(49, 203, 0, 0.18);
     transition: all 0.3s ease;
 }
 
@@ -929,7 +929,7 @@
 }
 
 .summary-cards {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     margin-bottom: 32px;
 }
@@ -939,7 +939,7 @@
     padding: 20px;
     border-radius: 12px;
     gap: 16px;
-    border-left: 0;
+    border: 1px solid #e7ebe5;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 

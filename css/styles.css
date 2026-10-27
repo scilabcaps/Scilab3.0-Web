@@ -114,11 +114,19 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px;
+    gap: 12px;
+    padding: 12px 14px;
     background: #f8fafc;
     border-radius: 8px;
-    margin-top: 16px;
+    margin-top: 12px;
     border: 1px solid #e2e8f0;
+}
+
+.data-table > .pagination-container {
+    margin-top: 0;
+    border: 0;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0;
 }
 
 .pagination-info {
@@ -130,11 +138,12 @@ body {
 .pagination-controls {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .pagination-controls button {
-    padding: 8px 16px;
+    min-height: 32px;
+    padding: 6px 12px;
     border: 1px solid #d1d5db;
     background: #ffffff;
     border-radius: 6px;
@@ -184,7 +193,8 @@ body {
 }
 
 .pagination-size select {
-    padding: 8px 12px;
+    min-height: 32px;
+    padding: 5px 10px;
     border: 1px solid #d1d5db;
     border-radius: 6px;
     background: #ffffff;
@@ -203,22 +213,32 @@ body {
 /* Responsive pagination */
 @media (max-width: 768px) {
     .pagination-container {
-        flex-direction: column;
-        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px 16px;
         padding: 12px;
     }
     
     .pagination-controls {
         order: 2;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
     .pagination-info {
+        flex: 1 1 100%;
         order: 1;
+        text-align: center;
     }
     
     .pagination-size {
         order: 3;
     }
+}
+
+@media (max-width: 420px) {
+    .pagination-controls { gap: 6px; }
+    .pagination-controls button { padding: 6px 8px; font-size: 0.8125rem; }
 }
 
 .login-right {
@@ -1100,9 +1120,10 @@ body {
     gap: 24px;
     padding: 15px;
     background: white;
+    border: 1px solid #e5e7eb;
     border-radius: 8px;
     margin-bottom: 10px;
-    border-left: 4px solid #31CB00;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .cart-item-info {
@@ -1304,7 +1325,7 @@ body {
 .reservation-detail-field span { overflow-wrap: anywhere; }
 .reservation-detail-heading { margin: 22px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #2a7221; }
 .reservation-detail-resources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.reservation-detail-resource { min-width: 0; padding: 14px 16px; background: #f2f7f0; border-left: 3px solid #31cb00; border-radius: 8px; }
+.reservation-detail-resource { min-width: 0; padding: 14px 16px; background: #f2f7f0; border: 1px solid #e5ebe3; border-radius: 8px; }
 .reservation-detail-resource h3 { margin: 0 0 8px; font-size: 1rem; overflow-wrap: anywhere; }
 .reservation-detail-resource p { margin: 5px 0 0; color: #475467; overflow-wrap: anywhere; }
 .reservation-detail-resource .reservation-detail-type { margin: -2px 0 9px; color: #667085; font-size: .9rem; }
@@ -1394,7 +1415,7 @@ body {
     background: #f0f7ee;
     border-radius: 8px;
     margin-bottom: 10px;
-    border-left: 3px solid #31CB00;
+    border: 1px solid #e5ebe3;
 }
 
 .summary-label {
@@ -1606,7 +1627,7 @@ body {
     background: #f9f9f9;
     border-radius: 8px;
     margin-bottom: 10px;
-    border-left: 3px solid #2A7221;
+    border: 1px solid #e5ebe3;
 }
 
 .inventory-item-info {
@@ -1733,7 +1754,7 @@ body {
 }
 
 .account-status {
-    border-left: 4px solid #31CB00;
+    border: 1px solid #e5ebe3;
 }
 
 .status-card {
@@ -1791,7 +1812,7 @@ body {
     background: #f9f9f9;
     border-radius: 8px;
     margin-bottom: 10px;
-    border-left: 3px solid #2A7221;
+    border: 1px solid #e5ebe3;
 }
 
 .professor-info {
@@ -1920,7 +1941,7 @@ body {
     border-radius: 8px;
     padding: 16px 24px;
     position: fixed;
-    z-index: 2000;
+    z-index: 2147483647;
     left: 50%;
     bottom: 30px;
     transform: translateX(-50%);

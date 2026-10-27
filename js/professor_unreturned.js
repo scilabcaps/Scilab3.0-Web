@@ -3,9 +3,6 @@
  * Handles functionality for professor unreturned items page
  */
 
-const PROFESSOR_UNRETURNED_CACHE_KEY = 'professor_unreturned_cache_v5';
-const PROFESSOR_UNRETURNED_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
 const ProfessorUnreturned = {
     formattedItems: [],
     currentPage: 1,
@@ -47,42 +44,6 @@ const ProfessorUnreturned = {
         }
     },
 
-    getCachedData() {
-        try {
-            const cached = localStorage.getItem(PROFESSOR_UNRETURNED_CACHE_KEY);
-            if (!cached) return null;
-
-            const { data, timestamp } = JSON.parse(cached);
-            const now = Date.now();
-
-            if (now - timestamp > PROFESSOR_UNRETURNED_CACHE_TTL) {
-                localStorage.removeItem(PROFESSOR_UNRETURNED_CACHE_KEY);
-                return null;
-            }
-
-            return data;
-        } catch (error) {
-            console.error('Error reading cache:', error);
-            return null;
-        }
-    },
-
-    setCachedData(data) {
-        try {
-            const cacheData = {
-                data: data,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(PROFESSOR_UNRETURNED_CACHE_KEY, JSON.stringify(cacheData));
-        } catch (error) {
-            console.error('Error setting cache:', error);
-        }
-    },
-
-    clearCache() {
-        localStorage.removeItem(PROFESSOR_UNRETURNED_CACHE_KEY);
-    },
-
     hasReservationEnded(date, endTime, now = Date.now()) {
         if (!date || !endTime) return false;
         const endTimestamp = new Date(`${date}T${endTime}`).getTime();
@@ -91,14 +52,6 @@ const ProfessorUnreturned = {
 
     async loadUnreturnedItems() {
         try {
-            const cachedData = this.getCachedData();
-            if (cachedData) {
-                this.formattedItems = this.filterRequestedReservation(cachedData.formattedItems);
-                this.currentPage = 1;
-                this.displayItems();
-                return;
-            }
-
             const { data: items, error } = await supabase
                 .from('reservation_items')
                 .select(`
@@ -146,7 +99,6 @@ const ProfessorUnreturned = {
 
             this.formattedItems = this.filterRequestedReservation(formattedItems);
             this.currentPage = 1;
-            this.setCachedData({ formattedItems });
 
             this.displayItems();
         } catch (error) {

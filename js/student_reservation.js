@@ -1,6 +1,7 @@
         let cart = [];
         let pendingStockItem = null;
         let earliestAvailableTime = null;
+        let reservationSubmissionInProgress = false;
 
         // Calendar and Timeline State
         let currentDate = new Date();
@@ -20,6 +21,8 @@
                     form.dataset.navigationBound = 'true';
                 }
                 cart = [];
+                updateCart();
+                setupReservationDialogs();
                 loadResources();
                 initializeCalendar();
                 loadUserInfo();
@@ -918,6 +921,20 @@
 
         function updateCart() {
             const cartItems = document.getElementById('cartItems');
+            const cartCount = cart.length;
+            const cartBadge = document.getElementById('cartCountBadge');
+            const cartButton = document.getElementById('floatingCartButton');
+            const scheduleButton = document.getElementById('chooseScheduleButton');
+            if (cartBadge) {
+                cartBadge.textContent = cartCount > 99 ? '99+' : String(cartCount);
+                cartBadge.hidden = cartCount === 0;
+            }
+            if (cartButton) {
+                const resourceLabel = cartCount === 1 ? 'resource' : 'resources';
+                cartButton.setAttribute('aria-label', 'Open reservation cart, ' + cartCount + ' ' + resourceLabel);
+            }
+            if (scheduleButton) scheduleButton.disabled = cartCount === 0;
+
             if (cart.length === 0) {
                 cartItems.innerHTML = '<div class="empty-state"><div class="empty-state-text">Your cart is empty. Add resources to get started.</div></div>';
                 return;
@@ -942,6 +959,54 @@
                     <button class="remove-item-btn" onclick="removeFromCart(${index})">Remove</button>
                 </div>
             `).join('');
+        }
+
+        function setupReservationDialogs() {
+            if (document.body.dataset.reservationDialogEventsBound) return;
+
+            ['cartModal', 'reservationDetailsModal', 'summaryModal'].forEach(dialogId => {
+                const dialog = document.getElementById(dialogId);
+                if (dialog) {
+                    dialog.addEventListener('click', event => {
+                        if (event.target === dialog) closeModal(dialogId);
+                    });
+                }
+            });
+            document.body.dataset.reservationDialogEventsBound = 'true';
+        }
+
+        function openCartModal() {
+            updateCart();
+            const dialog = document.getElementById('cartModal');
+            if (dialog && !dialog.open) dialog.showModal();
+        }
+
+        function openReservationDetailsModal() {
+            if (cart.length === 0) {
+                showWarningSnackbar('Add at least one resource before choosing a reservation time.');
+                return;
+            }
+
+            closeModal('cartModal');
+            const dialog = document.getElementById('reservationDetailsModal');
+            if (dialog && !dialog.open) {
+                dialog.showModal();
+                if (!selectedDate) selectDate(getNextBookableDate());
+            }
+        }
+
+        function getNextBookableDate() {
+            const date = new Date();
+            date.setHours(0, 0, 0, 0);
+            while (date.getDay() === 0 || date.getDay() === 6) {
+                date.setDate(date.getDate() + 1);
+            }
+            return formatDateForInput(date);
+        }
+
+        function returnToCartModal() {
+            closeModal('reservationDetailsModal');
+            openCartModal();
         }
 
         function updateChemicalQuantity(index, value) {
@@ -1211,10 +1276,35 @@
                 { label: 'Course', value: formData.course },
                 { label: 'Professor', value: formData.professor }
             ], resources);
-            document.getElementById('summaryModal').style.display = 'block';
+            const summaryDialog = document.getElementById('summaryModal');
+            if (!summaryDialog.open) summaryDialog.showModal();
         }
 
         async function confirmReservation() {
+            if (reservationSubmissionInProgress) return;
+
+            reservationSubmissionInProgress = true;
+            const confirmButton = document.getElementById('confirmReservationButton');
+            const originalButtonContent = confirmButton?.innerHTML;
+            if (confirmButton) {
+                confirmButton.disabled = true;
+                confirmButton.setAttribute('aria-busy', 'true');
+                confirmButton.innerHTML = '<span class="reservation-submit-spinner" aria-hidden="true"></span><span>Submitting…</span>';
+            }
+
+            try {
+                await submitReservation();
+            } finally {
+                reservationSubmissionInProgress = false;
+                if (confirmButton?.isConnected) {
+                    confirmButton.disabled = false;
+                    confirmButton.removeAttribute('aria-busy');
+                    confirmButton.innerHTML = originalButtonContent || 'Confirm';
+                }
+            }
+        }
+
+        async function submitReservation() {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
             const userId = user.user_id || user.id;
             const studentName = [user.firstname, user.lastname].filter(Boolean).join(' ') || user.username || user.email || 'A student';
@@ -1370,6 +1460,7 @@
 
                 showSuccessSnackbar('Reservation submitted successfully! Reservation ID: ' + reservationId);
                 closeModal('summaryModal');
+                closeModal('reservationDetailsModal');
                 
                 // Clear cart and form
                 cart = [];
@@ -1391,6 +1482,12 @@
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            if (modal instanceof HTMLDialogElement) {
+                if (modal.open) modal.close();
+                return;
+            }
+            modal.style.display = 'none';
         }
     

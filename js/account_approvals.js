@@ -3,18 +3,11 @@
  * Handles functionality for professor account approvals page
  */
 
-const ACCOUNT_APPROVALS_CACHE_KEY_PREFIX = 'account_approvals_cache';
-const ACCOUNT_APPROVALS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 const AccountApprovals = {
     accounts: [],
     currentPage: 1,
     pageSize: 10,
     professorId: null,
-
-    getCacheKey() {
-        return `${ACCOUNT_APPROVALS_CACHE_KEY_PREFIX}:${this.professorId}`;
-    },
 
     init() {
         if (!window.location.pathname.endsWith('/account_approvals.html')) return;
@@ -27,53 +20,9 @@ const AccountApprovals = {
         }
     },
 
-    getCachedData() {
-        try {
-            const cached = localStorage.getItem(this.getCacheKey());
-            if (!cached) return null;
-
-            const { data, timestamp } = JSON.parse(cached);
-            const now = Date.now();
-
-            if (now - timestamp > ACCOUNT_APPROVALS_CACHE_TTL) {
-                localStorage.removeItem(this.getCacheKey());
-                return null;
-            }
-
-            return data;
-        } catch (error) {
-            console.error('Error reading cache:', error);
-            return null;
-        }
-    },
-
-    setCachedData(data) {
-        try {
-            const cacheData = {
-                data: data,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(this.getCacheKey(), JSON.stringify(cacheData));
-        } catch (error) {
-            console.error('Error setting cache:', error);
-        }
-    },
-
-    clearCache() {
-        localStorage.removeItem(this.getCacheKey());
-    },
-
     async loadPendingAccounts() {
         try {
             console.log('Loading pending account approvals');
-
-            const cachedData = this.getCachedData();
-            if (cachedData) {
-                this.accounts = cachedData;
-                this.currentPage = 1;
-                this.displayAccounts();
-                return;
-            }
 
             const { data: accounts, error } = await supabase
                 .from('user_info')
@@ -90,7 +39,6 @@ const AccountApprovals = {
 
             this.accounts = accounts || [];
             this.currentPage = 1;
-            this.setCachedData(this.accounts);
             this.displayAccounts();
         } catch (error) {
             console.error('Error loading pending accounts:', error);
@@ -242,12 +190,10 @@ const AccountApprovals = {
         if (error) throw error;
         if (!data) {
             showErrorSnackbar('This account is no longer pending or is assigned to another professor.');
-            this.clearCache();
             await this.loadPendingAccounts();
             return;
         }
 
-        this.clearCache();
         showSuccessSnackbar(`Account ${actionLabel} successfully.`);
         await this.loadPendingAccounts();
     },

@@ -1,4 +1,17 @@
 /* Resource search */
+body.professor-reservation-page { height: 100dvh; overflow: hidden; }
+.professor-reservation-page .dashboard-container { height: 100%; min-height: 0; overflow: hidden; }
+.professor-reservation-page .dashboard-main { height: 100dvh; min-height: 0; overflow: hidden; }
+.professor-reservation-page .dashboard-content { display: flex; flex: 1; min-height: 0; overflow: hidden; padding: clamp(12px, 2vw, 28px); }
+.professor-reservation-page .reservation-container { display: flex; flex: 1; flex-direction: column; height: 100%; min-height: 0; margin: 0; padding: clamp(16px, 2vw, 28px); overflow: hidden; }
+.professor-reservation-page .resource-browser { display: flex; flex: 1; flex-direction: column; min-height: 0; margin: 0; }
+.professor-reservation-page .resource-browser > .section-title { flex-shrink: 0; margin-bottom: 12px; }
+.professor-reservation-page .resource-search { flex-shrink: 0; margin-bottom: 8px; }
+.professor-reservation-page .resource-search-summary { min-height: 18px; margin-top: 4px; }
+.professor-reservation-page .inventory-tabs { flex-shrink: 0; }
+.professor-reservation-page .resource-results-viewport { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 2px 88px; scrollbar-gutter: stable; }
+.professor-reservation-page .resource-pagination { margin-bottom: 0; }
+
 .resource-search { margin: 0 0 16px; }
 .resource-search-label { display: block; margin-bottom: 6px; color: #152614; font-weight: 600; }
 .resource-search input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid #cbd5c7; border-radius: 8px; font: inherit; }
@@ -11,15 +24,103 @@
 .resource-pagination { margin-bottom: 30px; }
 .resource-pagination .pagination-container { margin-top: 0; }
 .resource-page-status { min-width: 88px; color: #152614; font-size: 0.875rem; font-weight: 600; text-align: center; }
-.reservation-container .resource-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.professor-reservation-page .reservation-container .resource-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.professor-reservation-page .resource-card { display: flex; min-height: 180px; flex-direction: column; }
+.professor-reservation-page .resource-card .add-to-cart-btn { margin-top: auto; }
+
+@media (min-width: 1101px) {
+    .professor-reservation-page .resource-results-viewport { display: flex; flex-direction: column; padding-bottom: 16px; }
+    .professor-reservation-page .resource-results-viewport > .tab-content.active { display: flex; flex: 1 0 auto; flex-direction: column; min-height: 100%; }
+    .professor-reservation-page .resource-results-viewport > .tab-content.active > .resource-grid { flex: 1 0 auto; grid-template-rows: repeat(3, minmax(180px, 1fr)); margin-bottom: 16px; }
+    .professor-reservation-page .resource-pagination .pagination-container { padding-right: 116px; }
+}
+
+.professor-reservation-page .floating-cart-button { position: fixed; right: 28px; bottom: 28px; z-index: 900; display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 20px; border: 0; border-radius: 999px; background: #1e441e; color: #fff; box-shadow: 0 8px 24px rgba(21, 38, 20, 0.28); cursor: pointer; font: inherit; font-weight: 700; transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+.professor-reservation-page .floating-cart-button:hover { background: #2a7221; box-shadow: 0 10px 28px rgba(21, 38, 20, 0.34); transform: translateY(-2px); }
+.professor-reservation-page .floating-cart-button:focus-visible { outline: 3px solid #31cb00; outline-offset: 3px; }
+.professor-reservation-page .floating-cart-button svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.professor-reservation-page .floating-cart-label { line-height: 1; }
+.professor-reservation-page .floating-cart-badge { position: absolute; top: -7px; right: -5px; display: grid; min-width: 23px; height: 23px; place-items: center; padding: 0 6px; border: 2px solid #fff; border-radius: 999px; background: #c62828; color: #fff; font-size: .75rem; font-weight: 800; line-height: 1; }
+.professor-reservation-page .floating-cart-badge[hidden] { display: none; }
+
+.professor-reservation-page .reservation-dialog { width: min(760px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; overflow: visible; border: 0; border-radius: 14px; background: transparent; color: inherit; box-shadow: 0 20px 60px rgba(0, 0, 0, .3); }
+.professor-reservation-page .reservation-dialog::backdrop { background: rgba(15, 26, 15, .58); backdrop-filter: blur(2px); }
+.professor-reservation-page .cart-dialog-content,
+.professor-reservation-page .schedule-dialog-content { display: flex; flex-direction: column; max-width: none; max-height: calc(100dvh - 32px); margin: 0; overflow: hidden; }
+.professor-reservation-page .cart-dialog-content { width: 100%; }
+.professor-reservation-page .cart-dialog-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.professor-reservation-page .cart-dialog-body .empty-state { min-height: 150px; }
+.professor-reservation-page .cart-dialog .modal-footer,
+.professor-reservation-page .schedule-dialog-footer { flex-shrink: 0; flex-wrap: wrap; padding: 16px 22px; }
+.professor-reservation-page .cart-dialog .modal-footer .btn-cancel,
+.professor-reservation-page .cart-dialog .modal-footer .btn-confirm,
+.professor-reservation-page .schedule-dialog-footer .btn-cancel,
+.professor-reservation-page .schedule-dialog-footer .submit-btn { justify-content: center; min-height: 44px; margin: 0; }
+.professor-reservation-page .cart-dialog .modal-footer .btn-confirm:disabled { background: #e5e7eb; color: #475467; cursor: not-allowed; box-shadow: none; }
+.professor-reservation-page .cart-dialog .modal-footer .btn-confirm { background: #2a7221; }
+.professor-reservation-page .cart-dialog .modal-footer .btn-confirm:hover:not(:disabled) { background: #1e441e; }
+.professor-reservation-page .cart-dialog .remove-item-btn { background: #c62828; }
+.professor-reservation-page .schedule-dialog { width: min(1120px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); }
+.professor-reservation-page .schedule-dialog-content { width: 100%; max-height: calc(100dvh - 48px); }
+.professor-reservation-page .summary-dialog { width: min(800px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); }
+.professor-reservation-page .summary-dialog > .modal-content { display: flex; flex-direction: column; width: 100%; max-height: calc(100dvh - 48px); margin: 0; overflow: hidden; }
+.professor-reservation-page .summary-dialog .modal-body { flex: 1; min-height: 0; overflow-y: auto; }
+.professor-reservation-page .summary-dialog .modal-footer { flex-shrink: 0; }
+.professor-reservation-page .schedule-reservation-form { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
+.professor-reservation-page .schedule-dialog-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 22px; }
+.professor-reservation-page .schedule-dialog-body > .form-row { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; margin-bottom: 16px; }
+.professor-reservation-page .schedule-dialog-body .form-group { min-width: 0; margin-bottom: 0; }
+.professor-reservation-page .schedule-dialog-body .date-form-group { min-width: 300px; }
+.professor-reservation-page .schedule-dialog-body .calendar-container { width: 100%; max-width: none; padding: 18px; }
+.professor-reservation-page .schedule-dialog-body .calendar-day-header { padding: 8px 2px; font-size: .85rem; }
+.professor-reservation-page .schedule-dialog-body .calendar-day { min-height: 42px; font-size: 1rem; }
+.professor-reservation-page .schedule-dialog-body .timeline-container { max-height: 380px; margin-top: 12px; padding: 14px; }
+.professor-reservation-page .schedule-dialog-body > .additional-note-group { margin-top: 14px; }
+.professor-reservation-page .schedule-dialog-body > .additional-note-group textarea { min-height: 90px; }
+.professor-reservation-page .schedule-dialog-footer { border-top: 1px solid #e5e7eb; }
+.professor-reservation-page .schedule-dialog-footer .submit-btn { width: auto; padding: 12px 22px; }
+.professor-reservation-page .reservation-submit-spinner { display: inline-block; width: 16px; height: 16px; flex: 0 0 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: professor-reservation-spin 700ms linear infinite; }
+@keyframes professor-reservation-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) { .professor-reservation-page .floating-cart-button { transition: none; } .professor-reservation-page .reservation-submit-spinner { animation-duration: 1400ms; } }
 
 @media (max-width: 1100px) {
-    .reservation-container .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .professor-reservation-page .reservation-container .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 640px) {
-    .reservation-container .resource-grid { grid-template-columns: minmax(0, 1fr); }
+    .professor-reservation-page .reservation-container,
+    .professor-reservation-page .resource-browser,
+    .professor-reservation-page .resource-results-viewport { min-width: 0; }
+    .professor-reservation-page .reservation-container .resource-grid { grid-template-columns: minmax(0, 1fr); }
     .resource-pagination .pagination-controls { flex-wrap: wrap; justify-content: center; }
+    .professor-reservation-page .floating-cart-button { right: 16px; bottom: 16px; min-height: 52px; padding: 0 16px; }
+    .professor-reservation-page .schedule-dialog-body { padding: 16px; }
+    .professor-reservation-page .schedule-dialog-body > .form-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .professor-reservation-page .schedule-dialog-body .date-form-group { min-width: 0; }
+    .professor-reservation-page .schedule-dialog-body .calendar-container { padding: 12px; }
+    .professor-reservation-page .schedule-dialog-body .calendar-day { min-height: 36px; font-size: .9rem; }
+    .professor-reservation-page .cart-dialog .modal-footer,
+    .professor-reservation-page .schedule-dialog-footer { padding: 12px 16px; }
+    .professor-reservation-page .cart-dialog .modal-footer > button,
+    .professor-reservation-page .schedule-dialog-footer > button { flex: 1 1 100%; }
+    .professor-reservation-page .cart-dialog-body { padding: 16px; overflow-x: hidden; }
+    .professor-reservation-page .cart-dialog .cart-item { flex-wrap: wrap; gap: 12px; padding: 12px; }
+    .professor-reservation-page .cart-dialog .cart-item-info { flex: 1 1 100%; min-width: 0; }
+    .professor-reservation-page .cart-dialog .quantity-controls { width: auto; }
+    .professor-reservation-page .cart-dialog .remove-item-btn { margin-left: auto; }
+}
+
+@media (max-width: 768px) {
+    .professor-reservation-page .dashboard-container { display: block; }
+    .professor-reservation-page .dashboard-sidebar { position: fixed; top: 0; left: 0; width: 70px; height: 100dvh; transform: translateX(-100%); }
+    .professor-reservation-page .dashboard-main { width: 100%; height: 100dvh; margin: 0; }
+    .professor-reservation-page .dashboard-header { flex-direction: row; gap: 8px; padding: 10px 12px; text-align: left; }
+    .professor-reservation-page .dashboard-header .header-left { width: auto; min-width: 0; flex: 1; flex-wrap: nowrap; gap: 8px; }
+    .professor-reservation-page .dashboard-header .header-logo { width: 34px; height: 34px; }
+    .professor-reservation-page .dashboard-header h1 { font-size: 16px; line-height: 1.25; }
+    .professor-reservation-page .dashboard-content { padding: 10px; }
+    .professor-reservation-page .reservation-container { padding: 14px; }
 }
 
 /* Always-Visible Sidebar Styles - White Theme */
@@ -440,7 +541,7 @@
     padding: 15px;
     background: #f0f7ee;
     border-radius: 6px;
-    border-left: 4px solid #31CB00;
+    border: 1px solid #dce8d9;
 }
 
 .selection-info h5 {
@@ -507,7 +608,7 @@
     padding: 15px;
     background: #f0f7ee;
     border-radius: 6px;
-    border-left: 4px solid #31CB00;
+    border: 1px solid #dce8d9;
 }
 
 .stock-info h4 {

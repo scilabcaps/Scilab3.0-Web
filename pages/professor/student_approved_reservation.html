@@ -19,9 +19,13 @@
             }
         }
 
-        .approval-status { font-weight: 600; }
+        .approval-status { background-color: transparent; font-weight: 600; }
         .status-approved { color: #119822; }
+        .status-ongoing { color: #0f766e; }
+        .status-completed { color: #6b7280; }
         .status-declined { color: #dc2626; }
+        .status-unreturned { color: #dc2626; }
+        .status-partial { color: #b45309; }
         .status-pending { color: #f59e0b; }
         .status-unknown { color: #6b7280; }
         .modal-resource-heading { margin: 18px 0 10px; color: #152614; }
@@ -37,7 +41,7 @@
         <main class="dashboard-main">
             <div class="dashboard-header">
                 <div class="header-left">
-                    <h1>Student Approved Reservations</h1>
+                    <h1>Student Reservations</h1>
                     <img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
                 </div>
             </div>
@@ -51,7 +55,7 @@
                                 <th>Resources</th>
                                 <th>Student</th>
                                 <th>Additional Note</th>
-                                <th>Admin Status</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>

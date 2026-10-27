@@ -2,6 +2,7 @@
 const ProfessorMyUnreturned = {
     items: [],
     detailsModal: null,
+    userId: null,
     requestedReservationId: new URLSearchParams(window.location.search).get('reservation_id'),
 
     async init() {
@@ -20,8 +21,18 @@ const ProfessorMyUnreturned = {
         if (!user) return;
 
         try {
+            this.userId = user.id;
             this.detailsModal = new Modal('professorMyUnreturnedDetailsModal');
             this.detailsModal.closeBtn?.addEventListener('click', () => this.detailsModal.close());
+            await this.loadItems(user.id);
+        } catch (error) {
+            console.error('Unable to load professor unreturned items:', error);
+            this.showMessage('Unable to load your unreturned items. Please refresh the page.');
+        }
+    },
+
+    async loadItems(userId) {
+        try {
             const { data, error } = await supabase
                 .from('reservation_items')
                 .select(`
@@ -29,7 +40,7 @@ const ProfessorMyUnreturned = {
                     reservations!inner(reservation_date, start_time, end_time, user_id, status, professor_approval, admin_approval, is_deleted),
                     lab_assets!inner(item_name, category)
                 `)
-                .eq('reservations.user_id', user.id)
+                .eq('reservations.user_id', userId)
                 .eq('reservations.is_deleted', false)
                 .eq('is_deleted', false)
                 .eq('is_returned', false)
@@ -45,6 +56,10 @@ const ProfessorMyUnreturned = {
             console.error('Unable to load professor unreturned items:', error);
             this.showMessage('Unable to load your unreturned items. Please refresh the page.');
         }
+    },
+
+    refresh() {
+        return this.userId ? this.loadItems(this.userId) : Promise.resolve();
     },
 
     isUnreturnedItem(item, now = Date.now()) {

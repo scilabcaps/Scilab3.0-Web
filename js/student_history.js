@@ -55,6 +55,9 @@ const StudentHistory = {
         if (status === 'Pending') {
             return 'Pending for return';
         }
+        if (status === 'Approved') {
+            return 'Upcoming';
+        }
         return status;
     },
 
@@ -63,8 +66,6 @@ const StudentHistory = {
      */
     async loadReservations(userId) {
         try {
-            const today = new Date().toISOString().split('T')[0];
-
             const { data: reservations, error } = await supabase
                 .from('reservations')
                 .select(`
@@ -82,7 +83,7 @@ const StudentHistory = {
                     )
                 `)
                 .eq('user_id', userId)
-                .or('status.in.(Completed,Cancelled,Declined),and(status.in.(Approved,Ongoing,Partially Returned),reservation_date.lt.' + today + ')')
+                .in('status', ['Approved', 'Ongoing', 'Partially Returned', 'Unreturned', 'Completed', 'Cancelled', 'Declined'])
                 .order('created_at', { ascending: false });
 
             if (error) throw error;

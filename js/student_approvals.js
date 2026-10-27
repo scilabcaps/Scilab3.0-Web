@@ -3,16 +3,11 @@
  * Handles functionality for professor student review page
  */
 
-const STUDENT_APPROVALS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 const StudentApprovals = {
     requests: [],
     currentPage: 1,
     pageSize: 10,
     loadPromise: null,
-    realtimeChannel: null,
-    realtimeProfessor: null,
-    focusListenerBound: false,
 
     init() {
         if (!window.location.pathname.endsWith('/student_approvals.html')) return;
@@ -27,52 +22,6 @@ const StudentApprovals = {
             window.location.href = '../../index.html';
         }
 
-        if (!this.focusListenerBound) {
-            window.addEventListener('focus', () => this.init());
-            this.focusListenerBound = true;
-        }
-    },
-
-    getCacheKey(professorName) {
-        return `student_approvals_cache:${professorName.trim().toLowerCase()}`;
-    },
-
-    getCachedData(professorName) {
-        try {
-            const cached = localStorage.getItem(this.getCacheKey(professorName));
-            if (!cached) return null;
-
-            const { data, timestamp } = JSON.parse(cached);
-            const now = Date.now();
-
-            if (now - timestamp > STUDENT_APPROVALS_CACHE_TTL) {
-                localStorage.removeItem(this.getCacheKey(professorName));
-                return null;
-            }
-
-            return data;
-        } catch (error) {
-            console.error('Error reading cache:', error);
-            return null;
-        }
-    },
-
-    setCachedData(professorName, data) {
-        try {
-            const cacheData = {
-                data: data,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(this.getCacheKey(professorName), JSON.stringify(cacheData));
-        } catch (error) {
-            console.error('Error setting cache:', error);
-        }
-    },
-
-    clearCache(professorName) {
-        if (professorName) {
-            localStorage.removeItem(this.getCacheKey(professorName));
-        }
     },
 
     async loadPendingRequests() {
@@ -167,38 +116,10 @@ const StudentApprovals = {
             this.requests = requests || [];
             this.currentPage = 1;
             this.displayRequests();
-            this.subscribeToReservations(professorName, profile.id);
         } catch (error) {
             console.error('Error loading requests:', error);
             this.showError('Failed to load pending requests');
         }
-    },
-
-    subscribeToReservations(professorName, professorId) {
-        if (this.realtimeProfessor === professorName && this.realtimeChannel) return;
-        if (this.realtimeChannel) {
-            window.supabase.removeChannel(this.realtimeChannel);
-            this.realtimeChannel = null;
-        }
-
-        this.realtimeProfessor = professorName;
-        this.realtimeChannel = window.supabase
-            .channel(`professor-approvals-${professorId}`)
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'reservations'
-            }, payload => {
-                const reservation = payload.new || {};
-                const belongsToProfessor = reservation.professor === professorName || reservation.professor === professorId;
-                const isPending = reservation.professor_approval === 'Pending';
-                if (belongsToProfessor && isPending) this.init();
-            })
-            .subscribe(status => {
-                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                    console.warn('Professor approvals realtime refresh unavailable:', status);
-                }
-            });
     },
 
     displayRequests() {
@@ -341,7 +262,6 @@ const StudentApprovals = {
 
                 if (error) throw error;
 
-                this.clearCache(`${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`);
                 showSuccessSnackbar('Request approved! Sent to admin for final approval.');
                 this.loadPendingRequests();
             } catch (error) {
@@ -362,7 +282,6 @@ const StudentApprovals = {
 
         if (confirmed) {
             try {
-                const user = JSON.parse(sessionStorage.getItem('user') || '{}');
                 const { error } = await supabase.rpc(
                     'decline_reservation_and_restore_inventory',
                     { p_reservation_id: id, p_reason: null }
@@ -370,7 +289,6 @@ const StudentApprovals = {
 
                 if (error) throw error;
 
-                this.clearCache(`${user.firstname || user.first_name || ''} ${user.lastname || user.last_name || ''}`);
                 showSuccessSnackbar('Request declined and reserved inventory restored.');
                 this.loadPendingRequests();
             } catch (error) {

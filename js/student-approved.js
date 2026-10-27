@@ -8,6 +8,7 @@ class StudentApprovedReservations {
         this.reservations = [];
         this.currentPage = 1;
         this.pageSize = 10;
+        this.activeReservationId = null;
         this.init();
     }
 
@@ -134,7 +135,9 @@ class StudentApprovedReservations {
                     professor: res.professor,
                     status: res.status,
                     professor_approval: res.professor_approval,
-                    admin_approval: res.admin_approval
+                    admin_approval: res.admin_approval,
+                    canCancel: res.status === 'Approved'
+                        && new Date(`${res.reservation_date}T${res.start_time}`).getTime() > Date.now()
                 };
             }).filter(reservation => {
                 const end = new Date(`${reservation.reservation_date}T${reservation.end_time}`).getTime();
@@ -238,7 +241,7 @@ class StudentApprovedReservations {
                 <td>${reservation.course || 'N/A'}</td>
                 <td>${reservation.professor || 'N/A'}</td>
                 <td>${approvalStatus}</td>
-                <td>
+                <td class="approved-reservation-actions">
                     <button type="button" class="btn btn-view" onclick="studentApproved.viewDetails(${Number(reservation.id)})">View</button>
                 </td>
             </tr>
@@ -307,6 +310,7 @@ class StudentApprovedReservations {
     viewDetails(reservationId) {
         const reservation = this.reservations.find(r => String(r.id) === String(reservationId));
         if (reservation) {
+            this.activeReservationId = reservation.id;
             const resources = [];
             const rooms = Array.isArray(reservation.rooms) ? reservation.rooms : [reservation.rooms];
             rooms.filter(room => room?.room_name && !room.is_deleted).forEach(room => resources.push({ name: room.room_name, type: 'Room' }));
@@ -326,10 +330,42 @@ class StudentApprovedReservations {
                 { label: 'Professor', value: reservation.professor },
                 { label: 'Status', value: reservation.status }
             ], resources, { note: reservation.additional_note });
+            const cancelButton = document.getElementById('studentApprovedDialogCancel');
+            if (cancelButton) cancelButton.hidden = !reservation.canCancel;
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
         } else {
             console.error('Approved reservation not found:', reservationId);
+        }
+    }
+
+    cancelReservationFromDetails() {
+        if (this.activeReservationId === null) return;
+        return this.cancelReservation(this.activeReservationId);
+    }
+
+    async cancelReservation(reservationId) {
+        const confirmed = await showConfirmDialog(
+            'Cancel Reservation',
+            'Are you sure you want to cancel this reservation? This action cannot be undone.',
+            'Cancel Reservation',
+            'Keep Reservation',
+            'danger'
+        );
+        if (!confirmed) return;
+
+        try {
+            const { error } = await supabase.rpc('student_cancel_approved_reservation', {
+                p_reservation_id: reservationId
+            });
+            if (error) throw error;
+
+            showSuccessSnackbar('Reservation cancelled. It is now in your reservation history.');
+            if (String(this.activeReservationId) === String(reservationId)) this.closeDetails();
+            await this.loadApprovedReservations();
+        } catch (error) {
+            console.error('Error cancelling reservation:', error);
+            showErrorSnackbar('Unable to cancel this reservation. Please refresh and try again.');
         }
     }
 

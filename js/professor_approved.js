@@ -3,9 +3,6 @@
  * Handles functionality for professor approved student reservations page
  */
 
-const PROFESSOR_APPROVED_CACHE_KEY = 'professor_approved_cache_v4';
-const PROFESSOR_APPROVED_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-
 const ProfessorApproved = {
     reservations: [],
     currentPage: 1,
@@ -30,49 +27,9 @@ const ProfessorApproved = {
         }
     },
 
-    getCachedData() {
-        try {
-            const cached = localStorage.getItem(PROFESSOR_APPROVED_CACHE_KEY);
-            if (!cached) return null;
-
-            const { data, timestamp } = JSON.parse(cached);
-            const now = Date.now();
-
-            if (now - timestamp > PROFESSOR_APPROVED_CACHE_TTL) {
-                localStorage.removeItem(PROFESSOR_APPROVED_CACHE_KEY);
-                return null;
-            }
-
-            return (data || []).some(reservation =>
-                (reservation.reservation_items || []).some(item => !Object.prototype.hasOwnProperty.call(item, 'quantity_returned'))
-            ) ? null : data;
-        } catch (error) {
-            console.error('Error reading cache:', error);
-            return null;
-        }
-    },
-
-    setCachedData(data) {
-        try {
-            const cacheData = {
-                data: data,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(PROFESSOR_APPROVED_CACHE_KEY, JSON.stringify(cacheData));
-        } catch (error) {
-            console.error('Error setting cache:', error);
-        }
-    },
-
-    clearCache() {
-        localStorage.removeItem(PROFESSOR_APPROVED_CACHE_KEY);
-    },
-
     async loadApprovedReservations() {
         try {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-
-            // Always refresh detail data to avoid serving an older cache shape.
 
             const professorFullName = user.firstname + ' ' + user.lastname;
             const { data: reservations, error } = await supabase
@@ -133,8 +90,8 @@ const ProfessorApproved = {
         const pageData = this.reservations.slice(start, end);
 
         tbody.innerHTML = pageData.map(res => {
-            const adminStatus = String(res.admin_approval || 'Unknown').trim();
-            const statusClass = this.getStatusClass(adminStatus);
+            const displayStatus = this.getDisplayStatus(res);
+            const statusClass = this.getStatusClass(displayStatus);
 
             let items = [];
 
@@ -161,7 +118,7 @@ const ProfessorApproved = {
                     <td>${resourcesDisplay}</td>
                     <td>${this.escapeHtml(studentName)}</td>
                     <td>${this.escapeHtml(res.additional_note || 'N/A')}</td>
-                    <td><span class="approval-status ${statusClass}">${this.escapeHtml(adminStatus)}</span></td>
+                    <td><span class="approval-status ${statusClass}">${this.escapeHtml(displayStatus)}</span></td>
                     <td>
                         <button class="btn btn-view" onclick="ProfessorApproved.viewDetails(${res.reservation_id})">View</button>
                     </td>
@@ -258,10 +215,20 @@ const ProfessorApproved = {
 
     getStatusClass(status) {
         const normalized = String(status || '').trim().toLowerCase();
-        if (normalized === 'approved') return 'status-approved';
-        if (['declined', 'rejected'].includes(normalized)) return 'status-declined';
+        if (['approved', 'upcoming'].includes(normalized)) return 'status-approved';
+        if (normalized === 'ongoing') return 'status-ongoing';
+        if (normalized === 'completed') return 'status-completed';
+        if (normalized === 'unreturned') return 'status-unreturned';
+        if (['declined', 'rejected', 'cancelled'].includes(normalized)) return 'status-declined';
+        if (normalized === 'partially returned') return 'status-partial';
         if (normalized === 'pending') return 'status-pending';
         return 'status-unknown';
+    },
+
+    getDisplayStatus(reservation) {
+        const status = String(reservation?.status || '').trim();
+        if (status === 'Approved') return 'Upcoming';
+        return status || String(reservation?.admin_approval || 'Unknown').trim();
     },
 
     escapeHtml(value) {

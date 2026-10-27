@@ -6,6 +6,13 @@
     <title>My Upcoming Reservations - Professor</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/sidebar_theme.css">
+    <style>
+        .professor-upcoming-dialog-actions [hidden] { display: none !important; }
+        .professor-upcoming-cancel-btn { min-width: 164px; min-height: 40px; background: #c62828; color: #fff; border: 1.5px solid #c62828; border-radius: 7px; font-weight: 600; }
+        .professor-upcoming-cancel-btn:hover { background: #b71c1c; border-color: #b71c1c; }
+        .professor-upcoming-cancel-btn:focus-visible { outline: 2px solid #f44336; outline-offset: 3px; }
+        @media (max-width: 600px) { .professor-upcoming-dialog-actions > button { flex: 1 1 140px; } }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -13,7 +20,7 @@
             <div class="dashboard-header"><div class="header-left"><h1>My Upcoming Reservations</h1><img src="../../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo"></div></div>
             <div class="dashboard-content">
                 <div class="data-table"><table>
-                    <thead><tr><th>Reservation #</th><th>Date</th><th>Time</th><th>Resources</th></tr></thead>
+                    <thead><tr><th>Reservation #</th><th>Date</th><th>Time</th><th>Resources</th><th>Actions</th></tr></thead>
                     <tbody id="myUpcomingReservationsTable"></tbody>
                 </table></div>
                 <div id="myUpcomingEmpty" class="empty-state" style="display: none;"><div class="empty-state-text">No upcoming reservations found</div></div>
@@ -24,6 +31,20 @@
     <script src="../../config/supabase.js"></script>
     <script src="../../js/sidebar_loader.js"></script>
     <script src="../../js/main.js"></script>
+    <script src="../../js/modal.js"></script>
+    <script src="../../js/dialog.js"></script>
     <script src="../../js/professor_my_upcoming.js"></script>
+    <div id="professorUpcomingDetailsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="professorUpcomingDetailsTitle">
+        <div class="modal-content reservation-dialog-content">
+            <div class="modal-header">
+                <h2 id="professorUpcomingDetailsTitle" class="modal-title">Reservation Details</h2>
+                <button type="button" class="modal-close" aria-label="Close" onclick="ProfessorMyUpcoming.closeDetails()">&times;</button>
+            </div>
+            <div class="modal-body" id="professorUpcomingDetailsBody"></div>
+            <div class="modal-footer professor-upcoming-dialog-actions">
+                <button type="button" id="professorUpcomingDialogCancel" class="btn professor-upcoming-cancel-btn" onclick="ProfessorMyUpcoming.cancelReservationFromDetails()" hidden>Cancel Reservation</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

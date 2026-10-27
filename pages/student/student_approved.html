@@ -7,6 +7,71 @@
     <title>Approved Reservations - Student</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/sidebar_theme.css">
+    <style>
+        .approved-reservation-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+            min-width: 168px;
+            flex-wrap: wrap;
+        }
+
+        .approved-reservation-actions .btn,
+        .approved-reservation-cancel-btn {
+            min-width: 76px;
+            min-height: 36px;
+        }
+
+        .approved-reservation-cancel-btn {
+            min-width: 164px;
+            min-height: 40px;
+            justify-content: center;
+            gap: 8px;
+            color: #ffffff;
+            background: #f44336;
+            border: 1.5px solid #f44336;
+            border-radius: 7px;
+            font-weight: 600;
+            transition: color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .approved-reservation-cancel-btn:hover,
+        .approved-reservation-cancel-btn:focus-visible {
+            color: #ffffff;
+            background: #d32f2f;
+            border-color: #d32f2f;
+            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2);
+            transform: none;
+        }
+
+        .approved-reservation-cancel-btn:focus-visible {
+            outline: 2px solid #f44336;
+            outline-offset: 3px;
+        }
+
+        .approved-reservation-dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .approved-reservation-dialog-actions [hidden] {
+            display: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .approved-reservation-actions {
+                min-width: 0;
+            }
+
+            .approved-reservation-dialog-actions > button {
+                flex: 1 1 140px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -58,9 +123,13 @@
                 <button type="button" class="modal-close" aria-label="Close" onclick="studentApproved.closeDetails()">&times;</button>
             </div>
             <div class="modal-body" id="studentApprovedDetailsBody"></div>
+            <div class="modal-footer approved-reservation-dialog-actions">
+                <button type="button" id="studentApprovedDialogCancel" class="btn approved-reservation-cancel-btn" onclick="studentApproved.cancelReservationFromDetails()" hidden>Cancel Reservation</button>
+            </div>
         </div>
     </div>
     <script src="../../js/main.js"></script>
+    <script src="../../js/dialog.js"></script>
     <script src="../../js/student-approved.js"></script>
 </body>
 

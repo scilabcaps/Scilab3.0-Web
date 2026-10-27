@@ -1,5 +1,27 @@
 // Main JavaScript file for common functionality
 
+// Remove data saved by the former page-level reservation and approval caches.
+try {
+    const retiredCacheKeys = new Set([
+        'professor_history_cache_v3',
+        'professor_approved_cache_v4',
+        'professor_unreturned_cache_v5'
+    ]);
+    const retiredCachePrefixes = [
+        'account_approvals_cache:',
+        'professor_pending_cache:',
+        'student_approvals_cache:'
+    ];
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+        const key = localStorage.key(index);
+        if (retiredCacheKeys.has(key) || retiredCachePrefixes.some(prefix => key?.startsWith(prefix))) {
+            localStorage.removeItem(key);
+        }
+    }
+} catch (error) {
+    console.warn('Unable to clear retired page cache entries:', error);
+}
+
 function formatResourceCell(resources, fallback = 'No resources specified') {
     if (!Array.isArray(resources) || resources.length === 0) {
         return `<span class="resource-cell-empty">${escapeResourceCellText(fallback)}</span>`;
@@ -54,6 +76,291 @@ function escapeResourceCellText(value) {
         "'": '&#039;'
     })[character]);
 }
+
+const APP_REALTIME_TABLES = [
+    'reservations',
+    'reservation_items',
+    'chemical_usage',
+    'user_info',
+    'rooms',
+    'lab_assets',
+    'chemicals',
+    'announcement',
+    'user_notifications'
+];
+
+const APP_REALTIME_PAGE_TABLES = {
+    'student_approvals.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info'],
+    'account_approvals.html': ['user_info'],
+    'professor_pending_approval.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'student_approved_reservation.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'professor_reservation_history.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'professor_my_upcoming.html': ['reservations', 'reservation_items', 'chemical_usage', 'rooms', 'lab_assets', 'chemicals'],
+    'professor_unreturned.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'professor_my_unreturned.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'student_pending.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'student_upcoming.html': ['reservations', 'reservation_items', 'chemical_usage', 'rooms', 'lab_assets', 'chemicals'],
+    'student_approved.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'student_history.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'student_unreturned.html': ['reservations', 'reservation_items', 'user_info', 'lab_assets'],
+    'student_upcoming_reservations.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'history_reports.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'reservation_reports.html': ['reservations', 'reservation_items', 'chemical_usage', 'user_info', 'rooms', 'lab_assets', 'chemicals'],
+    'reservation_student.html': ['reservations', 'reservation_items', 'chemical_usage', 'rooms', 'lab_assets', 'chemicals'],
+    'professor_new_reservation.html': ['reservations', 'reservation_items', 'chemical_usage', 'rooms', 'lab_assets', 'chemicals'],
+    'student_dashboard.html': ['reservations', 'user_info', 'announcement'],
+    'professor_dashboard.html': ['reservations', 'user_info', 'announcement'],
+    'settings.html': ['user_info']
+};
+
+let appRealtimeRefreshTimer = null;
+let appRealtimeFormRefreshTimer = null;
+let approvedReservationPromotionTimer = null;
+let approvedReservationPromotionPromise = null;
+
+function getManilaDateString(date = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+}
+
+function manilaReservationInterval(reservation) {
+    const date = reservation?.reservation_date;
+    const startTime = String(reservation?.start_time || '').slice(0, 8);
+    const endTime = String(reservation?.end_time || '').slice(0, 8);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '') || !/^\d{2}:\d{2}(:\d{2})?$/.test(startTime) || !/^\d{2}:\d{2}(:\d{2})?$/.test(endTime)) return null;
+
+    const normalizedStart = startTime.length === 5 ? `${startTime}:00` : startTime;
+    const normalizedEnd = endTime.length === 5 ? `${endTime}:00` : endTime;
+    const startAt = Date.parse(`${date}T${normalizedStart}+08:00`);
+    let endAt = Date.parse(`${date}T${normalizedEnd}+08:00`);
+    if (!Number.isFinite(startAt) || !Number.isFinite(endAt)) return null;
+    if (endAt <= startAt) endAt += 24 * 60 * 60 * 1000;
+    return { startAt, endAt };
+}
+
+async function promoteActiveApprovedReservations() {
+    if (approvedReservationPromotionPromise) return approvedReservationPromotionPromise;
+    if (!window.supabase?.from || !window.supabase?.auth) return;
+    approvedReservationPromotionPromise = (async () => {
+        const authResult = await window.supabase.auth.getSession();
+        if (authResult.error || !authResult.data?.session) return;
+
+        const today = getManilaDateString();
+        const yesterdayDate = new Date(Date.parse(`${today}T00:00:00+08:00`) - 24 * 60 * 60 * 1000);
+        const yesterday = getManilaDateString(yesterdayDate);
+        const { data: reservations, error } = await window.supabase
+            .from('reservations')
+            .select('reservation_id, reservation_date, start_time, end_time')
+            .eq('status', 'Approved')
+            .eq('professor_approval', 'Approved')
+            .eq('admin_approval', 'Approved')
+            .gte('reservation_date', yesterday)
+            .lte('reservation_date', today);
+
+        if (error) throw error;
+        const now = Date.now();
+        const activeIds = (reservations || []).filter(reservation => {
+            const interval = manilaReservationInterval(reservation);
+            return interval && interval.startAt <= now && now < interval.endAt;
+        }).map(reservation => reservation.reservation_id).filter(id => id !== null && id !== undefined);
+        if (!activeIds.length) return;
+
+        const { error: updateError } = await window.supabase
+            .from('reservations')
+            .update({ status: 'Ongoing', updated_at: new Date(now).toISOString() })
+            .in('reservation_id', activeIds)
+            .eq('status', 'Approved')
+            .eq('professor_approval', 'Approved')
+            .eq('admin_approval', 'Approved');
+        if (updateError) throw updateError;
+        refreshCurrentDataPage('reservations');
+    })();
+
+    try {
+        return await approvedReservationPromotionPromise;
+    } catch (error) {
+        console.warn('Unable to promote active approved reservations:', error);
+    } finally {
+        approvedReservationPromotionPromise = null;
+    }
+}
+
+function startApprovedReservationPromotionChecks() {
+    if (!approvedReservationPromotionTimer) {
+        approvedReservationPromotionTimer = setInterval(() => {
+            if (document.visibilityState === 'visible') promoteActiveApprovedReservations();
+        }, 60 * 1000);
+    }
+    return promoteActiveApprovedReservations();
+}
+
+function stopApprovedReservationPromotionChecks() {
+    if (approvedReservationPromotionTimer) clearInterval(approvedReservationPromotionTimer);
+    approvedReservationPromotionTimer = null;
+}
+
+function getRealtimeSessionUser() {
+    try {
+        return JSON.parse(sessionStorage.getItem('user') || '{}');
+    } catch (error) {
+        return {};
+    }
+}
+
+function refreshRealtimePageInPlace(pageName, changedTable = null) {
+    const user = getRealtimeSessionUser();
+    const reservationChanged = !changedTable || ['reservations', 'reservation_items', 'chemical_usage', 'rooms', 'lab_assets', 'chemicals', 'user_info'].includes(changedTable);
+
+    if (pageName === 'student_dashboard.html') {
+        if (changedTable === 'announcement') {
+            if (typeof loadAnnouncements === 'function') loadAnnouncements();
+            return;
+        }
+        if (!changedTable && typeof loadAnnouncements === 'function') loadAnnouncements();
+        if (reservationChanged) {
+            if (typeof loadStudentData === 'function') loadStudentData();
+            if (typeof updateWeekDisplay === 'function') updateWeekDisplay();
+        }
+        return;
+    }
+
+    if (pageName === 'professor_dashboard.html') {
+        if (changedTable === 'announcement') {
+            if (typeof loadAnnouncements === 'function') loadAnnouncements();
+            return;
+        }
+        if (!changedTable && typeof loadAnnouncements === 'function') loadAnnouncements();
+        if (reservationChanged) {
+            if (typeof loadProfessorData === 'function') loadProfessorData();
+            if (typeof loadStudentRequests === 'function') loadStudentRequests();
+            if (typeof loadUpcomingReservations === 'function') loadUpcomingReservations();
+            if (typeof updateProfessorWeekDisplay === 'function') updateProfessorWeekDisplay();
+        }
+        return;
+    }
+
+    if (pageName === 'student_approvals.html' && typeof StudentApprovals !== 'undefined') return StudentApprovals.loadPendingRequests();
+    if (pageName === 'account_approvals.html' && typeof AccountApprovals !== 'undefined') return AccountApprovals.loadPendingAccounts();
+    if (pageName === 'professor_pending_approval.html' && typeof ProfessorPending !== 'undefined') return ProfessorPending.loadPendingReservations();
+    if (pageName === 'student_approved_reservation.html' && typeof ProfessorApproved !== 'undefined') return ProfessorApproved.loadApprovedReservations();
+    if (pageName === 'professor_reservation_history.html' && typeof ProfessorHistory !== 'undefined') return ProfessorHistory.loadCompletedReservations();
+    if (pageName === 'professor_my_upcoming.html' && typeof ProfessorMyUpcoming !== 'undefined' && user.id) return ProfessorMyUpcoming.loadReservations(user.id);
+    if (pageName === 'professor_unreturned.html' && typeof ProfessorUnreturned !== 'undefined') return ProfessorUnreturned.loadUnreturnedItems();
+    if (pageName === 'professor_my_unreturned.html' && typeof ProfessorMyUnreturned !== 'undefined') return ProfessorMyUnreturned.refresh();
+    if (pageName === 'student_pending.html' && typeof studentPending !== 'undefined') return studentPending.loadPendingReservations();
+    if (pageName === 'student_upcoming.html' && typeof StudentUpcoming !== 'undefined') return StudentUpcoming.init();
+    if (pageName === 'student_approved.html' && typeof studentApproved !== 'undefined') return studentApproved.loadApprovedReservations();
+    if (pageName === 'student_history.html' && typeof StudentHistory !== 'undefined' && user.id) return StudentHistory.loadReservations(user.id);
+    if (pageName === 'student_unreturned.html' && typeof StudentUnreturnedItems !== 'undefined' && user.id) return StudentUnreturnedItems.loadItems(user.id);
+    if (pageName === 'student_upcoming_reservations.html' && typeof UpcomingStudentReservations !== 'undefined') return UpcomingStudentReservations.loadReservations(user);
+
+    if (pageName === 'history_reports.html') {
+        if (typeof loadHistoryStatistics === 'function') loadHistoryStatistics();
+        const results = document.getElementById('reportResultsSection');
+        if (reservationChanged && results && results.style.display !== 'none' && typeof generateHistoryReport === 'function') generateHistoryReport();
+        return;
+    }
+    if (pageName === 'reservation_reports.html') {
+        const results = document.getElementById('reportResultsSection');
+        if (reservationChanged && results && results.style.display !== 'none' && typeof generateReport === 'function') generateReport();
+    }
+}
+
+function refreshCurrentDataPage(changedTable = null) {
+    const pagePath = window.location.pathname;
+    const pageName = pagePath.split('/').pop();
+    const watchedTables = APP_REALTIME_PAGE_TABLES[pageName];
+    if (changedTable && (!watchedTables || !watchedTables.includes(changedTable))) return;
+    const isStudentReservationForm = pageName === 'reservation_student.html';
+    const isProfessorReservationForm = pageName === 'professor_new_reservation.html';
+
+    if (isStudentReservationForm || isProfessorReservationForm) {
+        clearTimeout(appRealtimeFormRefreshTimer);
+        appRealtimeFormRefreshTimer = setTimeout(() => {
+            if (window.location.pathname !== pagePath) return;
+            if (typeof loadResources === 'function') loadResources();
+            if (typeof selectedDate !== 'undefined' && selectedDate && typeof loadTimelineForDate === 'function') {
+                loadTimelineForDate(selectedDate);
+            }
+        }, 250);
+        return;
+    }
+
+    if (pageName === 'settings.html') {
+        if (typeof profileHasUnsavedChanges === 'function' && profileHasUnsavedChanges()) return;
+        if (typeof loadUserData === 'function') loadUserData();
+        return;
+    }
+    if (!Object.prototype.hasOwnProperty.call(APP_REALTIME_PAGE_TABLES, pageName)) return;
+
+    clearTimeout(appRealtimeRefreshTimer);
+    appRealtimeRefreshTimer = setTimeout(() => {
+        if (window.location.pathname !== pagePath) return;
+        try {
+            const refresh = refreshRealtimePageInPlace(pageName, changedTable);
+            if (refresh && typeof refresh.catch === 'function') {
+                refresh.catch(error => console.error('Unable to refresh live page data:', error));
+            }
+        } catch (error) {
+            console.error('Unable to refresh live page data:', error);
+        }
+    }, 350);
+}
+
+async function startAppRealtimeUpdates() {
+    if (!window.supabase?.channel || window.__appRealtimeChannel || window.__appRealtimeStarting) return;
+    window.__appRealtimeStarting = true;
+
+    try {
+        const { data, error } = await window.supabase.auth.getSession();
+        if (error) throw error;
+        if (!data?.session || window.__appRealtimeChannel) return;
+        startApprovedReservationPromotionChecks();
+
+        let needsRefreshAfterReconnect = false;
+        let channel = window.supabase.channel('app-live-data');
+        APP_REALTIME_TABLES.forEach(table => {
+            channel = channel.on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table
+            }, payload => {
+                window.dispatchEvent(new CustomEvent('app:data-changed', {
+                    detail: { table, eventType: payload.eventType, new: payload.new, old: payload.old }
+                }));
+                if (table !== 'user_notifications') refreshCurrentDataPage(table);
+            });
+        });
+
+        window.__appRealtimeChannel = channel.subscribe(status => {
+            if (status === 'SUBSCRIBED') {
+                if (needsRefreshAfterReconnect) refreshCurrentDataPage();
+                needsRefreshAfterReconnect = false;
+            } else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
+                needsRefreshAfterReconnect = true;
+                console.warn('Live data updates are temporarily unavailable:', status);
+            }
+        });
+    } catch (error) {
+        console.warn('Unable to start live data updates:', error);
+    } finally {
+        window.__appRealtimeStarting = false;
+    }
+}
+
+window.addEventListener('focus', () => {
+    refreshCurrentDataPage();
+    if (document.visibilityState === 'visible') promoteActiveApprovedReservations();
+});
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        refreshCurrentDataPage();
+        promoteActiveApprovedReservations();
+    }
+});
 
 function renderReservationDetails(fields = [], resources = [], options = {}) {
     const escape = escapeResourceCellText;
@@ -168,8 +475,17 @@ function logout() {
 // Confirm logout
 async function confirmLogout() {
     try {
+        if (window.__appRealtimeChannel) {
+            try {
+                await window.supabase.removeChannel(window.__appRealtimeChannel);
+            } catch (channelError) {
+                console.warn('Unable to close live updates channel during logout:', channelError);
+            }
+            window.__appRealtimeChannel = null;
+        }
         const { error } = await window.supabase.auth.signOut();
         if (error) throw error;
+        stopApprovedReservationPromotionChecks();
         sessionStorage.removeItem('user');
         window.location.href = '/index.html';
     } catch (error) {
@@ -248,6 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setActiveNavLink();
     initSidebarUser();
     initializeTableLoadingStates();
+    window.__appRealtimeStartPromise = startAppRealtimeUpdates();
 });
 
 // Keep the dashboard shell mounted while navigating between dashboard pages.
@@ -291,15 +608,21 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const syncPageOverlays = documentFragment => {
-        const currentOverlays = [...document.querySelectorAll('.modal')]
+        const pagePortals = '.modal, .reservation-dialog, .floating-cart-button';
+        const currentOverlays = [...document.querySelectorAll(pagePortals)]
             .filter(overlay => overlay.id !== 'logoutModal');
         currentOverlays.forEach(overlay => overlay.remove());
 
-        documentFragment.querySelectorAll('.modal').forEach(overlay => {
+        documentFragment.querySelectorAll(pagePortals).forEach(overlay => {
             if (overlay.id !== 'logoutModal') {
                 document.body.appendChild(overlay.cloneNode(true));
             }
         });
+
+        document.body.classList.toggle(
+            'student-reservation-page',
+            documentFragment.body.classList.contains('student-reservation-page')
+        );
     };
 
     const loadPageScripts = async (documentFragment, pageUrl) => {

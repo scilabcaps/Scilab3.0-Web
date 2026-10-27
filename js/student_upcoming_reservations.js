@@ -171,7 +171,7 @@ const UpcomingStudentReservations = {
         container.className = 'pagination-container';
         container.id = 'paginationContainer';
         container.innerHTML = `
-            <div class="pagination-info" aria-live="polite">Page ${this.currentPage} of ${totalPages}</div>
+            <div class="pagination-info" aria-live="polite">Showing ${this.currentPage} of ${totalPages}</div>
             <div class="pagination-controls">
                 <button type="button" onclick="UpcomingStudentReservations.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''} aria-label="First page">&laquo; First</button>
                 <button type="button" onclick="UpcomingStudentReservations.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''} aria-label="Previous page">&lsaquo; Prev</button>

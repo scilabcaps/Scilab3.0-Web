@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="../../css/professor_new_reservation.css">
 </head>
 
-<body>
+<body class="professor-reservation-page">
 
     <div class="dashboard-container">
         <!-- Sidebar will be loaded dynamically -->
@@ -25,8 +25,8 @@
             </div>
             <div class="dashboard-content">
                 <div class="reservation-container">
-                    <div class="form-section">
-                        <h3 class="section-title">Available Resources</h3>
+                    <section class="form-section resource-browser" aria-labelledby="availableResourcesTitle">
+                        <h3 id="availableResourcesTitle" class="section-title">Available Resources</h3>
                         <div class="resource-search">
                             <label class="resource-search-label" for="resourceSearch">Search all resources</label>
                             <input id="resourceSearch" type="search" placeholder="Search rooms, chemicals, equipment, or glassware" oninput="applyResourceSearch()" autocomplete="off">
@@ -38,124 +38,157 @@
                             <button class="tab-btn" onclick="switchTab('equipment', this)">Equipment</button>
                             <button class="tab-btn" onclick="switchTab('glassware', this)">Glassware</button>
                         </div>
-                        <div id="resourceSearchResults" class="resource-grid resource-search-results" hidden></div>
+                        <div class="resource-results-viewport">
+                            <div id="resourceSearchResults" class="resource-grid resource-search-results" hidden></div>
 
-                        <div id="rooms" class="tab-content active">
-                            <div class="resource-grid" id="roomsGrid">
-                                <!-- Resources will be loaded dynamically -->
+                            <div id="rooms" class="tab-content active">
+                                <div class="resource-grid" id="roomsGrid">
+                                    <!-- Resources will be loaded dynamically -->
+                                </div>
+                                <nav id="roomsPagination" class="resource-pagination" aria-label="Laboratory rooms pages" hidden></nav>
                             </div>
-                            <nav id="roomsPagination" class="resource-pagination" aria-label="Laboratory rooms pages" hidden></nav>
-                        </div>
-                        <div id="chemicals" class="tab-content">
-                            <div class="resource-grid" id="chemicalsGrid">
-                                <!-- Resources will be loaded dynamically -->
+                            <div id="chemicals" class="tab-content">
+                                <div class="resource-grid" id="chemicalsGrid">
+                                    <!-- Resources will be loaded dynamically -->
+                                </div>
+                                <nav id="chemicalsPagination" class="resource-pagination" aria-label="Chemicals pages" hidden></nav>
                             </div>
-                            <nav id="chemicalsPagination" class="resource-pagination" aria-label="Chemicals pages" hidden></nav>
-                        </div>
-                        <div id="equipment" class="tab-content">
-                            <div class="resource-grid" id="equipmentGrid">
-                                <!-- Resources will be loaded dynamically -->
+                            <div id="equipment" class="tab-content">
+                                <div class="resource-grid" id="equipmentGrid">
+                                    <!-- Resources will be loaded dynamically -->
+                                </div>
+                                <nav id="equipmentPagination" class="resource-pagination" aria-label="Equipment pages" hidden></nav>
                             </div>
-                            <nav id="equipmentPagination" class="resource-pagination" aria-label="Equipment pages" hidden></nav>
-                        </div>
-                        <div id="glassware" class="tab-content">
-                            <div class="resource-grid" id="glasswareGrid">
-                                <!-- Resources will be loaded dynamically -->
+                            <div id="glassware" class="tab-content">
+                                <div class="resource-grid" id="glasswareGrid">
+                                    <!-- Resources will be loaded dynamically -->
+                                </div>
+                                <nav id="glasswarePagination" class="resource-pagination" aria-label="Glassware pages" hidden></nav>
                             </div>
-                            <nav id="glasswarePagination" class="resource-pagination" aria-label="Glassware pages" hidden></nav>
                         </div>
-                    </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
 
-                    <div class="cart-section">
-                        <h3 class="section-title">Reservation Cart</h3>
-                        <div id="cartItems">
-                            <div class="empty-state">
-                                <div class="empty-state-text">Your cart is empty. Add resources to get started.</div>
-                            </div>
-                        </div>
-                    </div>
+    <button id="floatingCartButton" class="floating-cart-button" type="button" aria-label="Open reservation cart, 0 resources" aria-haspopup="dialog" aria-controls="cartModal" onclick="openCartModal()">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3 3h2l2.2 11.1a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 8H6"></path>
+            <circle cx="10" cy="20" r="1.5"></circle>
+            <circle cx="18" cy="20" r="1.5"></circle>
+        </svg>
+        <span class="floating-cart-label">Cart</span>
+        <span id="cartCountBadge" class="floating-cart-badge" aria-hidden="true" hidden>0</span>
+    </button>
 
-                    <div class="form-section">
-                        <h3 class="section-title">Reservation Details</h3>
-                        <form id="reservationForm">
-                            <div class="form-row">
-                                <div class="form-group" style="flex: 0 0 auto;">
-                                    <label>Select Date *</label>
-                                    <div class="calendar-container">
-                                        <div class="calendar-header">
-                                            <button type="button" class="calendar-nav-btn" onclick="changeMonth(-1)">&lt;</button>
-                                            <h3 id="calendarMonthYear">July 2026</h3>
-                                            <button type="button" class="calendar-nav-btn" onclick="changeMonth(1)">&gt;</button>
-                                        </div>
-                                        <div class="calendar-grid">
-                                            <div class="calendar-day-header">Sun</div>
-                                            <div class="calendar-day-header">Mon</div>
-                                            <div class="calendar-day-header">Tue</div>
-                                            <div class="calendar-day-header">Wed</div>
-                                            <div class="calendar-day-header">Thu</div>
-                                            <div class="calendar-day-header">Fri</div>
-                                            <div class="calendar-day-header">Sat</div>
-                                        </div>
-                                        <div class="calendar-grid" id="calendarDays"></div>
-                                    </div>
-                                    <input type="hidden" id="date" name="date" required>
-                                </div>
-                                <div class="form-group" style="flex: 1; margin-left: 20px;">
-                                    <label>Select Time *</label>
-                                    <div class="timeline-container" id="timelineContainer">
-                                        <div class="timeline-header">
-                                            <h4 id="timelineDate">Select a date to view availability</h4>
-                                            <p>Click on the timeline to select your start and end time</p>
-                                        </div>
-                                        <div class="timeline-wrapper hidden" id="timelineWrapper">
-                                            <div class="timeline-grid">
-                                                <div class="timeline-time-labels" id="timelineTimeLabels"></div>
-                                                <div class="timeline-slots" id="timelineSlots"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <input type="hidden" id="startTime" name="startTime" required>
-                                    <input type="hidden" id="endTime" name="endTime" required>
-                                </div>
-                            </div>
-                            <div class="selection-info hidden" id="selectionInfo">
-                                <h5>Selected Time Range</h5>
-                                <p class="time-display" id="selectedTimeDisplay">--:-- - --:--</p>
-                                <p id="selectionDuration">Duration: 0 hours</p>
-                                <div class="selection-actions">
-                                    <button class="btn-clear" onclick="clearTimeSelection()">Clear</button>
-                                </div>
-                            </div>
-                            <div id="availabilityStatus" class="availability-status"></div>
-                            <div id="existingReservations" class="existing-reservations"></div>
-                            <div class="form-group">
-                                <label for="additionalNote">Additional Note (Optional)</label>
-                                <textarea id="additionalNote" name="additionalNote" rows="4"
-                                    placeholder="Any additional information..."></textarea>
-                            </div>
-                            <button type="submit" class="submit-btn">Submit Reservation</button>
-                        </form>
+    <dialog id="cartModal" class="reservation-dialog cart-dialog" aria-labelledby="cartModalTitle">
+        <div class="modal-content cart-dialog-content">
+            <div class="modal-header">
+                <h2 id="cartModalTitle" class="modal-title">Reservation Cart</h2>
+                <button class="modal-close" type="button" aria-label="Close cart" onclick="closeModal('cartModal')">&times;</button>
+            </div>
+            <div class="modal-body cart-dialog-body">
+                <div id="cartItems">
+                    <div class="empty-state">
+                        <div class="empty-state-text">Your cart is empty. Add resources to get started.</div>
                     </div>
                 </div>
             </div>
-    </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" type="button" onclick="closeModal('cartModal')">Continue browsing</button>
+                <button id="chooseScheduleButton" class="btn-confirm" type="button" onclick="openReservationDetailsModal()" disabled>Choose date &amp; time</button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="reservationDetailsModal" class="reservation-dialog schedule-dialog" aria-labelledby="reservationDetailsTitle">
+        <div class="modal-content schedule-dialog-content">
+            <div class="modal-header">
+                <h2 id="reservationDetailsTitle" class="modal-title">Reservation Details</h2>
+                <button class="modal-close" type="button" aria-label="Close reservation details" onclick="closeModal('reservationDetailsModal')">&times;</button>
+            </div>
+            <form id="reservationForm" class="schedule-reservation-form">
+                <div class="modal-body schedule-dialog-body">
+                    <div class="form-row">
+                        <div class="form-group date-form-group">
+                            <label>Select Date *</label>
+                            <div class="calendar-container">
+                                <div class="calendar-header">
+                                    <button type="button" class="calendar-nav-btn" onclick="changeMonth(-1)" aria-label="Previous month">&lt;</button>
+                                    <h3 id="calendarMonthYear">July 2026</h3>
+                                    <button type="button" class="calendar-nav-btn" onclick="changeMonth(1)" aria-label="Next month">&gt;</button>
+                                </div>
+                                <div class="calendar-grid">
+                                    <div class="calendar-day-header">Sun</div>
+                                    <div class="calendar-day-header">Mon</div>
+                                    <div class="calendar-day-header">Tue</div>
+                                    <div class="calendar-day-header">Wed</div>
+                                    <div class="calendar-day-header">Thu</div>
+                                    <div class="calendar-day-header">Fri</div>
+                                    <div class="calendar-day-header">Sat</div>
+                                </div>
+                                <div class="calendar-grid" id="calendarDays"></div>
+                            </div>
+                            <input type="hidden" id="date" name="date" required>
+                        </div>
+                        <div class="form-group time-form-group">
+                            <label>Select Time *</label>
+                            <div class="timeline-container" id="timelineContainer">
+                                <div class="timeline-header">
+                                    <h4 id="timelineDate">Select a date to view availability</h4>
+                                    <p>Click on the timeline to select your start and end time</p>
+                                </div>
+                                <div class="timeline-wrapper hidden" id="timelineWrapper">
+                                    <div class="timeline-grid">
+                                        <div class="timeline-time-labels" id="timelineTimeLabels"></div>
+                                        <div class="timeline-slots" id="timelineSlots"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="startTime" name="startTime" required>
+                            <input type="hidden" id="endTime" name="endTime" required>
+                        </div>
+                    </div>
+                    <div class="selection-info hidden" id="selectionInfo">
+                        <h5>Selected Time Range</h5>
+                        <p class="time-display" id="selectedTimeDisplay">--:-- - --:--</p>
+                        <p id="selectionDuration">Duration: 0 hours</p>
+                        <div class="selection-actions">
+                            <button class="btn-clear" type="button" onclick="clearTimeSelection()">Clear</button>
+                        </div>
+                    </div>
+                    <div id="availabilityStatus" class="availability-status" aria-live="polite"></div>
+                    <div id="existingReservations" class="existing-reservations"></div>
+                    <div class="form-group additional-note-group">
+                        <label for="additionalNote">Additional Note (Optional)</label>
+                        <textarea id="additionalNote" name="additionalNote" rows="3" placeholder="Any additional information..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer schedule-dialog-footer">
+                    <button class="btn-cancel" type="button" onclick="returnToCartModal()">Back to cart</button>
+                    <button type="submit" class="submit-btn">Review Reservation</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
 
     <!-- Summary Modal -->
-    <div id="summaryModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="summaryModalTitle">
+    <dialog id="summaryModal" class="reservation-dialog summary-dialog" aria-labelledby="summaryModalTitle">
         <div class="modal-content reservation-dialog-content">
             <div class="modal-header">
                 <h2 id="summaryModalTitle" class="modal-title">Review Reservation</h2>
-                <button class="modal-close" type="button" aria-label="Close" onclick="closeModal('summaryModal')">&times;</button>
+                <button class="modal-close" type="button" aria-label="Close" onclick="returnToScheduleFromReview()">&times;</button>
             </div>
             <div class="modal-body" id="summaryContent">
                 <!-- Summary will be populated here -->
             </div>
             <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('summaryModal')">Cancel</button>
-                <button class="btn-confirm" onclick="confirmReservation()">Confirm</button>
+                <button class="btn-cancel" type="button" onclick="returnToScheduleFromReview()">Cancel</button>
+                <button id="confirmReservationButton" class="btn-confirm" type="button" onclick="confirmReservation()">Confirm</button>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <!-- Stock Availability Modal -->
     <div id="stockModal" class="modal">
@@ -182,11 +215,6 @@
     <script src="../../js/snackbar.js"></script>
     <script>
         let cart = [];
-        let reservationsCache = {
-            data: null,
-            date: null,
-            roomId: null
-        };
         let pendingStockItem = null; // Store item info for stock modal
         let earliestAvailableTime = null; // Store earliest available time for selected date
 
@@ -196,8 +224,11 @@
         let selectedStartTime = null;
         let selectedEndTime = null;
         let existingReservationsForDay = [];
+        let reservationSubmissionInProgress = false;
 
         window.addEventListener('DOMContentLoaded', function () {
+            setupReservationDialogs();
+            updateCart();
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
             if (user.username && user.role === 'Professor') {
                 loadResources();
@@ -1101,16 +1132,24 @@
             if (type === 'Laboratory Room' && selectedDate) {
                 loadTimelineForDate(selectedDate);
             }
-            // Clear cache for equipment/chemical checking
-            if (type === 'Laboratory Room' || 
-                type.toLowerCase() === 'equipment' || 
-                type.toLowerCase() === 'glassware') {
-                reservationsCache = { data: null, date: null, roomId: null };
-            }
         }
 
         function updateCart() {
             const cartItems = document.getElementById('cartItems');
+            const cartCount = cart.length;
+            const cartBadge = document.getElementById('cartCountBadge');
+            const cartButton = document.getElementById('floatingCartButton');
+            const scheduleButton = document.getElementById('chooseScheduleButton');
+            if (cartBadge) {
+                cartBadge.textContent = cartCount > 99 ? '99+' : String(cartCount);
+                cartBadge.hidden = cartCount === 0;
+            }
+            if (cartButton) {
+                const resourceLabel = cartCount === 1 ? 'resource' : 'resources';
+                cartButton.setAttribute('aria-label', `Open reservation cart, ${cartCount} ${resourceLabel}`);
+            }
+            if (scheduleButton) scheduleButton.disabled = cartCount === 0;
+
             if (cart.length === 0) {
                 cartItems.innerHTML = '<div class="empty-state"><div class="empty-state-text">Your cart is empty. Add resources to get started.</div></div>';
                 return;
@@ -1135,6 +1174,56 @@
                     <button class="remove-item-btn" onclick="removeFromCart(${index})">Remove</button>
                 </div>
             `).join('');
+        }
+
+        function setupReservationDialogs() {
+            ['cartModal', 'reservationDetailsModal', 'summaryModal'].forEach(dialogId => {
+                const dialog = document.getElementById(dialogId);
+                if (dialog) {
+                    dialog.addEventListener('click', event => {
+                        if (event.target === dialog) closeModal(dialogId);
+                    });
+                }
+            });
+        }
+
+        function openCartModal() {
+            updateCart();
+            const dialog = document.getElementById('cartModal');
+            if (dialog && !dialog.open) dialog.showModal();
+        }
+
+        function openReservationDetailsModal(dateToSelect = null) {
+            if (cart.length === 0) {
+                showWarningSnackbar('Add at least one resource before choosing a reservation time.');
+                return;
+            }
+
+            closeModal('cartModal');
+            const dialog = document.getElementById('reservationDetailsModal');
+            if (dialog && !dialog.open) {
+                dialog.showModal();
+                if (dateToSelect) selectDate(dateToSelect);
+                else if (!selectedDate) selectDate(getNextBookableDate());
+            } else if (dialog?.open && dateToSelect) {
+                selectDate(dateToSelect);
+            }
+        }
+
+        function getNextBookableDate() {
+            const date = new Date();
+            date.setHours(0, 0, 0, 0);
+            while (date.getDay() === 0 || date.getDay() === 6) date.setDate(date.getDate() + 1);
+            return formatDateForInput(date);
+        }
+
+        function returnToCartModal() {
+            closeModal('reservationDetailsModal');
+            openCartModal();
+        }
+
+        function returnToScheduleFromReview() {
+            closeModal('summaryModal');
         }
 
         function updateChemicalQuantity(index, value) {
@@ -1177,12 +1266,6 @@
             // Refresh timeline if a room was removed
             if (removedItem.type === 'Laboratory Room' && selectedDate) {
                 loadTimelineForDate(selectedDate);
-            }
-            // Clear cache for equipment/chemical checking
-            if (removedItem.type === 'Laboratory Room' || 
-                removedItem.type.toLowerCase() === 'equipment' || 
-                removedItem.type.toLowerCase() === 'glassware') {
-                reservationsCache = { data: null, date: null, roomId: null };
             }
         }
 
@@ -1375,12 +1458,7 @@
             // Add item to cart
             addToCart(pendingStockItem.id, pendingStockItem.name, pendingStockItem.type, 1);
             
-            // Select the date in calendar
-            selectDate(date);
-            
-            // Scroll to calendar
-            document.querySelector('.calendar-container').scrollIntoView({ behavior: 'smooth' });
-            
+            openReservationDetailsModal(date);
             showSuccessSnackbar(`Date selected for ${pendingStockItem.name}. Please select a time slot.`);
             
             pendingStockItem = null;
@@ -1393,10 +1471,18 @@
                 return;
             }
 
+            const date = document.getElementById('date').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            if (!date || !startTime || !endTime) {
+                showWarningSnackbar('Please select a date and time range');
+                return;
+            }
+
             const formData = {
-                date: document.getElementById('date').value,
-                startTime: document.getElementById('startTime').value,
-                endTime: document.getElementById('endTime').value,
+                date,
+                startTime,
+                endTime,
                 additionalNote: document.getElementById('additionalNote').value
             };
 
@@ -1419,10 +1505,35 @@
                 { label: 'Date', value: formData.date },
                 { label: 'Time', value: `${formData.startTime} - ${formData.endTime}` }
             ], resources, { note: formData.additionalNote });
-            document.getElementById('summaryModal').style.display = 'block';
+            const summaryDialog = document.getElementById('summaryModal');
+            if (!summaryDialog.open) summaryDialog.showModal();
         }
 
         async function confirmReservation() {
+            if (reservationSubmissionInProgress) return;
+
+            reservationSubmissionInProgress = true;
+            const confirmButton = document.getElementById('confirmReservationButton');
+            const originalButtonContent = confirmButton?.innerHTML;
+            if (confirmButton) {
+                confirmButton.disabled = true;
+                confirmButton.setAttribute('aria-busy', 'true');
+                confirmButton.innerHTML = '<span class="reservation-submit-spinner" aria-hidden="true"></span><span>Submitting…</span>';
+            }
+
+            try {
+                await submitReservation();
+            } finally {
+                reservationSubmissionInProgress = false;
+                if (confirmButton?.isConnected) {
+                    confirmButton.disabled = false;
+                    confirmButton.removeAttribute('aria-busy');
+                    confirmButton.innerHTML = originalButtonContent || 'Confirm';
+                }
+            }
+        }
+
+        async function submitReservation() {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
             const professorName = user.firstname + ' ' + user.lastname;
             const userId = user.user_id || user.id;
@@ -1435,7 +1546,7 @@
             const reservationDate = new Date(`${date}T00:00:00`);
             if (reservationDate.getDay() === 0 || reservationDate.getDay() === 6) {
                 showErrorSnackbar('Reservations are not available on Saturdays or Sundays');
-                closeModal('summaryModal');
+                returnToScheduleFromReview();
                 return;
             }
 
@@ -1444,7 +1555,7 @@
             const roomItems = cart.filter(item => item.type === 'Laboratory Room');
             if (roomItems.length > 1) {
                 showErrorSnackbar('Only one room can be included in a reservation.');
-                closeModal('summaryModal');
+                returnToScheduleFromReview();
                 return;
             }
             const equipmentItems = cart.filter(item => item.type.toLowerCase() === 'equipment');
@@ -1499,7 +1610,7 @@
 
                 if (hasConflict) {
                     showErrorSnackbar('Conflict detected: This room is already reserved for the selected time slot. Please choose a different time or room.');
-                    closeModal('summaryModal');
+                    returnToScheduleFromReview();
                     return;
                 }
             }
@@ -1580,6 +1691,7 @@
                 updateCart();
                 document.getElementById('reservationForm').reset();
                 closeModal('summaryModal');
+                closeModal('reservationDetailsModal');
                 
                 // Refresh the resource display after submission. Inventory is deducted by admin approval.
                 await loadResources();
@@ -1591,7 +1703,13 @@
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            if (modal instanceof HTMLDialogElement) {
+                if (modal.open) modal.close();
+                return;
+            }
+            modal.style.display = 'none';
         }
     </script>
 </main>

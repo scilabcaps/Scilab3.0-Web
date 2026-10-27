@@ -127,6 +127,15 @@ function initUserNotifications(wrapper) {
     const markAll = wrapper.querySelector('.notifications-mark-all');
     let recipientId = null;
     let notifications = [];
+    let notificationRefreshTimer = null;
+
+    window.addEventListener('app:data-changed', event => {
+        if (event.detail?.table !== 'user_notifications') return;
+        const notification = event.detail.new || event.detail.old;
+        if (recipientId && notification?.recipient_user_id !== recipientId) return;
+        clearTimeout(notificationRefreshTimer);
+        notificationRefreshTimer = setTimeout(loadNotifications, 150);
+    });
 
     const updateBadge = () => {
         const unread = notifications.filter(notification => !notification.is_read).length;

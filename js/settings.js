@@ -3,6 +3,13 @@
 let originalProfileFirstName = '';
 let originalProfileLastName = '';
 
+function profileHasUnsavedChanges() {
+    const firstNameInput = document.getElementById('firstName');
+    const lastNameInput = document.getElementById('lastName');
+    return Boolean(firstNameInput && firstNameInput.value !== originalProfileFirstName)
+        || Boolean(lastNameInput && lastNameInput.value !== originalProfileLastName);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Load user data and initialize forms
     loadUserData();
