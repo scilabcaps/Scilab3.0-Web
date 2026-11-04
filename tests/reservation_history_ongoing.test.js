@@ -10,17 +10,31 @@ function loadPageScript(file) {
     return fs.readFileSync(path.join(__dirname, '..', 'js', file), 'utf8');
 }
 
-test('student and professor history include approved work and label it Upcoming', () => {
-    const states = "['Approved', 'Ongoing', 'Partially Returned', 'Unreturned', 'Completed', 'Cancelled', 'Declined']";
+test('history shows Pending until both approvals are complete', () => {
+    const states = "['Pending', 'Approved', 'Ongoing', 'Partially Returned', 'Unreturned', 'Completed', 'Cancelled', 'Declined']";
+    const professorStates = "['Approved', 'Ongoing', 'Partially Returned', 'Unreturned', 'Completed', 'Cancelled', 'Declined']";
     const student = loadPageScript('student_history.js');
     const professor = loadPageScript('professor_history.js');
 
     assert.ok(student.includes(`.in('status', ${states})`));
-    assert.ok(professor.includes(`.in('status', ${states})`));
+    assert.ok(professor.includes(`.in('status', ${professorStates})`));
+    assert.match(student, /reservation\?\.professor_approval === 'Pending' \|\| reservation\?\.admin_approval === 'Pending'/);
     assert.match(student, /status === 'Approved'[\s\S]*?return 'Upcoming'/);
     assert.match(student, /'Unreturned': '#e74c3c'/);
-    assert.match(professor, /res\.status === 'Approved' \? 'Upcoming' : res\.status/);
+    assert.match(professor, /res\.status === 'Approved'[\s\S]*?res\.professor_approval === 'Pending' \|\| res\.admin_approval === 'Pending'[\s\S]*?'Pending' : 'Upcoming'/);
     assert.match(professor, /res\.status === 'Declined' \|\| res\.status === 'Unreturned'/);
+});
+
+test('student history display status respects pending approvals even when overall status is Approved', () => {
+    const source = loadPageScript('student_history.js');
+    const context = vm.createContext({ window: { addEventListener() {} } });
+    vm.runInContext(source, context);
+    const display = vm.runInContext('StudentHistory.getStatusDisplayText', context);
+
+    assert.equal(display({ status: 'Pending', professor_approval: 'Pending', admin_approval: 'Pending' }), 'Pending');
+    assert.equal(display({ status: 'Approved', professor_approval: 'Approved', admin_approval: 'Pending' }), 'Pending');
+    assert.equal(display({ status: 'Approved', professor_approval: 'Approved', admin_approval: 'Approved' }), 'Upcoming');
+    assert.equal(display({ status: 'Ongoing', professor_approval: 'Approved', admin_approval: 'Approved' }), 'Ongoing');
 });
 
 test('only fully approved reservations active now in Manila are promoted to Ongoing', async () => {

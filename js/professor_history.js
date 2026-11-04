@@ -91,7 +91,9 @@ const ProfessorHistory = {
 
         tbody.innerHTML = pageData.map(res => {
             let statusColor = '#119822';
-            if (res.status === 'Approved' || res.status === 'Ongoing' || res.status === 'Partially Returned') {
+            if (res.status === 'Approved' && (res.professor_approval === 'Pending' || res.admin_approval === 'Pending')) {
+                statusColor = '#f59e0b';
+            } else if (res.status === 'Approved' || res.status === 'Ongoing' || res.status === 'Partially Returned') {
                 statusColor = '#119822';
             } else if (res.status === 'Rejected' || res.status === 'Declined' || res.status === 'Unreturned') {
                 statusColor = '#dc2626';
@@ -125,6 +127,9 @@ const ProfessorHistory = {
             });
 
             const resourcesDisplay = formatResourceCell(resources, 'No resources specified');
+            const statusText = res.status === 'Approved'
+                ? (res.professor_approval === 'Pending' || res.admin_approval === 'Pending' ? 'Pending' : 'Upcoming')
+                : res.status;
 
             return `
                 <tr>
@@ -132,7 +137,7 @@ const ProfessorHistory = {
                     <td>${res.start_time} - ${res.end_time}</td>
                     <td>${resourcesDisplay}</td>
                     <td>${res.additional_note || 'N/A'}</td>
-                    <td><span style="color: ${statusColor}; font-weight: 600;">${res.status === 'Approved' ? 'Upcoming' : res.status}</span></td>
+                    <td><span style="color: ${statusColor}; font-weight: 600;">${statusText}</span></td>
                     <td>
                         <button class="btn btn-view" onclick="ProfessorHistory.viewDetails(${res.reservation_id})">View</button>
                     </td>

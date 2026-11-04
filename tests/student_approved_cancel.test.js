@@ -132,3 +132,19 @@ test('SQL RPC locks owner reservation and marks approvals and status cancelled',
     assert.match(sql, /admin_approval\s*=\s*'Cancelled'/);
     assert.match(sql, /status\s*=\s*'Cancelled'/);
 });
+
+test('student and professor cancellation restore deducted stock once', () => {
+    const sql = fs.readFileSync(path.join(__dirname, '..', 'database', 'migrations', '20261104_restore_inventory_on_cancellation.sql'), 'utf8');
+    const professorRpc = sql.split('CREATE OR REPLACE FUNCTION public.professor_cancel_own_approved_reservation')[1]
+        .split('CREATE OR REPLACE FUNCTION public.student_cancel_approved_reservation')[0];
+    const studentRpc = sql.split('CREATE OR REPLACE FUNCTION public.student_cancel_approved_reservation')[1];
+
+    for (const rpc of [professorRpc, studentRpc]) {
+        assert.match(rpc, /reservation_row\.inventory_deducted IS TRUE/);
+        assert.match(rpc, /SUM\(quantity_borrowed\)::integer/);
+        assert.match(rpc, /SUM\(quantity_used\)/);
+        assert.match(rpc, /inventory_deducted\s*=\s*false/);
+        assert.match(rpc, /status\s*=\s*'Cancelled'/);
+        assert.match(rpc, /FOR UPDATE/);
+    }
+});

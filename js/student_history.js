@@ -51,9 +51,10 @@ const StudentHistory = {
     /**
      * Get display text for status
      */
-    getStatusDisplayText(status) {
-        if (status === 'Pending') {
-            return 'Pending for return';
+    getStatusDisplayText(reservation) {
+        const status = typeof reservation === 'string' ? reservation : reservation?.status;
+        if (status === 'Pending' || reservation?.professor_approval === 'Pending' || reservation?.admin_approval === 'Pending') {
+            return 'Pending';
         }
         if (status === 'Approved') {
             return 'Upcoming';
@@ -83,7 +84,7 @@ const StudentHistory = {
                     )
                 `)
                 .eq('user_id', userId)
-                .in('status', ['Approved', 'Ongoing', 'Partially Returned', 'Unreturned', 'Completed', 'Cancelled', 'Declined'])
+                .in('status', ['Pending', 'Approved', 'Ongoing', 'Partially Returned', 'Unreturned', 'Completed', 'Cancelled', 'Declined'])
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -121,7 +122,7 @@ const StudentHistory = {
 
         tbody.innerHTML = pageData.map(res => {
             const statusColor = this.getStatusColor(res.status);
-            const statusText = this.getStatusDisplayText(res.status);
+            const statusText = this.getStatusDisplayText(res);
             return `
                 <tr>
                     <td>${this.escapeHtml(res.reservation_date || 'N/A')}</td>
@@ -228,7 +229,7 @@ const StudentHistory = {
             { label: 'Year & Section', value: reservation.year_section || 'N/A' },
             { label: 'Course', value: reservation.course || 'N/A' },
             { label: 'Professor', value: reservation.professor || 'N/A' },
-            { label: 'Status', value: this.getStatusDisplayText(reservation.status || 'N/A') }
+            { label: 'Status', value: this.getStatusDisplayText(reservation) }
         ], resources, { note: reservation.additional_note }));
     },
 
