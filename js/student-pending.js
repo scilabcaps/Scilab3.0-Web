@@ -32,7 +32,7 @@ class StudentPendingReservations {
             this.loadPendingReservations();
             this.setupModalListeners();
         } else {
-            window.location.href = '../../index.html';
+            window.location.href = '/login';
         }
     }
 

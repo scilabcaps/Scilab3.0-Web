@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 setButtonLoading('verifyOtpBtn', false);
                 showSuccessSnackbar('Account created successfully! Redirecting to login...');
                 setTimeout(() => {
-                    window.location.href = '../../index.html';
+                    window.location.href = '/login';
                 }, 2000);
             } catch (err) {
                 setButtonLoading('verifyOtpBtn', false);

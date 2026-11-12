@@ -25,7 +25,7 @@ const StudentHistory = {
             this.reservationModal.closeBtn?.addEventListener('click', () => this.reservationModal.close());
             this.loadReservations(user.id);
         } else {
-            window.location.href = '../../index.html';
+            window.location.href = '/login';
         }
     },
 
