@@ -21,20 +21,31 @@ test('history shows Pending until both approvals are complete', () => {
     assert.match(student, /reservation\?\.professor_approval === 'Pending' \|\| reservation\?\.admin_approval === 'Pending'/);
     assert.match(student, /status === 'Approved'[\s\S]*?return 'Upcoming'/);
     assert.match(student, /'Unreturned': '#e74c3c'/);
-    assert.match(professor, /res\.status === 'Approved'[\s\S]*?res\.professor_approval === 'Pending' \|\| res\.admin_approval === 'Pending'[\s\S]*?'Pending' : 'Upcoming'/);
+    assert.match(professor, /status === 'Approved'[\s\S]*?professor_approval === 'Pending' \|\| .*?admin_approval === 'Pending'[\s\S]*?'Pending' : 'Upcoming'/);
     assert.match(professor, /res\.status === 'Declined' \|\| res\.status === 'Unreturned'/);
 });
 
-test('student history display status respects pending approvals even when overall status is Approved', () => {
-    const source = loadPageScript('student_history.js');
-    const context = vm.createContext({ window: { addEventListener() {} } });
-    vm.runInContext(source, context);
-    const display = vm.runInContext('StudentHistory.getStatusDisplayText', context);
+test('student and professor history display status respects pending approvals even when overall status is Approved', () => {
+    const studentSource = loadPageScript('student_history.js');
+    const studentContext = vm.createContext({ window: { addEventListener() {} } });
+    vm.runInContext(studentSource, studentContext);
+    const studentDisplay = vm.runInContext('StudentHistory.getStatusDisplayText', studentContext);
 
-    assert.equal(display({ status: 'Pending', professor_approval: 'Pending', admin_approval: 'Pending' }), 'Pending');
-    assert.equal(display({ status: 'Approved', professor_approval: 'Approved', admin_approval: 'Pending' }), 'Pending');
-    assert.equal(display({ status: 'Approved', professor_approval: 'Approved', admin_approval: 'Approved' }), 'Upcoming');
-    assert.equal(display({ status: 'Ongoing', professor_approval: 'Approved', admin_approval: 'Approved' }), 'Ongoing');
+    assert.equal(studentDisplay({ status: 'Pending', professor_approval: 'Pending', admin_approval: 'Pending' }), 'Pending');
+    assert.equal(studentDisplay({ status: 'Approved', professor_approval: 'Approved', admin_approval: 'Pending' }), 'Pending');
+    assert.equal(studentDisplay({ status: 'Approved', professor_approval: 'Approved', admin_approval: 'Approved' }), 'Upcoming');
+    assert.equal(studentDisplay({ status: 'Ongoing', professor_approval: 'Approved', admin_approval: 'Approved' }), 'Ongoing');
+
+    const profSource = loadPageScript('professor_history.js');
+    const profContext = vm.createContext({ window: { addEventListener() {} } });
+    vm.runInContext(profSource, profContext);
+    const profDisplay = vm.runInContext('ProfessorHistory.getStatusDisplayText', profContext);
+
+    assert.equal(profDisplay({ status: 'Pending', professor_approval: 'Pending', admin_approval: 'Pending' }), 'Pending');
+    assert.equal(profDisplay({ status: 'Approved', professor_approval: 'Approved', admin_approval: 'Pending' }), 'Pending');
+    assert.equal(profDisplay({ status: 'Approved', professor_approval: 'Pending', admin_approval: 'Approved' }), 'Pending');
+    assert.equal(profDisplay({ status: 'Approved', professor_approval: 'Approved', admin_approval: 'Approved' }), 'Upcoming');
+    assert.equal(profDisplay({ status: 'Ongoing', professor_approval: 'Approved', admin_approval: 'Approved' }), 'Ongoing');
 });
 
 test('only fully approved reservations active now in Manila are promoted to Ongoing', async () => {

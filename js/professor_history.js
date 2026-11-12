@@ -9,6 +9,16 @@ const ProfessorHistory = {
     pageSize: 10,
     reservationModal: null,
 
+    getStatusDisplayText(reservation) {
+        const status = typeof reservation === 'string' ? reservation : reservation?.status;
+        if (status === 'Approved') {
+            return (reservation?.professor_approval === 'Pending' || reservation?.admin_approval === 'Pending')
+                ? 'Pending'
+                : 'Upcoming';
+        }
+        return status;
+    },
+
     init() {
         if (!window.location.pathname.endsWith('/professor_reservation_history.html')) return;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -127,9 +137,7 @@ const ProfessorHistory = {
             });
 
             const resourcesDisplay = formatResourceCell(resources, 'No resources specified');
-            const statusText = res.status === 'Approved'
-                ? (res.professor_approval === 'Pending' || res.admin_approval === 'Pending' ? 'Pending' : 'Upcoming')
-                : res.status;
+            const statusText = this.getStatusDisplayText(res);
 
             return `
                 <tr>
@@ -239,7 +247,7 @@ const ProfessorHistory = {
                 { label: 'Reservation ID', value: reservation.reservation_id },
                 { label: 'Date', value: reservation.reservation_date },
                 { label: 'Time', value: `${reservation.start_time} - ${reservation.end_time}` },
-                { label: 'Status', value: reservation.status },
+                { label: 'Status', value: this.getStatusDisplayText(reservation) },
                 { label: 'Created At', value: reservation.created_at ? new Date(reservation.created_at).toLocaleString() : 'N/A' }
             ], resources, { note: reservation.additional_note });
 
