@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <script src="/js/route-map.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Professor Dashboard - Scilab 3.0 - Science Laboratory Reservation System</title>
@@ -1064,19 +1065,19 @@
                 <div class="quick-actions-section">
                     <h2 class="section-title">Quick Actions</h2>
                     <div class="quick-actions-grid">
-                        <a href="professor_new_reservation.html" class="quick-action-btn">
+                        <a href="/professor/reservation" class="quick-action-btn">
                             <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a2 2 0 0 1 2 2v6h6a2 2 0 1 1 0 4h-6v6a2 2 0 1 1-4 0v-6H4a2 2 0 1 1 0-4h6V4a2 2 0 0 1 2-2Z"/></svg></div>
                             <span>Reserve Laboratory</span>
                         </a>
-                        <a href="professor_new_reservation.html" class="quick-action-btn">
+                        <a href="/professor/reservation" class="quick-action-btn">
                             <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 2h6v2h-1v5.59l5.7 8.55A2 2 0 0 1 18 21H6a2 2 0 0 1-1.7-2.86L10 9.59V4H9V2Zm3 9-5 8h10l-5-8Zm-1-7v6h2V4h-2Z"/></svg></div>
                             <span>Reserve Equipment</span>
                         </a>
-                        <a href="student_approvals.html" class="quick-action-btn">
+                        <a href="/professor/student-approvals" class="quick-action-btn">
                             <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 5v4.59l3.2 3.2-1.4 1.42L11 12.41V7h2Zm-1 14a9 9 0 1 1 9-9 9 9 0 0 1-9 9Z"/></svg></div>
                             <span>Manage Requests</span>
                         </a>
-                        <a href="professor_reservation_history.html" class="quick-action-btn">
+                        <a href="/professor/history" class="quick-action-btn">
                             <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm2 4v2h8V6H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></div>
                             <span>Reservation History</span>
                         </a>
@@ -1467,7 +1468,7 @@
             if (requests.length > 3) {
                 html += `
                     <div style="text-align: center; padding: 16px;">
-                        <a href="student_approvals.html" style="color: #31CB00; text-decoration: none; font-weight: 500;">
+                        <a href="/professor/student-approvals" style="color: #31CB00; text-decoration: none; font-weight: 500;">
                             View ${requests.length - 3} more requests →
                         </a>
                     </div>

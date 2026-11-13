@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showErrorSnackbar('Session expired. Please request a new OTP code.');
                 setButtonLoading(submitBtn, false);
                 setTimeout(() => {
-                    window.location.href = 'forgot-password.html';
+                    window.location.href = '/forgot-password';
                 }, 2000);
                 return;
             }

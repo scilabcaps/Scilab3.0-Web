@@ -10,7 +10,7 @@ const StudentApprovals = {
     loadPromise: null,
 
     init() {
-        if (!window.location.pathname.endsWith('/student_approvals.html')) return;
+        if (!scilabPagePath().endsWith('/student_approvals.html')) return;
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (user.username && String(user.role || '').toLowerCase() === 'professor') {
             if (!this.loadPromise) {

@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Redirect to reset password page
                 setTimeout(() => {
-                    window.location.href = 'reset-password.html';
+                    window.location.href = '/reset-password';
                 }, 1500);
             } catch (err) {
                 setButtonLoading('verifyOtpBtn', false);

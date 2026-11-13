@@ -297,7 +297,7 @@
         function quickReserve(assetId) {
             // Pre-fill reservation form with this item
             sessionStorage.setItem('preselectedItem', assetId);
-            window.location.href = 'reservation_student.html';
+            window.location.href = '/student/reservation';
         }
 
         // Load user data and validate session
