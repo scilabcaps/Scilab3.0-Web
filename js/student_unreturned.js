@@ -7,7 +7,7 @@ const StudentUnreturnedItems = {
     async init() {
         const sessionUser = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (String(sessionUser.role || '').toLowerCase() !== 'student') {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
             return;
         }
 

@@ -16,7 +16,7 @@ const ProfessorPending = {
         if (user.username && String(user.role || '').toLowerCase() === 'professor') {
             this.loadPendingReservations();
         } else {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
         }
     },
 

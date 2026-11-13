@@ -19,7 +19,7 @@ const StudentApprovals = {
                 });
             }
         } else {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
         }
 
     },

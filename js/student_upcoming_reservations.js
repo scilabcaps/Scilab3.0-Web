@@ -17,7 +17,7 @@ const UpcomingStudentReservations = {
         }
 
         if (!user.username || user.role !== 'Professor') {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
             return;
         }
 

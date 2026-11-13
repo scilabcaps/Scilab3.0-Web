@@ -487,7 +487,7 @@ async function confirmLogout() {
         if (error) throw error;
         stopApprovedReservationPromotionChecks();
         sessionStorage.removeItem('user');
-        window.location.href = '/login';
+        window.location.href = '/index.html';
     } catch (error) {
         console.error('Logout failed:', error);
         alert('Unable to log out. Please try again.');
@@ -768,9 +768,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Redirect based on role
                 if (userData.role === 'Professor') {
-                    window.location.href = '/professor/dashboard';
+                    window.location.href = '/pages/professor/professor_dashboard.html';
                 } else {
-                    window.location.href = '/student/dashboard';
+                    window.location.href = '/pages/student/student_dashboard.html';
                 }
             } catch (error) {
                 console.error('Login error:', error);
@@ -830,7 +830,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (userError) throw userError;
                 
                 alert('Account created successfully! Please login.');
-                window.location.href = '/login';
+                window.location.href = '../index.html';
             } catch (error) {
                 console.error('Signup error:', error);
                 const errorMsg = document.getElementById('errorMessage');

@@ -40,7 +40,7 @@ const ProfessorUnreturned = {
             this.reservationModal.modalBody.addEventListener('click', closeReservationModal);
             this.loadUnreturnedItems();
         } else {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
         }
     },
 

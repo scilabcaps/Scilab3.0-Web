@@ -309,7 +309,7 @@
                 const fullName = firstName + ' ' + lastName;
                 document.getElementById('studentName').textContent = fullName;
             } else {
-                window.location.href = '/login';
+                window.location.href = '../../index.html';
             }
         }
 

@@ -40,7 +40,7 @@ class StudentApprovedReservations {
             this.loadUserInfo();
             this.loadApprovedReservations();
         } else {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
         }
     }
 

@@ -9,13 +9,13 @@ const StudentUpcoming = {
         }
 
         if (String(sessionUser.role || '').toLowerCase() !== 'student') {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
             return;
         }
 
         const { user, transient } = await getCurrentAuthUser();
         if (!user && !transient) {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
             return;
         }
         if (!user) return;

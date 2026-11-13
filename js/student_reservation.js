@@ -27,7 +27,7 @@
                 initializeCalendar();
                 loadUserInfo();
             } else {
-                window.location.href = '/login';
+                window.location.href = '../../index.html';
             }
         }
 

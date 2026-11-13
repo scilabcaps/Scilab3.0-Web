@@ -36,7 +36,7 @@ const ProfessorHistory = {
             this.reservationModal.closeBtn?.addEventListener('click', () => this.reservationModal.close());
             this.loadCompletedReservations();
         } else {
-            window.location.href = '/login';
+            window.location.href = '../../index.html';
         }
     },
 

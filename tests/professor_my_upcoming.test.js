@@ -72,7 +72,7 @@ test('view action renders receipt details and opens the modal', () => {
     assert.match(html, /id="professorUpcomingDetailsModal"/);
     assert.match(html, /id="professorUpcomingDialogCancel"[\s\S]*?ProfessorMyUpcoming\.cancelReservationFromDetails\(\)/);
     assert.equal(elements.professorUpcomingDialogCancel.hidden, false);
-    assert.ok(html.indexOf('/js/modal.js') < html.indexOf('/js/professor_my_upcoming.js'));
+    assert.ok(html.indexOf('../../js/modal.js') < html.indexOf('../../js/professor_my_upcoming.js'));
 });
 
 test('details dialog hides cancellation for ineligible reservations', () => {

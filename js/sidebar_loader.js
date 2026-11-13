@@ -4,7 +4,7 @@ async function loadSidebar() {
     if (!(await enforceRoleRoute())) return;
     const header = document.querySelector('.dashboard-header');
     const currentPath = window.location.pathname;
-    const isStudentOrProfessorPage = currentPath.includes('/pages/student/') || currentPath.includes('/pages/professor/') || currentPath.startsWith('/student/') || currentPath.startsWith('/professor/');
+    const isStudentOrProfessorPage = currentPath.includes('/pages/student/') || currentPath.includes('/pages/professor/');
     if (header && isStudentOrProfessorPage && !header.querySelector('.header-notifications')) {
         const notificationWrap = document.createElement('div');
         notificationWrap.className = 'header-notifications-wrap';
@@ -38,16 +38,16 @@ async function loadSidebar() {
     try {
         // Determine the correct path based on current location
         const currentPath = window.location.pathname;
-        let sidebarPath = '/components/professor_sidebar.txt';
+        let sidebarPath = '../../components/professor_sidebar.txt';
         
         // Check user role from sessionStorage
         const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         
         // If we're in a professor page, adjust the path
-        if (currentPath.includes('/pages/professor/') || currentPath.startsWith('/professor/')) {
-            sidebarPath = '/components/professor_sidebar.txt';
-        } else if (currentPath.includes('/pages/student/') || currentPath.startsWith('/student/') || currentPath.includes('/pages/shared_pages/')) {
-            sidebarPath = '/components/student_sidebar.txt';
+        if (currentPath.includes('/pages/professor/')) {
+            sidebarPath = '../../components/professor_sidebar.txt';
+        } else if (currentPath.includes('/pages/student/') || currentPath.includes('/pages/shared_pages/')) {
+            sidebarPath = '../../components/student_sidebar.txt';
         }
         
         const response = await fetch(sidebarPath, { cache: 'no-store' });
@@ -81,14 +81,14 @@ async function loadSidebar() {
 
 async function enforceRoleRoute() {
     const currentPath = window.location.pathname;
-    const isStudentRoute = currentPath.includes('/pages/student/') || currentPath.startsWith('/student/');
-    const isProfessorRoute = currentPath.includes('/pages/professor/') || currentPath.startsWith('/professor/');
+    const isStudentRoute = currentPath.includes('/pages/student/');
+    const isProfessorRoute = currentPath.includes('/pages/professor/');
     if (!isStudentRoute && !isProfessorRoute) return true;
 
     try {
         const { user, error: authError, transient } = await getCurrentAuthUser();
         if (!user && !transient) {
-            window.location.replace('/login');
+            window.location.replace('../../index.html');
             return false;
         }
         if (!user) return true;
@@ -105,11 +105,11 @@ async function enforceRoleRoute() {
 
         const role = String(userInfo.role || '').toLowerCase();
         if (isStudentRoute && role !== 'student') {
-            window.location.replace('/professor/dashboard');
+            window.location.replace('../professor/professor_dashboard.html');
             return false;
         }
         if (isProfessorRoute && role !== 'professor') {
-            window.location.replace('/student/dashboard');
+            window.location.replace('../student/student_dashboard.html');
             return false;
         }
         return true;
@@ -147,7 +147,7 @@ function initUserNotifications(wrapper) {
 
     const notificationDestination = notification => {
         const pagePath = window.location.pathname;
-        const isProfessor = pagePath.includes('/pages/professor/') || pagePath.startsWith('/professor/');
+        const isProfessor = pagePath.includes('/pages/professor/');
         const type = String(notification.type || '');
         const title = String(notification.title || '').toLowerCase();
 
@@ -155,7 +155,7 @@ function initUserNotifications(wrapper) {
         if (isProfessor && type === 'reservation_reminder_day_before') return 'professor_my_upcoming.html';
         if (isProfessor && type === 'unreturned_items_student') return 'professor_unreturned.html';
         if (isProfessor && type === 'unreturned_items_owner') return 'professor_my_unreturned.html';
-        if ((!pagePath.includes('/pages/student/') && !pagePath.startsWith('/student/')) || !notification.reservation_id) return null;
+        if (!pagePath.includes('/pages/student/') || !notification.reservation_id) return null;
         if (type === 'reservation_reminder_day_before') return 'student_upcoming.html';
         if (type === 'unreturned_items_owner') return 'student_unreturned.html';
         if (title.includes('declined') || title.includes('cancelled')) return 'student_history.html';

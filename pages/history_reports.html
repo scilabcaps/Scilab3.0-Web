@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>History Reports</title>
-    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="../css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -12,7 +12,7 @@
         <!-- Sidebar Navigation -->
         <aside class="dashboard-sidebar">
             <div class="sidebar-header">
-                <img src="/Logo/Scilab_Logo.png" alt="Scilab Logo" class="sidebar-logo-img">
+                <img src="../Logo/Scilab_Logo.png" alt="Scilab Logo" class="sidebar-logo-img">
                 <div class="sidebar-brand">
                     <h1>SciLabReserve</h1>
                     <p>Lab Management</p>
@@ -31,13 +31,13 @@
                 <div class="nav-section-title">Navigation</div>
                 <ul class="nav-menu">
                     <li class="nav-item">
-                        <a href="/student/dashboard" class="nav-link" id="dashboardLink">
+                        <a href="student/student_dashboard.html" class="nav-link" id="dashboardLink">
                             <span class="nav-icon"></span>
                             <span class="nav-text">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="/student/reservation" class="nav-link" id="reservationLink">
+                        <a href="student/reservation_student.html" class="nav-link" id="reservationLink">
                             <span class="nav-icon"></span>
                             <span class="nav-text">New Reservation</span>
                         </a>
@@ -49,7 +49,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="/reports/history" class="nav-link active">
+                        <a href="history_reports.html" class="nav-link active">
                             <span class="nav-icon"></span>
                             <span class="nav-text">History Reports</span>
                         </a>
@@ -92,7 +92,7 @@
             <div class="dashboard-header">
                 <div class="header-left">
                     <h1>History Reports</h1>
-                    <img src="/Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
+                    <img src="../Logo/DLSP_Logo.png" alt="DLSP Logo" class="header-logo">
                 </div>
             </div>
             <div class="dashboard-content">
@@ -327,9 +327,9 @@
         </main>
     </div>
 
-    <script src="/js/main.js"></script>
-    <script src="/js/snackbar.js"></script>
-    <script src="/js/dialog.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/snackbar.js"></script>
+    <script src="../js/dialog.js"></script>
     <script>
         let currentUser = null;
         let charts = {};
@@ -1338,6 +1338,6 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/config/supabase.js"></script>
+    <script src="../config/supabase.js"></script>
 </body>
 </html>
