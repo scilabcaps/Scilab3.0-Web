@@ -345,7 +345,7 @@ const studentPending = new StudentPendingReservations();
 window.studentPending = studentPending;
 
 window.addEventListener('content:navigation', () => {
-    if (scilabPagePath().endsWith('/student_pending.html')) {
+    if (window.location.pathname.endsWith('/student_pending.html')) {
         studentPending.loadUserInfo();
         studentPending.loadPendingReservations();
     }

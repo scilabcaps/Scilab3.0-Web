@@ -271,7 +271,7 @@ function refreshRealtimePageInPlace(pageName, changedTable = null) {
 
 function refreshCurrentDataPage(changedTable = null) {
     const pagePath = window.location.pathname;
-    const pageName = scilabPagePath(pagePath).split('/').pop();
+    const pageName = pagePath.split('/').pop();
     const watchedTables = APP_REALTIME_PAGE_TABLES[pageName];
     if (changedTable && (!watchedTables || !watchedTables.includes(changedTable))) return;
     const isStudentReservationForm = pageName === 'reservation_student.html';
@@ -509,13 +509,13 @@ function navigateTo(page) {
 
 // Set active navigation link based on current page
 function setActiveNavLink() {
-    const currentPage = scilabPagePath().split('/').pop();
+    const currentPage = window.location.pathname.split('/').pop() || window.location.href.split('/').pop();
     console.log('Current page detected:', currentPage); // Debug log
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
         const href = link.getAttribute('href');
         console.log('Checking link href:', href, 'against current page:', currentPage); // Debug log
-        if (href && href !== '#' && scilabPagePath(href) === scilabPagePath()) {
+        if (href === currentPage || (currentPage === '' && href === 'index.html')) {
             link.classList.add('active');
         } else {
             link.classList.remove('active');
@@ -582,7 +582,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!link || !link.href || link.target === '_blank' || link.hasAttribute('download')) return false;
         const url = new URL(link.href, window.location.href);
         return url.origin === window.location.origin
-            && dashboardPath.test(scilabPagePath(url.pathname));
+            && dashboardPath.test(url.pathname)
+            && url.pathname.endsWith('.html');
     };
 
     const loadPageAssets = (documentFragment, pageUrl) => {
@@ -718,7 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('popstate', () => {
         const url = new URL(window.location.href);
-        if (dashboardPath.test(scilabPagePath(url.pathname))) renderPage(url, { pushState: false });
+        if (dashboardPath.test(url.pathname)) renderPage(url, { pushState: false });
     });
 })();
 

@@ -398,7 +398,7 @@ const studentApproved = new StudentApprovedReservations();
 window.studentApproved = studentApproved;
 
 window.addEventListener('content:navigation', () => {
-    if (scilabPagePath().endsWith('/student_approved.html')) {
+    if (window.location.pathname.endsWith('/student_approved.html')) {
         studentApproved.loadUserInfo();
         studentApproved.loadApprovedReservations();
     }

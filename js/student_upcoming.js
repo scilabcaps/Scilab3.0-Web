@@ -96,5 +96,5 @@ const StudentUpcoming = {
 
 window.addEventListener('DOMContentLoaded', () => StudentUpcoming.init());
 window.addEventListener('content:navigation', () => {
-    if (scilabPagePath().endsWith('/student_upcoming.html')) StudentUpcoming.init();
+    if (window.location.pathname.endsWith('/student_upcoming.html')) StudentUpcoming.init();
 });
