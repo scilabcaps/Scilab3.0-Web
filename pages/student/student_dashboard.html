@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <script src="/js/route-map.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard - Scilab 3.0 - Science Laboratory Reservation System</title>
@@ -71,15 +72,15 @@
                 <div class="quick-actions-section">
                     <h2 class="section-title">Quick Actions</h2>
                     <div class="quick-actions-grid">
-                        <a href="reservation_student.html" class="quick-action-btn">
+                        <a href="/student/reservation" class="quick-action-btn">
                             <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 2h6v2h-1v5.59l5.7 8.55A2 2 0 0 1 18 21H6a2 2 0 0 1-1.7-2.86L10 9.59V4H9V2Zm3 9-5 8h10l-5-8Zm-1-7v6h2V4h-2Z"/></svg></div>
                             <span>Reserve Equipment</span>
                         </a>
-                        <a href="student_approved.html" class="quick-action-btn">
+                        <a href="/student/approved" class="quick-action-btn">
                             <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm1 15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9h16v9Z"/></svg></div>
                             <span>View My Schedule</span>
                         </a>
-                        <a href="student_history.html" class="quick-action-btn">
+                        <a href="/student/history" class="quick-action-btn">
                             <div class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm2 4v2h8V6H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></div>
                             <span>Reservation History</span>
                         </a>
@@ -484,7 +485,7 @@
         function quickReserve(assetId) {
             // Pre-fill reservation form with this item
             sessionStorage.setItem('preselectedItem', assetId);
-            window.location.href = 'reservation_student.html';
+            window.location.href = '/student/reservation';
         }
 
         // Load user data and validate session
@@ -496,7 +497,7 @@
                 const fullName = firstName + ' ' + lastName;
                 document.getElementById('studentName').textContent = fullName;
             } else {
-                window.location.href = '../../index.html';
+                window.location.href = '/login';
             }
         }
 

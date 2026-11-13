@@ -151,17 +151,17 @@ function initUserNotifications(wrapper) {
         const type = String(notification.type || '');
         const title = String(notification.title || '').toLowerCase();
 
-        if (isProfessor && type === 'reservation_submitted') return 'student_approvals.html';
-        if (isProfessor && type === 'reservation_reminder_day_before') return 'professor_my_upcoming.html';
-        if (isProfessor && type === 'unreturned_items_student') return 'professor_unreturned.html';
-        if (isProfessor && type === 'unreturned_items_owner') return 'professor_my_unreturned.html';
+        if (isProfessor && type === 'reservation_submitted') return '/professor/student-approvals';
+        if (isProfessor && type === 'reservation_reminder_day_before') return '/professor/my-upcoming';
+        if (isProfessor && type === 'unreturned_items_student') return '/professor/unreturned';
+        if (isProfessor && type === 'unreturned_items_owner') return '/professor/my-unreturned';
         if ((!pagePath.includes('/pages/student/') && !pagePath.startsWith('/student/')) || !notification.reservation_id) return null;
-        if (type === 'reservation_reminder_day_before') return 'student_upcoming.html';
-        if (type === 'unreturned_items_owner') return 'student_unreturned.html';
-        if (title.includes('declined') || title.includes('cancelled')) return 'student_history.html';
-        if (type === 'admin_approval_updated' && title.includes('approved')) return 'student_approved.html';
-        if (type === 'professor_approval_updated') return 'student_pending.html';
-        if (type === 'admin_approval_updated') return 'student_history.html';
+        if (type === 'reservation_reminder_day_before') return '/student/upcoming';
+        if (type === 'unreturned_items_owner') return '/student/unreturned';
+        if (title.includes('declined') || title.includes('cancelled')) return '/student/history';
+        if (type === 'admin_approval_updated' && title.includes('approved')) return '/student/approved';
+        if (type === 'professor_approval_updated') return '/student/pending';
+        if (type === 'admin_approval_updated') return '/student/history';
         return null;
     };
 
@@ -323,7 +323,7 @@ function setActiveNavItem() {
     navLinks.forEach(link => {
         link.classList.remove('active');
         const href = link.getAttribute('href');
-        if (href === currentPage) {
+        if (href && href !== '#' && scilabPagePath(href) === scilabPagePath()) {
             link.classList.add('active');
             // Open parent dropdown if this link is inside one
             const parentDropdown = link.closest('.dropdown');
