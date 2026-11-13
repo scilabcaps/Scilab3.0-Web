@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Redirect to login after a delay
             setTimeout(() => {
-                window.location.href = '../index.html';
+                window.location.href = '/login';
             }, 2000);
         } catch (error) {
             showErrorSnackbar('An error occurred: ' + error.message);

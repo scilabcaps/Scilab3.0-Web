@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Send OTP for password reset using Supabase
                 const { data, error } = await window.supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: `${window.location.origin}/pages/reset-password.html`
+                    redirectTo: `${window.location.origin}/reset-password`
                 });
 
                 if (error) {

@@ -25,8 +25,8 @@ vm.runInContext(sharedSource, context);
 vm.runInContext(source, context);
 
 test('pending approval page loads Modal before its View handler module', () => {
-    const modalScriptIndex = pageSource.indexOf('../../js/modal.js');
-    const pendingScriptIndex = pageSource.indexOf('../../js/professor_pending.js');
+    const modalScriptIndex = pageSource.indexOf('/js/modal.js');
+    const pendingScriptIndex = pageSource.indexOf('/js/professor_pending.js');
     assert.notEqual(modalScriptIndex, -1);
     assert.ok(modalScriptIndex < pendingScriptIndex);
 });

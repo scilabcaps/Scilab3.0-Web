@@ -16,7 +16,7 @@ const AccountApprovals = {
             this.professorId = user.id;
             this.loadPendingAccounts();
         } else {
-            window.location.href = '../../index.html';
+            window.location.href = '/login';
         }
     },
 

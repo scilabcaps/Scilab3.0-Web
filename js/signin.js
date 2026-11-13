@@ -131,10 +131,10 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 switch (role) {
                     case 'professor':
-                        window.location.href = '/pages/professor/professor_dashboard.html';
+                        window.location.href = '/professor/dashboard';
                         break;
                     case 'student':
-                        window.location.href = '/pages/student/student_dashboard.html';
+                        window.location.href = '/student/dashboard';
                         break;
                     default:
                         showErrorSnackbar('Unknown role. Please contact administrator.');

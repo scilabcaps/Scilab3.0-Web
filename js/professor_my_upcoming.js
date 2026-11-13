@@ -9,13 +9,13 @@ const ProfessorMyUpcoming = {
         if (!window.location.pathname.endsWith('/professor_my_upcoming.html')) return;
         const sessionUser = JSON.parse(sessionStorage.getItem('user') || '{}');
         if (String(sessionUser.role || '').toLowerCase() !== 'professor') {
-            window.location.href = '../../index.html';
+            window.location.href = '/login';
             return;
         }
 
         const { user, transient } = await getCurrentAuthUser();
         if (!user && !transient) {
-            window.location.href = '../../index.html';
+            window.location.href = '/login';
             return;
         }
         if (!user) return;

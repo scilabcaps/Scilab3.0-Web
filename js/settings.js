@@ -25,7 +25,7 @@ async function loadUserData() {
         
         if (authError || !user) {
             console.error('Error fetching user:', authError);
-            window.location.href = '../../index.html';
+            window.location.href = '/login';
             return;
         }
 
@@ -42,12 +42,12 @@ async function loadUserData() {
         }
 
         const role = String(userInfo?.role || '').toLowerCase();
-        if (window.location.pathname.includes('/pages/student/') && role !== 'student') {
-            window.location.replace('../professor/professor_dashboard.html');
+        if ((window.location.pathname.includes('/pages/student/') || window.location.pathname.startsWith('/student/')) && role !== 'student') {
+            window.location.replace('/professor/dashboard');
             return;
         }
-        if (window.location.pathname.includes('/pages/professor/') && role !== 'professor') {
-            window.location.replace('../student/student_dashboard.html');
+        if ((window.location.pathname.includes('/pages/professor/') || window.location.pathname.startsWith('/professor/')) && role !== 'professor') {
+            window.location.replace('/student/dashboard');
             return;
         }
 

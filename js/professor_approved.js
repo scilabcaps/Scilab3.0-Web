@@ -23,7 +23,7 @@ const ProfessorApproved = {
             this.reservationModal.closeBtn?.addEventListener('click', () => this.reservationModal.close());
             this.loadApprovedReservations();
         } else {
-            window.location.href = '../../index.html';
+            window.location.href = '/login';
         }
     },
 
