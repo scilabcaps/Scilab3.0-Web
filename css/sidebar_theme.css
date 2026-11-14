@@ -388,3 +388,101 @@
         margin-left: 0;
     }
 }
+
+@keyframes contentFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes cardFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dashboard-main.content-leaving {
+    opacity: 0.25;
+    transition: opacity 150ms ease-out;
+}
+
+.dashboard-main.content-entering {
+    animation: contentFadeIn 220ms ease-out;
+}
+
+.stagger-fade-item {
+    animation: cardFadeInUp 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--stagger-index, 0) * 45ms);
+}
+
+.dashboard-main table thead,
+.dashboard-main table tbody tr,
+.dashboard-main .resource-grid.resource-grid-entering .resource-card {
+    animation: cardFadeInUp 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(1) { animation-delay: 30ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(2) { animation-delay: 65ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(3) { animation-delay: 100ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(4) { animation-delay: 135ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(5) { animation-delay: 170ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(6) { animation-delay: 205ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(7) { animation-delay: 240ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(8) { animation-delay: 275ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(9) { animation-delay: 310ms; }
+.dashboard-main .resource-grid.resource-grid-entering .resource-card:nth-child(n+10) { animation-delay: 345ms; }
+
+.dashboard-main table tbody tr:nth-child(1) { animation-delay: 60ms; }
+.dashboard-main table tbody tr:nth-child(2) { animation-delay: 95ms; }
+.dashboard-main table tbody tr:nth-child(3) { animation-delay: 130ms; }
+.dashboard-main table tbody tr:nth-child(4) { animation-delay: 165ms; }
+.dashboard-main table tbody tr:nth-child(5) { animation-delay: 200ms; }
+.dashboard-main table tbody tr:nth-child(6) { animation-delay: 235ms; }
+.dashboard-main table tbody tr:nth-child(7) { animation-delay: 270ms; }
+.dashboard-main table tbody tr:nth-child(8) { animation-delay: 305ms; }
+.dashboard-main table tbody tr:nth-child(9) { animation-delay: 340ms; }
+.dashboard-main table tbody tr:nth-child(10) { animation-delay: 375ms; }
+.dashboard-main table tbody tr:nth-child(n+11) { animation-delay: 410ms; }
+
+.notifications-panel:not([hidden]) {
+    animation: cardFadeInUp 200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.notifications-panel:not([hidden]) .notification-item {
+    animation: cardFadeInUp 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.notifications-panel:not([hidden]) .notification-item:nth-child(1) { animation-delay: 40ms; }
+.notifications-panel:not([hidden]) .notification-item:nth-child(2) { animation-delay: 75ms; }
+.notifications-panel:not([hidden]) .notification-item:nth-child(3) { animation-delay: 110ms; }
+.notifications-panel:not([hidden]) .notification-item:nth-child(4) { animation-delay: 145ms; }
+.notifications-panel:not([hidden]) .notification-item:nth-child(5) { animation-delay: 180ms; }
+.notifications-panel:not([hidden]) .notification-item:nth-child(6) { animation-delay: 215ms; }
+.notifications-panel:not([hidden]) .notification-item:nth-child(n+7) { animation-delay: 250ms; }
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-main.content-leaving {
+        opacity: 1;
+        transition: none;
+    }
+
+    .dashboard-main.content-entering,
+    .stagger-fade-item,
+    .dashboard-main table thead,
+    .dashboard-main table tbody tr,
+    .dashboard-main .resource-grid.resource-grid-entering .resource-card,
+    .notifications-panel:not([hidden]),
+    .notifications-panel:not([hidden]) .notification-item {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}

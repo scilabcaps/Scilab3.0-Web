@@ -657,6 +657,64 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
+    const applyContentStagger = root => {
+        const contentRoot = root?.querySelector('.dashboard-content') || root;
+        if (!contentRoot || !contentRoot.children) return;
+
+        const cardSelectors = [
+            '.welcome-section',
+            '.summary-card',
+            '.quick-action-card',
+            '.quick-action-btn',
+            '.unreturned-summary-card',
+            '.dashboard-section',
+            '.quick-actions-section',
+            '.table-section',
+            '.table-container',
+            '.filters-section',
+            '.filter-section',
+            '.settings-card',
+            '.profile-card',
+            '.card'
+        ].join(', ');
+
+        const targets = [];
+        const seen = new Set();
+
+        [...contentRoot.children].forEach(child => {
+            const nestedCards = [...child.querySelectorAll(cardSelectors)].filter(
+                el => el.parentElement === child || el.closest('.summary-cards, .quick-actions-grid, .unreturned-summary-grid, .cards-grid') === child
+            );
+            if (nestedCards.length > 0) {
+                nestedCards.forEach(card => {
+                    if (!seen.has(card)) {
+                        seen.add(card);
+                        targets.push(card);
+                    }
+                });
+            } else if (!seen.has(child)) {
+                seen.add(child);
+                targets.push(child);
+            }
+        });
+
+        targets.forEach((el, index) => {
+            el.style.setProperty('--stagger-index', String(Math.min(index, 10)));
+            el.classList.add('stagger-fade-item');
+            el.addEventListener('animationend', () => {
+                el.classList.remove('stagger-fade-item');
+                el.style.removeProperty('--stagger-index');
+            }, { once: true });
+        });
+
+        root.querySelectorAll('.resource-grid').forEach(grid => {
+            grid.classList.add('resource-grid-entering');
+            grid.addEventListener('animationstart', () => {
+                setTimeout(() => grid.classList.remove('resource-grid-entering'), 650);
+            }, { once: true });
+        });
+    };
+
     const renderPage = async (url, { pushState = true } = {}) => {
         if (navigationInProgress) return;
         navigationInProgress = true;
@@ -664,6 +722,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const sharedHeaderControls = currentMain
             ? [...currentMain.querySelectorAll('.header-notifications-wrap, .header-logout')]
             : [];
+
+        if (currentMain) currentMain.classList.add('content-leaving');
 
         try {
             const response = await fetch(url.href, { headers: { 'X-Content-Navigation': 'true' } });
@@ -676,6 +736,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             loadPageAssets(parsed, url.href);
             syncPageOverlays(parsed);
+            nextMain.classList.add('content-entering');
+            nextMain.addEventListener('animationend', () => {
+                nextMain.classList.remove('content-entering');
+            }, { once: true });
+            applyContentStagger(nextMain);
             currentMain.replaceWith(nextMain);
             const nextHeader = nextMain.querySelector('.dashboard-header');
             if (nextHeader) {
@@ -701,6 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.__contentNavigationRefresh = false;
             window.scrollTo({ top: 0, behavior: 'instant' });
         } catch (error) {
+            if (currentMain) currentMain.classList.remove('content-leaving');
             console.error('Content navigation failed; using normal navigation:', error);
             window.location.assign(url.href);
         } finally {
