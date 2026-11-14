@@ -25,3 +25,5 @@ Thumbs.db
 .archive_tasks/
 .agent/
 /AGENTS.md
+.vercel
+.env*

@@ -153,14 +153,25 @@
             updateWeekDisplay();
         }
 
+        function getStudentDisplayName(user = {}) {
+            if (user.username && user.role === 'Student') {
+                const firstName = user.firstname || 'Student';
+                const lastName = user.lastname || 'User';
+                return `${firstName} ${lastName}`;
+            }
+            return document.getElementById('userNameSidebar')?.textContent?.trim() || 'Student Name';
+        }
+
         // Load student data and dashboard metrics
         async function loadStudentData() {
             try {
                 const user = JSON.parse(sessionStorage.getItem('user') || '{}');
                 
                 // Update student name
-                const studentName = document.getElementById('userName')?.textContent || 'Student Name';
-                document.getElementById('studentName').textContent = studentName;
+                const studentNameElement = document.getElementById('studentName');
+                if (studentNameElement) {
+                    studentNameElement.textContent = getStudentDisplayName(user);
+                }
                 
                 // Fetch reservation counts from Supabase
                 const { data: allReservations, error } = await supabase
@@ -304,10 +315,10 @@
         function loadUserData() {
             const user = JSON.parse(sessionStorage.getItem('user') || '{}');
             if (user.username && user.role === 'Student') {
-                const firstName = user.firstname || 'Student';
-                const lastName = user.lastname || 'User';
-                const fullName = firstName + ' ' + lastName;
-                document.getElementById('studentName').textContent = fullName;
+                const studentNameElement = document.getElementById('studentName');
+                if (studentNameElement) {
+                    studentNameElement.textContent = getStudentDisplayName(user);
+                }
             } else {
                 window.location.href = '/login';
             }
